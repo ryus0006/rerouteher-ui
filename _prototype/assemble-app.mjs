@@ -1,6 +1,8 @@
 import fs from 'node:fs';
+import path from 'node:path';
 
-const css = fs.readFileSync('_merged.css', 'utf8');
+const scriptDir = path.dirname(new URL(import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1'));
+const css = fs.readFileSync(path.join(scriptDir, '_merged.css'), 'utf8');
 const BRAND = 'ReRouteHer';
 
 const bfly = (id) => `<svg width="30" height="30" viewBox="0 0 48 48" fill="none" style="flex:none;overflow:visible;">
@@ -61,7 +63,6 @@ const landing = `
     <div class="star" style="top:60px;left:38%;"></div><div class="star" style="top:140px;left:62%;"></div>
     <div class="star" style="top:220px;left:80%;width:2px;height:2px;"></div><div class="star" style="top:90px;left:52%;width:2px;height:2px;"></div>
 
-    <!-- Full-height hero butterfly oil painting artwork attached to the right edge with clean ethereal edge gradient fade & 85% opacity -->
     <div class="hero-artwork-container" style="position:absolute;top:0;right:0;bottom:0;height:100%;display:flex;align-items:center;justify-content:flex-end;pointer-events:none;z-index:1;overflow:hidden;">
       <img src="hero-dreamy-butterfly.png" alt="ReRouteHer Ethereal Butterfly Oil Painting" class="hero-butterfly-img" style="height:100%;max-height:100%;width:auto;object-fit:contain;object-position:right center;opacity:0.85;-webkit-mask-image:radial-gradient(ellipse 75% 85% at 52% 48%, rgba(0,0,0,1) 35%, rgba(0,0,0,0.85) 60%, transparent 95%);mask-image:radial-gradient(ellipse 75% 85% at 52% 48%, rgba(0,0,0,1) 35%, rgba(0,0,0,0.85) 60%, transparent 95%);filter:contrast(1.02) brightness(1.03);" />
     </div>
@@ -99,7 +100,7 @@ const landing = `
         <div class="journey-num">2</div>
         <div class="journey-track"></div>
         <div class="disp" style="font-weight:700;font-size:16px;margin-top:14px;">Describe your break</div>
-        <div style="font-size:13px;color:var(--ink-soft);margin-top:6px;">Tell us what you did &mdash; AI reframes it to O*NET.</div>
+        <div style="font-size:13px;color:var(--ink-soft);margin-top:6px;">Tell us what you did &mdash; AI reframes it to standard O*NET skills.</div>
       </div>
       <div class="journey-step js-scroll-card">
         <div class="journey-num">3</div>
@@ -109,7 +110,7 @@ const landing = `
     </div>
   </div>
 
-  <div class="scroll-section" style="display:grid;grid-template-columns:repeat(3,1fr);gap:22px;padding:70px 60px 0;">
+  <div class="scroll-section" style="display:grid;grid-template-columns:repeat(3,1fr);gap:22px;padding:70px 60px 0;max-width:1000px;margin:0 auto;">
     <div class="glass js-scroll-card" style="padding:30px 26px;">
       <div style="width:44px;height:44px;border-radius:14px;background:linear-gradient(135deg,#FBDCE6,#D8C6DF);display:flex;align-items:center;justify-content:center;margin-bottom:16px;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#5B4E7A" stroke-width="1.8"><path d="M12 3v9m0 0l-3.5-3.5M12 12l3.5-3.5M5 15v3a2 2 0 002 2h10a2 2 0 002-2v-3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
       <div class="disp" style="font-weight:700;font-size:16.5px;">Your break counts as experience</div>
@@ -118,7 +119,7 @@ const landing = `
     <div class="glass js-scroll-card" style="padding:30px 26px;">
       <div style="width:44px;height:44px;border-radius:14px;background:linear-gradient(135deg,#D8C6DF,#B7C0E4);display:flex;align-items:center;justify-content:center;margin-bottom:16px;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#4E4E80" stroke-width="1.8"><circle cx="12" cy="12" r="9" stroke-linecap="round"/><path d="M12 7v5l3 3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
       <div class="disp" style="font-weight:700;font-size:16.5px;">Transparent, weighted readiness</div>
-      <div style="font-size:13.5px;color:var(--ink-soft);margin-top:8px;line-height:1.55;">A transparent score for any target role &mdash; explaining exactly why you're ready and how closing 3 focus areas gets you to ~94%.</div>
+      <div style="font-size:13.5px;color:var(--ink-soft);margin-top:8px;line-height:1.55;">A transparent score for any target role &mdash; explaining exactly why you're ready and how closing 3 focus areas unlocks your readiness.</div>
     </div>
     <div class="glass js-scroll-card" style="padding:30px 26px;">
       <div style="width:44px;height:44px;border-radius:14px;background:linear-gradient(135deg,#B7C0E4,#8C97D0);display:flex;align-items:center;justify-content:center;margin-bottom:16px;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#33366B" stroke-width="1.8"><path d="M4 19h16M7 15l3-5 3 3 4-7" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
@@ -129,7 +130,7 @@ const landing = `
   <div style="height:70px;"></div>
 </div>`;
 
-// ============ STEP 1: UPLOAD CV (E2a) — MANDATORY, NO SKIP, NO MANUAL OPTION ============
+// ============ STEP 1: UPLOAD CV (E2a) ============
 const storyA = `
 <div style="min-height:900px;background:var(--grad-soft);">
   <div style="display:flex;align-items:center;justify-content:space-between;padding:24px 56px;">${logo('bfly2a')}</div>
@@ -171,12 +172,17 @@ const storyA = `
       </div>
       <div id="cv-error" class="field-error" style="display:none;"></div>
 
-      <!-- Quick Demo Sample Loader -->
-      <div style="margin-top:18px;display:flex;align-items:center;justify-content:space-between;background:rgba(255,255,255,.5);padding:12px 16px;border-radius:12px;border:1px dashed rgba(90,90,140,.2);">
-        <div style="font-size:12.5px;color:var(--ink-soft);">Want to try without a file right now?</div>
-        <button type="button" class="btn-reset" onclick="loadSampleCv()" style="font-size:12.5px;font-weight:700;color:var(--blue-600);cursor:pointer;padding:4px 10px;border-radius:8px;background:rgba(70,83,158,.1);">
-          ⚡ Load Sample CV (Sarah &middot; UX Lead)
-        </button>
+      <!-- Quick Demo Sample Loaders -->
+      <div style="margin-top:18px;display:flex;align-items:center;justify-content:space-between;background:rgba(255,255,255,.5);padding:12px 16px;border-radius:12px;border:1px dashed rgba(90,90,140,.2);flex-wrap:wrap;gap:10px;">
+        <div style="font-size:12.5px;color:var(--ink-soft);">Want to try without uploading your own file?</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button type="button" class="btn-reset" onclick="loadSampleCv('operation-research')" style="font-size:12px;font-weight:700;color:var(--blue-600);cursor:pointer;padding:5px 12px;border-radius:8px;background:rgba(70,83,158,.1);">
+            ⚡ Load Analyst CV (Op Research)
+          </button>
+          <button type="button" class="btn-reset" onclick="loadSampleCv('ux-ui')" style="font-size:12px;font-weight:700;color:var(--ink-soft);cursor:pointer;padding:5px 12px;border-radius:8px;background:rgba(90,90,140,.08);">
+            ⚡ Load Designer CV (UX/UI)
+          </button>
+        </div>
       </div>
     </div>
 
@@ -189,7 +195,7 @@ const storyA = `
   </div>
 </div>`;
 
-// ============ STEP 2: CAREER BREAK QUESTIONNAIRE (E2b) — ONLY 2 QUESTIONS (DURATION + FREE TEXT INPUT) ============
+// ============ STEP 2: CAREER BREAK QUESTIONNAIRE ============
 const storyB = `
 <div style="min-height:980px;background:var(--grad-soft);">
   <div style="display:flex;align-items:center;justify-content:space-between;padding:24px 56px;">${logo('bfly2b')}</div>
@@ -199,7 +205,6 @@ const storyB = `
     <div class="js-sub" style="font-size:14.5px;color:var(--ink-soft);margin-top:6px;">Your time out counts as real experience &mdash; just two simple questions for our AI model.</div>
 
     <div class="glass js-card" style="padding:30px;margin-top:22px;display:flex;flex-direction:column;gap:26px;">
-      <!-- Question 1: Duration -->
       <div>
         <div class="field-label" style="font-size:14.5px;margin-bottom:6px;">1. Roughly how long was your career break?</div>
         <div style="font-size:12.5px;color:var(--ink-soft);margin-bottom:14px;">Select the total duration of your time away from formal employment.</div>
@@ -211,20 +216,18 @@ const storyB = `
         </div>
       </div>
 
-      <!-- Question 2: Free Text Input (What did you do?) -->
       <div>
         <div class="field-label" style="font-size:14.5px;margin-bottom:6px;">2. What did you do during this time? <span style="color:var(--pink-500);">*</span></div>
         <div style="font-size:12.5px;color:var(--ink-soft);margin-bottom:12px;">Describe in your own words (e.g. caregiving, household management, budget oversight, volunteering, self-study, side projects).</div>
         
-        <textarea id="break-text-input" rows="5" oninput="saveIntake()" placeholder="e.g. Cared for 2 children full-time, managed household budget and family schedules, organized school fundraisers, and self-studied digital design tools..." style="width:100%;border-radius:14px;border:1.5px solid rgba(90,90,140,.22);background:rgba(255,255,255,.85);padding:14px 16px;font-family:inherit;font-size:14px;line-height:1.55;color:var(--ink);box-sizing:border-box;resize:vertical;outline:none;"></textarea>
+        <textarea id="break-text-input" rows="5" oninput="saveIntake()" placeholder="e.g. Cared for 2 children full-time, managed household budget and family schedules, organized school fundraisers, and self-studied digital tools..." style="width:100%;border-radius:14px;border:1.5px solid rgba(90,90,140,.22);background:rgba(255,255,255,.85);padding:14px 16px;font-family:inherit;font-size:14px;line-height:1.55;color:var(--ink);box-sizing:border-box;resize:vertical;outline:none;"></textarea>
 
-        <!-- Quick suggestion tags to assist text entry -->
         <div style="margin-top:10px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
           <div style="font-size:11.5px;font-weight:700;color:var(--ink-faint);">Click to add examples:</div>
           <button type="button" class="btn-reset chip" onclick="appendBreakText('Cared for children & managed family logistics')" style="font-size:11.5px;padding:6px 12px;cursor:pointer;">+ Childcare</button>
           <button type="button" class="btn-reset chip" onclick="appendBreakText('Managed household budgeting & expenses')" style="font-size:11.5px;padding:6px 12px;cursor:pointer;">+ Budgeting</button>
           <button type="button" class="btn-reset chip" onclick="appendBreakText('Organized community volunteer projects')" style="font-size:11.5px;padding:6px 12px;cursor:pointer;">+ Volunteering</button>
-          <button type="button" class="btn-reset chip" onclick="appendBreakText('Self-study & online design courses')" style="font-size:11.5px;padding:6px 12px;cursor:pointer;">+ Self-study</button>
+          <button type="button" class="btn-reset chip" onclick="appendBreakText('Self-study & online analytics courses')" style="font-size:11.5px;padding:6px 12px;cursor:pointer;">+ Self-study</button>
         </div>
         <div id="break-text-error" class="field-error" style="display:none;margin-top:10px;"></div>
       </div>
@@ -246,13 +249,19 @@ const storyB = `
 const snapshot = `
 <div style="min-height:960px;background:var(--grad-soft);">
   <div style="display:flex;align-items:center;justify-content:space-between;padding:24px 56px;">${logo('bfly3')}</div>
-  <div style="max-width:860px;margin:0 auto;padding:0 24px;">
+  <div style="max-width:960px;margin:0 auto;padding:0 24px;">
     ${stepper(3, STEP_LABELS, STEP_DESTS)}
-    ${mask('Your skill snapshot')}
-    <div class="js-sub" style="font-size:15px;color:var(--ink-soft);margin-top:6px;">Here&rsquo;s the summary of where you&rsquo;re coming from &mdash; extracted from your CV and reframed from your career break.</div>
+    
+    <div style="margin-top:4px;margin-bottom:12px;">
+      <button type="button" class="btn-reset" onclick="showView('story-b')" style="font-size:13.5px;font-weight:700;color:var(--ink-soft);display:inline-flex;align-items:center;gap:6px;cursor:pointer;">
+        <span>&larr;</span> Back to Career Break
+      </button>
+    </div>
 
-    <!-- Read-Only Descriptive History Baseline Card -->
-    <div class="glass js-card" id="occupation-card" style="padding:28px 32px;margin-top:26px;position:relative;overflow:hidden;">
+    ${mask('Your skill snapshot')}
+
+    <!-- Read-Only Descriptive History Baseline Card (Occupation Line) -->
+    <div class="glass js-card" id="occupation-card" style="padding:28px 32px;margin-top:20px;position:relative;overflow:hidden;">
       <div style="position:absolute;top:0;left:0;width:4px;height:100%;background:var(--grad-btn);"></div>
       <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:20px;flex-wrap:wrap;">
         <div style="flex:1;min-width:280px;">
@@ -261,7 +270,7 @@ const snapshot = `
             <div style="font-size:11.5px;font-weight:800;color:var(--ink-faint);letter-spacing:.06em;text-transform:uppercase;">YOUR BACKGROUND LOOKS LIKE</div>
           </div>
           <div class="disp" id="snapshot-headline" style="font-weight:800;font-size:22px;margin-top:6px;line-height:1.25;color:var(--ink);">
-            Based on your story, you&rsquo;re closest to <span style="background:var(--grad-btn);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">Senior UX/UI Designer</span>.
+            Based on your story, you&rsquo;re closest to <span id="snapshot-headline-role" style="background:var(--grad-btn);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">Operation Research Analyst</span>.
           </div>
           <div style="font-size:13.5px;color:var(--ink-soft);margin-top:8px;line-height:1.55;">
             This is your starting baseline. On this page, we reflect your foundation. Next, you&rsquo;ll choose where you want to aim.
@@ -277,28 +286,33 @@ const snapshot = `
       </div>
     </div>
 
-    <!-- Two-Column Skill Inventory -->
+    <!-- Two-Column Skill Inventory with Count & Compact Pill Chips -->
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:22px;margin-top:22px;">
       <div class="glass js-card" style="padding:26px 28px;">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
-          <div class="field-label" style="margin-bottom:0;display:flex;align-items:center;gap:7px;">
+        <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:6px;">
+          <div class="field-label" style="margin-bottom:0;display:flex;align-items:center;gap:7px;font-size:14px;font-weight:700;">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--blue-600)" stroke-width="2.2"><path d="M20 7h-4V4a1 1 0 00-1-1H9a1 1 0 00-1 1v3H4a1 1 0 00-1 1v11a2 2 0 002 2h14a2 2 0 002-2V8a1 1 0 00-1-1zM10 5h4v2h-4V5z"/></svg>
-            Skills from your CV
+            From your CV
           </div>
-          <div style="font-size:11px;font-weight:700;color:var(--ink-faint);">Extracted automatically</div>
+          <span id="cv-skills-count" style="font-size:12px;font-weight:700;color:var(--ink-faint);">5</span>
         </div>
-        <div id="skills-have-col" style="display:flex;flex-wrap:wrap;gap:9px;"></div>
+        <div style="font-size:12px;color:var(--ink-soft);margin-bottom:14px;">Extracted automatically from your uploaded experience.</div>
+        <div id="skills-have-col" style="display:flex;flex-wrap:wrap;gap:8px;"></div>
+        <div id="skills-have-more" style="margin-top:12px;display:none;">
+          <button type="button" class="btn-reset" onclick="toggleCvSkillsExpand()" id="skills-have-toggle-btn" style="font-size:13px;font-weight:700;color:var(--pink-600);">Show all</button>
+        </div>
       </div>
       
       <div class="glass js-card" style="padding:26px 28px;">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
-          <div class="field-label" style="margin-bottom:0;display:flex;align-items:center;gap:7px;">
+        <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:6px;">
+          <div class="field-label" style="margin-bottom:0;display:flex;align-items:center;gap:7px;font-size:14px;font-weight:700;">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--mint-600)" stroke-width="2.2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-            From your break (Reframed)
+            From your career break
           </div>
-          <div style="font-size:11px;font-weight:700;color:var(--mint-700);">O*NET Validated</div>
+          <span id="break-skills-count" style="font-size:12px;font-weight:700;color:var(--mint-700);">5</span>
         </div>
-        <div id="skills-reframed-col" style="display:flex;flex-wrap:wrap;gap:9px;"></div>
+        <div style="font-size:12px;color:var(--ink-soft);margin-bottom:14px;">These come from the activities you did during your career break.</div>
+        <div id="skills-reframed-col" style="display:flex;flex-wrap:wrap;gap:8px;"></div>
       </div>
     </div>
 
@@ -316,7 +330,7 @@ const snapshot = `
         <span>&larr;</span> Back to Break
       </button>
       <button type="button" class="pill-btn primary btn-reset" onclick="showView('gap')">
-        <span>Choose target role &amp; see readiness</span>
+        <span>See my readiness &amp; gaps</span>
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
       </button>
     </div>
@@ -327,135 +341,124 @@ const snapshot = `
 const gap = `
 <div style="min-height:980px;background:var(--grad-soft);">
   <div style="display:flex;align-items:center;justify-content:space-between;padding:24px 56px;">${logo('bfly4')}</div>
-  <div style="max-width:880px;margin:0 auto;padding:0 24px;">
+  <div style="max-width:960px;margin:0 auto;padding:0 24px;">
     ${stepper(4, STEP_LABELS, STEP_DESTS)}
     
+    <div style="margin-top:4px;margin-bottom:12px;">
+      <button type="button" class="btn-reset" onclick="showView('snapshot')" style="font-size:13.5px;font-weight:700;color:var(--ink-soft);display:inline-flex;align-items:center;gap:6px;cursor:pointer;">
+        <span>&larr;</span> Back to Skill Snapshot
+      </button>
+    </div>
+
     <!-- Aiming Reframe Header -->
     ${mask('Where do you want to go next?')}
     <div class="js-sub" style="font-size:15px;color:var(--ink-soft);margin-top:6px;">
       Pick the role you&rsquo;re aiming for. We started with your closest match &mdash; switch to any role you want to aim for.
     </div>
 
-    <!-- Interactive Role Selector -->
+    <!-- Interactive Role Selector Pills matching FE & Screenshot -->
     <div class="js-card" style="margin-top:18px;">
-      <div class="field-label" style="margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;">
-        <span style="display:flex;align-items:center;gap:6px;">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--pink-500)" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg>
-          Select your target role:
-        </span>
-        <span style="font-size:11.5px;color:var(--ink-faint);font-weight:600;">Recalculates readiness live</span>
-      </div>
-      <div style="display:flex;gap:10px;flex-wrap:wrap;">
-        <button type="button" class="btn-reset role-pill on" data-role="ux-ui" onclick="pickRole('ux-ui')">
-          <span>🎨 Senior UX/UI Design</span>
+      <div id="role-selector-container" style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+        <button type="button" class="btn-reset role-pill on" data-role="operation-research" onclick="pickRole('operation-research')">
+          <span>Operation Research Analyst</span>
           <span class="pill-match-tag">Closest match</span>
         </button>
-        <button type="button" class="btn-reset role-pill" data-role="digital-marketing" onclick="pickRole('digital-marketing')">
-          <span>📈 Digital Marketing</span>
+        <button type="button" class="btn-reset role-pill" data-role="data-analyst" onclick="pickRole('data-analyst')">
+          <span>Data Analyst</span>
         </button>
-        <button type="button" class="btn-reset role-pill" data-role="customer-support" onclick="pickRole('customer-support')">
-          <span>💬 Customer Support</span>
-        </button>
-        <button type="button" class="btn-reset role-pill" data-role="bookkeeping" onclick="pickRole('bookkeeping')">
-          <span>📊 Bookkeeping &amp; Finance</span>
+        <button type="button" class="btn-reset role-pill" data-role="mis-analyst" onclick="pickRole('mis-analyst')">
+          <span>Management Information Systems (MIS) Analyst</span>
         </button>
       </div>
     </div>
 
-    <!-- Enhanced Readiness Card: Transparent Formula + Lieflat Charts -->
-    <div class="glass js-card" style="padding:28px;margin-top:22px;">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;border-bottom:1px solid rgba(90,90,140,.12);padding-bottom:12px;">
-        <div style="font-size:12px;font-weight:800;color:var(--ink-faint);letter-spacing:.06em;text-transform:uppercase;">READINESS ANALYSIS FOR TARGET ROLE</div>
-        <div id="target-role-badge" style="font-size:12px;font-weight:700;color:var(--blue-600);">Senior UX/UI Designer (Remote)</div>
-      </div>
-
-      <div style="display:grid;grid-template-columns:300px 1fr;gap:26px;align-items:center;" class="readiness-grid">
-        <!-- Left: Lieflat SVG Gauge -->
-        <div style="text-align:center;position:relative;">
-          <svg id="gauge" viewBox="0 0 320 240" style="width:100%;max-width:280px;display:block;margin:0 auto;overflow:visible;"></svg>
-          <div id="projected-tag-pill" style="display:inline-flex;align-items:center;gap:6px;margin-top:-6px;background:var(--grad-btn);color:#fff;padding:6px 14px;border-radius:999px;font-size:11.5px;font-weight:800;box-shadow:0 6px 16px -4px rgba(180,90,150,.45);">
-            78% today &rarr; 94% target
+    <!-- Two Main Cards (Side-by-Side: Gauge Card & Missing Requirements Card) -->
+    <div style="display:grid;grid-template-columns:330px 1fr;gap:22px;margin-top:22px;" class="readiness-grid">
+      <!-- Left Card: Selected Role Readiness Gauge -->
+      <div class="glass js-card" style="padding:28px 24px;text-align:center;display:flex;flex-direction:column;justify-content:space-between;">
+        <div>
+          <h2 id="gauge-role-title" style="font-size:18px;font-weight:800;color:var(--ink);margin:0 0 16px;text-align:left;line-height:1.3;">
+            Operation Research Analyst
+          </h2>
+          
+          <div style="position:relative;margin:10px auto 0;">
+            <svg id="gauge" viewBox="0 0 320 220" style="width:100%;max-width:280px;display:block;margin:0 auto;overflow:visible;"></svg>
           </div>
         </div>
 
-        <!-- Right: Transparent Score Breakdown & Formula -->
-        <div style="display:flex;flex-direction:column;gap:14px;">
-          <!-- Skill Count Summary -->
-          <div style="background:rgba(255,255,255,.6);border:1px solid rgba(90,90,140,.12);border-radius:14px;padding:14px 18px;">
-            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
-              <div id="skill-count-headline" style="font-size:14px;font-weight:800;color:var(--ink);">You already have 7 of 10 key skills for this role.</div>
-              <div id="skill-count-badge" style="font-size:11px;font-weight:800;color:var(--mint-700);background:var(--mint-100);padding:3px 9px;border-radius:999px;">70% Base Count</div>
-            </div>
-            <div class="dot-meter" id="skill-dot-meter"></div>
+        <div style="margin-top:16px;">
+          <div id="projected-banner-pill" style="background:#FDF0F4;border:1px solid #F7D5E0;color:#B23A68;padding:12px 18px;border-radius:18px;font-size:13.5px;font-weight:700;text-align:center;line-height:1.4;">
+            62.6% today &rarr; 84.3% after your focus areas
           </div>
+        </div>
+      </div>
 
-          <!-- Formula Explanation Box -->
-          <div class="formula-card" style="background:linear-gradient(135deg,rgba(253,240,244,.7),rgba(237,241,250,.7));">
-            <div style="font-size:11px;font-weight:800;color:var(--pink-600);letter-spacing:.05em;text-transform:uppercase;margin-bottom:4px;display:flex;align-items:center;gap:6px;">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
-              Why 78% ready when you have 7 of 10 skills?
-            </div>
-            <div id="formula-expl-text" style="font-size:12.5px;line-height:1.55;color:var(--ink-soft);">
-              Score is <b>importance-weighted</b>: because you&rsquo;ve got the foundational core skills, you&rsquo;re 78% ready. The skill count (7 of 10) and percentage differ on purpose &mdash; weighting rewards having the critical essentials first.
-            </div>
-          </div>
+      <!-- Right Card: Missing For This Role & Top 3 Focus Areas -->
+      <div class="glass js-card" style="padding:26px 28px;">
+        <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:14px;">
+          <h2 class="field-label" style="margin-bottom:0;font-size:15px;font-weight:700;color:var(--ink);">Missing for this role</h2>
+          <span id="missing-count-badge" style="font-size:12.5px;font-weight:600;color:var(--ink-soft);">3 requirements</span>
+        </div>
 
-          <!-- Projected Readiness Roadmap -->
-          <div style="background:rgba(255,255,255,.6);border:1px solid rgba(90,90,140,.12);border-radius:14px;padding:12px 18px;display:flex;align-items:center;justify-content:space-between;">
-            <div>
-              <div style="font-size:11px;font-weight:800;color:var(--ink-faint);text-transform:uppercase;letter-spacing:.04em;">PROJECTED READINESS</div>
-              <div id="projected-summary-text" style="font-size:13.5px;font-weight:700;color:var(--ink);margin-top:2px;">
-                78% today &rarr; 94% after your 3 focus areas
-              </div>
-            </div>
-            <div id="uplift-sum-badge" style="font-size:12px;font-weight:800;color:var(--blue-600);background:#E6EBFC;padding:5px 12px;border-radius:999px;">
-              +16% Total Uplift
-            </div>
+        <div style="font-size:11px;font-weight:800;color:var(--ink-soft);letter-spacing:.08em;text-transform:uppercase;margin-top:18px;margin-bottom:10px;">
+          YOUR TOP 3 TO START WITH
+        </div>
+
+        <div id="gap-top3-list" style="display:flex;flex-direction:column;gap:10px;"></div>
+
+        <div id="gap-also-missing" style="margin-top:18px;display:none;">
+          <div style="font-size:11px;font-weight:800;color:var(--ink-soft);letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px;">
+            ALSO MISSING
           </div>
+          <div id="gap-also-missing-list" style="display:flex;flex-wrap:wrap;gap:6px;"></div>
+        </div>
+
+        <div style="margin-top:20px;font-size:12px;color:var(--ink-soft);line-height:1.45;">
+          Projected improvement is an estimate of readiness, not a guarantee of employment.
         </div>
       </div>
     </div>
 
-    <!-- Clarified Gap Panel: Have vs Top 3 Focus Areas -->
-    <div style="margin-top:24px;">
+    <!-- Detailed Breakdown Accordion / Supporting Transparency Info -->
+    <div class="glass js-card" style="padding:24px 28px;margin-top:22px;">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
-        <div class="field-label" style="margin-bottom:0;">Role Competency Inventory (10 Key Skills Evaluated)</div>
-        <div style="font-size:11.5px;color:var(--ink-faint);font-weight:600;">Measured across all role skills &middot; Capped to top 3 focus areas to avoid overwhelm</div>
+        <div style="font-size:13px;font-weight:800;color:var(--ink-faint);letter-spacing:.05em;text-transform:uppercase;">
+          COMPETENCY INVENTORY &amp; IMPORTANCE WEIGHTING
+        </div>
+        <div id="target-role-badge" style="font-size:12px;font-weight:700;color:var(--blue-600);">Operation Research Analyst</div>
       </div>
 
-      <div style="display:grid;grid-template-columns:1fr 1.15fr;gap:22px;">
-        <!-- Left: Skills Have -->
-        <div class="glass js-card" style="padding:24px;">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
-            <div style="font-size:13.5px;font-weight:700;color:var(--ink);display:flex;align-items:center;gap:7px;">
-              <span style="color:var(--mint-600);">&#10003;</span> Skills you already bring
-            </div>
-            <div id="gap-have-count" style="font-size:11px;font-weight:800;color:var(--mint-700);background:var(--mint-100);padding:2px 8px;border-radius:999px;">7 matched</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+        <div style="background:rgba(255,255,255,.6);border:1px solid rgba(90,90,140,.12);border-radius:14px;padding:16px 18px;">
+          <div style="font-size:13px;font-weight:700;color:var(--ink);margin-bottom:6px;display:flex;align-items:center;gap:6px;">
+            <span style="color:var(--mint-600);">&#10003;</span> Skills you already bring
           </div>
-          <div id="gap-have"></div>
+          <div id="gap-have-list" style="display:flex;flex-direction:column;gap:6px;margin-top:10px;"></div>
         </div>
 
-        <!-- Right: Top 3 Focus Areas -->
-        <div class="glass js-card" style="padding:24px;">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
-            <div style="font-size:13.5px;font-weight:700;color:var(--ink);display:flex;align-items:center;gap:7px;">
-              <span style="color:var(--pink-500);">&#9733;</span> Your top 3 to start with
+        <div style="background:linear-gradient(135deg,rgba(253,240,244,.7),rgba(237,241,250,.7));border:1px solid rgba(232,93,138,.2);border-radius:14px;padding:16px 18px;display:flex;flex-direction:column;justify-content:space-between;">
+          <div>
+            <div style="font-size:12px;font-weight:800;color:var(--pink-600);letter-spacing:.04em;text-transform:uppercase;margin-bottom:6px;display:flex;align-items:center;gap:6px;">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+              Why this percentage?
             </div>
-            <div style="font-size:11px;font-weight:800;color:var(--amber-700);background:var(--amber-100);padding:2px 8px;border-radius:999px;">Prioritized Focus</div>
+            <div id="formula-expl-text" style="font-size:12.5px;line-height:1.55;color:var(--ink-soft);"></div>
           </div>
-          <div id="gap-build"></div>
+          <div style="margin-top:12px;font-size:11.5px;color:var(--ink-faint);">
+            Weighted based on standard O*NET importance levels and technical role benchmarks.
+          </div>
         </div>
       </div>
     </div>
 
-    <!-- Navigation & Iteration 2 Footer -->
+    <!-- Navigation Prompt -->
     <div class="js-card" style="display:flex;align-items:center;justify-content:space-between;margin-top:30px;padding-bottom:70px;flex-wrap:wrap;gap:16px;">
       <button type="button" class="btn-reset" onclick="showView('snapshot')" style="font-size:13.5px;font-weight:700;color:var(--ink-soft);display:flex;align-items:center;gap:6px;cursor:pointer;">
-        <span>&larr;</span> Back to Snapshot
+        <span>&larr;</span> Back to Skill Snapshot
       </button>
       <div style="font-size:12.5px;color:var(--ink-faint);display:flex;align-items:center;gap:8px;">
         <span style="width:8px;height:8px;border-radius:50%;background:var(--violet-400);"></span>
-        <span>Iteration 2 preview: Automated personalized learning sprints</span>
+        <span>ReRouteHer Diagnostic &middot; Ready for action</span>
       </div>
     </div>
   </div>
@@ -527,34 +530,117 @@ input[type=range].slider{-webkit-appearance:none;appearance:none;height:6px;bord
 input[type=range].slider::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;border-radius:50%;background:#fff;border:3px solid var(--pink-500);box-shadow:0 2px 6px rgba(40,40,90,.25);cursor:pointer;}
 input[type=range].slider::-moz-range-thumb{width:20px;height:20px;border-radius:50%;background:#fff;border:3px solid var(--pink-500);box-shadow:0 2px 6px rgba(40,40,90,.25);cursor:pointer;}
 
-/* ---- Role pills ---- */
-.role-pill{
-  display:inline-flex;align-items:center;gap:8px;
-  padding:12px 18px;border-radius:999px;font-size:13.5px;font-weight:700;
-  background:rgba(255,255,255,.65);border:1.5px solid rgba(90,90,140,.18);
-  color:var(--ink-soft);cursor:pointer;
-  transition:all .22s var(--ease-spring);
+/* ---- Compact Skill Pill Chips ---- */
+.skill-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.4;
+  border: 1px solid rgba(38, 43, 74, 0.12);
+  background: rgba(255, 255, 255, 0.7);
+  color: var(--ink);
+  cursor: default;
+  transition: all 0.2s ease;
 }
-.role-pill:hover{
-  background:rgba(255,255,255,.95);transform:translateY(-1px);color:var(--ink);
-  border-color:rgba(90,90,140,.32);
+.skill-chip:hover {
+  background: rgba(255, 255, 255, 0.95);
+  border-color: rgba(38, 43, 74, 0.22);
 }
-.role-pill.on{
-  background:linear-gradient(135deg,rgba(253,240,244,.95),rgba(237,241,250,.95));
-  color:var(--ink);border-color:var(--pink-500);
-  box-shadow:0 8px 22px -6px rgba(232,93,138,.35), 0 0 0 1px var(--pink-500) inset;
-  transform:translateY(-2px) scale(1.02);
+.skill-chip.from-break {
+  border-color: rgba(51, 120, 87, 0.25);
+  background: rgba(230, 245, 237, 0.75);
+  color: var(--mint-700);
 }
-.role-pill .pill-match-tag{
-  font-size:10px;font-weight:800;background:var(--mint-100);color:var(--mint-700);
-  padding:2px 8px;border-radius:999px;letter-spacing:.03em;
+.skill-chip.from-break:hover {
+  background: rgba(230, 245, 237, 0.95);
 }
 
-/* ---- Lieflat Dot Meter ---- */
-.dot-meter{display:flex;gap:6px;align-items:center;}
-.dot-pip{width:11px;height:11px;border-radius:50%;background:rgba(35,42,82,.14);transition:all .3s var(--ease-spring);}
-.dot-pip.have{background:var(--mint-600);box-shadow:0 0 0 2px var(--mint-100);}
-.dot-pip.target{background:var(--pink-500);box-shadow:0 0 0 2px var(--pink-100);}
+/* ---- Role Selector Pills (Exact Match to Screenshot) ---- */
+.role-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  border-radius: 999px;
+  font-size: 13.5px;
+  font-weight: 700;
+  background: #FFFFFF;
+  border: 1.5px solid rgba(90, 90, 140, 0.16);
+  color: rgba(38, 43, 74, 0.7);
+  cursor: pointer;
+  box-shadow: 0 2px 8px -2px rgba(35, 42, 82, 0.06);
+  transition: all 0.2s var(--ease-spring);
+}
+.role-pill:hover {
+  background: #FFFFFF;
+  border-color: rgba(60, 75, 128, 0.4);
+  color: var(--ink);
+  transform: translateY(-1px);
+}
+.role-pill.on {
+  background: #3B4B7C;
+  color: #FFFFFF;
+  border-color: #3B4B7C;
+  box-shadow: 0 6px 20px -4px rgba(59, 75, 124, 0.45);
+  transform: translateY(-1px);
+}
+.role-pill .pill-match-tag {
+  font-size: 11px;
+  font-weight: 700;
+  background: #FFFFFF;
+  color: #3B4B7C;
+  padding: 2px 9px;
+  border-radius: 999px;
+  letter-spacing: .02em;
+}
+.role-pill:not(.on) .pill-match-tag {
+  background: var(--mint-100);
+  color: var(--mint-700);
+}
+
+/* ---- Focus Area Item Card ---- */
+.gap-item-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 16px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.65);
+  border: 1px solid rgba(38, 43, 74, 0.12);
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+.gap-item-card:hover {
+  background: rgba(255, 255, 255, 0.9);
+  border-color: rgba(38, 43, 74, 0.2);
+}
+.gap-num-badge {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--grad-btn);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+.uplift-pill {
+  font-size: 11.5px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: #FEF0DA;
+  color: #96540D;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
 
 /* ---- Journey stepper ---- */
 .journey-stepper{position:relative;}
@@ -597,7 +683,7 @@ function showView(id) {
     playEntrance(id);
     if (id === 'landing') setTimeout(function () { ScrollTrigger.refresh(); }, 60);
     if (id === 'snapshot') renderSnapshot();
-    if (id === 'gap') renderRole(currentSelectedRole || 'ux-ui');
+    if (id === 'gap') renderRole(currentSelectedRole || 'operation-research');
   }
 
   if (REDUCED || !current) {
@@ -696,9 +782,8 @@ function initScrollReveals() {
 /* =========================================================
    GUEST SESSION & INTAKE STATE
    ========================================================= */
-var GUEST_KEY = 'rerouteher_guest_session_v5';
-var INTAKE_KEY = 'rerouteher_intake_mvp_v1';
-var intake = { cv: null, breakYears: 3, breakText: '' };
+var INTAKE_KEY = 'rerouteher_intake_mvp_v2';
+var intake = { cv: null, breakYears: 3, breakText: '', loadedProfile: 'operation-research' };
 
 function beginIntake() {
   showView('story-a');
@@ -733,7 +818,8 @@ function handleCvFile(file) {
   var okSize = file.size <= 10 * 1024 * 1024;
   if (!okType) { err.textContent = 'Please upload a PDF or DOCX file.'; err.style.display = 'block'; return; }
   if (!okSize) { err.textContent = 'That file is over 10MB \u2014 please upload something smaller.'; err.style.display = 'block'; return; }
-  intake.cv = { name: file.name, size: file.size, role: 'Senior UX/UI Designer' };
+  intake.cv = { name: file.name, size: file.size, role: 'Operation Research Analyst' };
+  intake.loadedProfile = 'operation-research';
   showCvFileState(intake.cv);
   saveIntake();
 }
@@ -753,8 +839,16 @@ function removeCvFile() {
   saveIntake();
 }
 
-function loadSampleCv() {
-  intake.cv = { name: 'Sarah_Chen_Resume_2026.pdf', size: 1.8 * 1024 * 1024, role: 'Senior UX/UI Designer' };
+function loadSampleCv(profileKey) {
+  profileKey = profileKey || 'operation-research';
+  intake.loadedProfile = profileKey;
+  if (profileKey === 'ux-ui') {
+    intake.cv = { name: 'Sarah_Chen_Resume_UX.pdf', size: 1.8 * 1024 * 1024, role: 'Senior UX/UI Designer' };
+    currentSelectedRole = 'ux-ui';
+  } else {
+    intake.cv = { name: 'Sarah_Chen_Resume_Analyst.pdf', size: 1.9 * 1024 * 1024, role: 'Operation Research Analyst' };
+    currentSelectedRole = 'operation-research';
+  }
   showCvFileState(intake.cv);
   saveIntake();
 }
@@ -762,9 +856,7 @@ function loadSampleCv() {
 function validateAndContinueStoryA() {
   var err = document.getElementById('cv-error');
   if (!intake.cv) {
-    err.textContent = 'Please upload your CV (or click "Load Sample CV") to proceed with matching.';
-    err.style.display = 'block';
-    return;
+    loadSampleCv('operation-research');
   }
   err.style.display = 'none';
   showView('story-b');
@@ -785,10 +877,9 @@ function appendBreakText(snippet) {
 
 function validateAndContinueStoryB() {
   var bt = document.getElementById('break-text-input');
-  var err = document.getElementById('break-text-error');
   var text = (bt ? bt.value : '').trim();
   if (text.length === 0) {
-    intake.breakText = 'Cared for 2 children full-time, managed family household budget, scheduled logistics, and self-studied digital design tools';
+    intake.breakText = 'Cared for children full-time, managed household finances and schedules, organized community logistics, and self-studied data analytics tools';
     if (bt) bt.value = intake.breakText;
   } else {
     intake.breakText = text;
@@ -800,68 +891,122 @@ function validateAndContinueStoryB() {
 /* =========================================================
    STEP 3: SKILL SNAPSHOT (READ-ONLY HISTORY BASELINE)
    ========================================================= */
-var PROFESSIONAL_SKILLS_CV = [
-  'User Research & Synthesis',
-  'Wireframing & Interactive Prototyping',
-  'Design Systems & Component Tokens',
-  'Usability Testing & Feedback Loops',
-  'Stakeholder Presentation & Alignment'
-];
+var CV_SKILLS_PROFILES = {
+  'operation-research': [
+    { skill: 'Mathematical Optimization & Modeling', evidence: 'Designed linear programming & logistics optimization algorithms' },
+    { skill: 'Data Analysis & Quantitative Reasoning', evidence: 'Analyzed operational datasets and simulation parameters' },
+    { skill: 'Complex Problem Solving', evidence: 'Synthesized multidimensional constraints into structured solutions' },
+    { skill: 'Critical Thinking & Inference', evidence: 'Evaluated trade-offs in resource distribution models' },
+    { skill: 'Spreadsheet & Analytical Systems', evidence: 'Built predictive financial and inventory forecasting models' }
+  ],
+  'ux-ui': [
+    { skill: 'User Research & Persona Synthesis', evidence: 'Ran usability testing at Wira Digital' },
+    { skill: 'Wireframing & Interactive Prototyping', evidence: 'Wireframing and interactive prototyping at Studio Lima' },
+    { skill: 'Design Systems & Component Tokens', evidence: 'Owned the design system at Wira Digital' },
+    { skill: 'Information Architecture & User Flows', evidence: 'Led information architecture for the mobile app' },
+    { skill: 'Usability Testing & Feedback Loops', evidence: 'Ran usability testing at Wira Digital' }
+  ]
+};
+
+var isCvSkillsExpanded = false;
+function toggleCvSkillsExpand() {
+  isCvSkillsExpanded = !isCvSkillsExpanded;
+  renderSnapshot();
+}
 
 function extractReframedSkillsFromText(text) {
   var lower = (text || '').toLowerCase();
   var skills = [];
   
   if (/child|kid|care|parent|family|baby/.test(lower)) {
-    skills.push('Active Listening', 'Social Perceptiveness', 'Crisis De-escalation');
+    skills.push(
+      { skill: 'Active Listening', from: 'Cared for children' },
+      { skill: 'Social Perceptiveness', from: 'Family care & needs anticipation' }
+    );
   }
   if (/budget|financ|money|cost|expense|saving|bill/.test(lower)) {
-    skills.push('Financial Resource Management', 'Cost Optimization');
+    skills.push({ skill: 'Management of Financial Resources', from: 'Household budget management' });
   }
   if (/house|home|schedul|organiz|manage|coordinat|plan|logistics/.test(lower)) {
-    skills.push('Time Management', 'Coordination & Scheduling');
+    skills.push(
+      { skill: 'Time Management', from: 'Managed multi-track schedules' },
+      { skill: 'Coordination', from: 'Organized family and household logistics' }
+    );
   }
   if (/volunt|commun|event|school|fundrais|outreach/.test(lower)) {
-    skills.push('Community Coordination', 'Stakeholder Outreach');
+    skills.push({ skill: 'Stakeholder Coordination', from: 'Community volunteer initiatives' });
   }
-  if (/stud|learn|course|class|read|tool|figma|certif/.test(lower)) {
-    skills.push('Continuous Learning', 'Digital Literacy');
-  }
-  if (/project|side|freelanc|consult|client/.test(lower)) {
-    skills.push('Initiative & Ownership', 'Project Execution');
+  if (/stud|learn|course|class|read|tool|data|analyt|certif/.test(lower)) {
+    skills.push({ skill: 'Continuous Learning', from: 'Self-directed online study' });
   }
 
-  // Fallback defaults
+  // Fallback defaults if empty
   if (skills.length === 0) {
-    skills = ['Active Listening', 'Time Management', 'Multi-tasking Coordination', 'Financial Budgeting'];
+    skills = [
+      { skill: 'Active Listening', from: 'Caregiving and active communication' },
+      { skill: 'Social Perceptiveness', from: 'Family emotional support' },
+      { skill: 'Time Management', from: 'Multi-task daily scheduling' },
+      { skill: 'Coordination', from: 'Family operations management' },
+      { skill: 'Management of Financial Resources', from: 'Budget oversight' }
+    ];
   }
   
-  // Deduplicate
-  return skills.filter(function(item, pos) { return skills.indexOf(item) === pos; });
+  // Deduplicate by skill name
+  var seen = {};
+  return skills.filter(function(item) {
+    if (seen[item.skill]) return false;
+    seen[item.skill] = true;
+    return true;
+  });
 }
 
 function renderSnapshot() {
-  // Professional skills from CV
+  var profileKey = intake.loadedProfile || 'operation-research';
+  var cvList = CV_SKILLS_PROFILES[profileKey] || CV_SKILLS_PROFILES['operation-research'];
+
+  // Baseline headline role
+  var roleTitle = (profileKey === 'ux-ui') ? 'Senior UX/UI Designer' : 'Operation Research Analyst';
+  var headlineRoleEl = document.getElementById('snapshot-headline-role');
+  if (headlineRoleEl) headlineRoleEl.textContent = roleTitle;
+
+  // CV skills count & chips
+  var cvCountEl = document.getElementById('cv-skills-count');
+  if (cvCountEl) cvCountEl.textContent = cvList.length;
+
   var haveCol = document.getElementById('skills-have-col');
   if (haveCol) {
-    haveCol.innerHTML = PROFESSIONAL_SKILLS_CV.map(function(s){
-      return '<div class="chip" style="background:rgba(255,255,255,.8);"><span style="color:var(--blue-600);">&#9679;</span> ' + s + '</div>';
+    var maxVisible = 12;
+    var visibleList = (isCvSkillsExpanded || cvList.length <= maxVisible) ? cvList : cvList.slice(0, maxVisible);
+    haveCol.innerHTML = visibleList.map(function(item){
+      return '<div class="skill-chip" title="' + (item.evidence || '') + '">' + item.skill + '</div>';
     }).join('');
+
+    var moreContainer = document.getElementById('skills-have-more');
+    var toggleBtn = document.getElementById('skills-have-toggle-btn');
+    if (cvList.length > maxVisible) {
+      moreContainer.style.display = 'block';
+      toggleBtn.textContent = isCvSkillsExpanded ? 'Show fewer' : ('Show all ' + cvList.length);
+    } else {
+      moreContainer.style.display = 'none';
+    }
   }
 
-  // Reframed break skills from user's free text input
+  // Reframed break skills from user's break input
   var reframedSkills = extractReframedSkillsFromText(intake.breakText);
+  var breakCountEl = document.getElementById('break-skills-count');
+  if (breakCountEl) breakCountEl.textContent = reframedSkills.length;
+
   var reframedCol = document.getElementById('skills-reframed-col');
   if (reframedCol) {
-    reframedCol.innerHTML = reframedSkills.map(function(s){
-      return '<div class="chip mint"><span style="color:var(--mint-600);">&#10003;</span> ' + s + '</div>';
+    reframedCol.innerHTML = reframedSkills.map(function(item){
+      return '<div class="skill-chip from-break" title="from ' + (item.from || 'career break') + '">' + item.skill + '</div>';
     }).join('');
   }
 
   // Crosswalk banner
   var crosswalkText = document.getElementById('crosswalk-text');
   if (crosswalkText) {
-    var primaryBreak = reframedSkills.slice(0, 3).join(' &middot; ');
+    var primaryBreak = reframedSkills.slice(0, 3).map(function(s){ return s.skill; }).join(' &middot; ');
     crosswalkText.innerHTML = '<b>Natural Language Processing &rarr; ' + primaryBreak + '.</b> Real-world break activities systematically translated into standard O*NET competency taxonomies.';
   }
 }
@@ -870,105 +1015,157 @@ function renderSnapshot() {
    STEP 4: TARGET ROLE READINESS & GAP ANALYSIS
    ========================================================= */
 var PRESETS = {
-  'ux-ui': {
-    title: 'Senior UX/UI Designer (Remote)',
+  'operation-research': {
+    title: 'Operation Research Analyst',
     isClosestMatch: true,
-    totalSkills: 10,
-    matchedCount: 7,
-    pct: 78,
-    projectedPct: 94,
-    upliftTotal: 16,
-    formulaExpl: 'Because you have foundational core competencies (User Research, Prototyping, Design Systems), you start at <b>78% ready</b>. The count (7 of 10) and % differ because foundational essentials carry heavier weighting in hiring than emerging tool gaps.',
+    pct: 62.6,
+    projectedPct: 84.3,
+    requirementsCount: 3,
+    formulaExpl: 'Score is <b>importance-weighted</b>: based on the CV profile and O*NET requirements, your foundational core skills give you <b>62.6% baseline readiness</b>. Closing the top 3 focus areas projects your readiness to <b>84.3%</b>.',
+    have: [
+      { name: 'Mathematical Optimization & Modeling', origin: 'CV' },
+      { name: 'Data Analysis & Quantitative Reasoning', origin: 'CV' },
+      { name: 'Complex Problem Solving', origin: 'CV' },
+      { name: 'Critical Thinking & Inference', origin: 'CV' },
+      { name: 'Spreadsheet & Analytical Systems', origin: 'CV' },
+      { name: 'Time Management', origin: 'Break' },
+      { name: 'Coordination', origin: 'Break' }
+    ],
+    focusAreas: [
+      {
+        num: 1,
+        skill: 'Mathematics (O*NET Skill)',
+        band: 'Role skill',
+        uplift: '+6.7% if learned'
+      },
+      {
+        num: 2,
+        skill: 'Use AI Assistants for Everyday Work Tasks',
+        band: 'AI literacy',
+        uplift: '+7.5% if learned'
+      },
+      {
+        num: 3,
+        skill: 'Check and Verify AI Output',
+        band: 'AI literacy',
+        uplift: '+7.5% if learned'
+      }
+    ],
+    alsoMissing: []
+  },
+  'data-analyst': {
+    title: 'Data Analyst',
+    isClosestMatch: false,
+    pct: 71.4,
+    projectedPct: 88.9,
+    requirementsCount: 4,
+    formulaExpl: 'Transferable quantitative modeling, statistics, and structured problem-solving provide a strong <b>71.4% foundation</b>.',
+    have: [
+      { name: 'Data Analysis & Quantitative Reasoning', origin: 'CV' },
+      { name: 'Spreadsheet Modeling & Pivot Queries', origin: 'CV' },
+      { name: 'Critical Thinking & Pattern Recognition', origin: 'CV' },
+      { name: 'Active Listening', origin: 'Break' },
+      { name: 'Time Management', origin: 'Break' }
+    ],
+    focusAreas: [
+      {
+        num: 1,
+        skill: 'SQL Query Optimization & Data Warehousing',
+        band: 'Role skill',
+        uplift: '+8.5% if learned'
+      },
+      {
+        num: 2,
+        skill: 'Use AI Assistants for Everyday Work Tasks',
+        band: 'AI literacy',
+        uplift: '+7.5% if learned'
+      },
+      {
+        num: 3,
+        skill: 'Interactive Business Dashboards (Tableau / Power BI)',
+        band: 'Role skill',
+        uplift: '+6.2% if learned'
+      }
+    ],
+    alsoMissing: ['Python for Data Automation']
+  },
+  'mis-analyst': {
+    title: 'Management Information Systems (MIS) Analyst',
+    isClosestMatch: false,
+    pct: 68.0,
+    projectedPct: 86.5,
+    requirementsCount: 3,
+    formulaExpl: 'Strong process architecture and analytical background deliver a <b>68.0% baseline fit</b> for enterprise systems analyst roles.',
+    have: [
+      { name: 'Complex Problem Solving & Analysis', origin: 'CV' },
+      { name: 'Information Systems Architecture', origin: 'CV' },
+      { name: 'Spreadsheet & Analytical Systems', origin: 'CV' },
+      { name: 'Resource & Budget Tracking', origin: 'Break' },
+      { name: 'Coordination', origin: 'Break' }
+    ],
+    focusAreas: [
+      {
+        num: 1,
+        skill: 'Enterprise System Integration (ERP / Cloud CRM)',
+        band: 'Role skill',
+        uplift: '+9.0% if learned'
+      },
+      {
+        num: 2,
+        skill: 'Use AI Assistants for Everyday Work Tasks',
+        band: 'AI literacy',
+        uplift: '+7.5% if learned'
+      },
+      {
+        num: 3,
+        skill: 'Information Security & Compliance Standards',
+        band: 'Role skill',
+        uplift: '+6.5% if learned'
+      }
+    ],
+    alsoMissing: []
+  },
+  'ux-ui': {
+    title: 'Senior UX/UI Designer',
+    isClosestMatch: false,
+    pct: 78.0,
+    projectedPct: 94.0,
+    requirementsCount: 3,
+    formulaExpl: 'Foundational core design competencies (User Research, Prototyping, Design Systems) yield <b>78.0% readiness</b>.',
     have: [
       { name: 'User Research & Persona Synthesis', origin: 'CV' },
       { name: 'Wireframing & Interactive Prototyping', origin: 'CV' },
       { name: 'Design Systems & Component Tokens', origin: 'CV' },
       { name: 'Information Architecture & User Flows', origin: 'CV' },
       { name: 'Usability Testing & Feedback Loops', origin: 'CV' },
-      { name: 'Active Listening & Stakeholder Empathy', origin: 'Break' },
-      { name: 'Time & Multi-project Prioritization', origin: 'Break' }
+      { name: 'Active Listening', origin: 'Break' },
+      { name: 'Time Management', origin: 'Break' }
     ],
-    build: [
-      { name: 'AI Design Tools (Figma AI, Midjourney)', type: 'essential', uplift: 9, note: 'Generative asset ideation & rapid exploration workflows' },
-      { name: 'Scalable Design Systems (Tokens & Multi-brand)', type: 'essential', uplift: 7, note: 'Advanced enterprise variables & multi-platform scaling' },
-      { name: 'Prompt Engineering for UX Workflows', type: 'uplift', uplift: 5, note: 'Automated micro-copy testing & synthetic user journeys' }
-    ]
-  },
-  'digital-marketing': {
-    title: 'Digital Marketing Specialist (Flexible)',
-    isClosestMatch: false,
-    totalSkills: 10,
-    matchedCount: 7,
-    pct: 72,
-    projectedPct: 91,
-    upliftTotal: 19,
-    formulaExpl: 'Your transferable storytelling, content creation, and project management provide a <b>72% baseline fit</b>. Closing tactical analytics and modern search gaps unlocks <b>91% readiness</b>.',
-    have: [
-      { name: 'Content Strategy & Copywriting', origin: 'CV' },
-      { name: 'Social Media Channel Management', origin: 'CV' },
-      { name: 'Campaign Planning & Storytelling', origin: 'CV' },
-      { name: 'Brand Voice & Audience Positioning', origin: 'CV' },
-      { name: 'Stakeholder & Client Communication', origin: 'CV' },
-      { name: 'Budget & Resource Allocation', origin: 'Break' },
-      { name: 'Community & Event Coordination', origin: 'Break' }
+    focusAreas: [
+      {
+        num: 1,
+        skill: 'Scalable Design Systems (Tokens & Multi-brand)',
+        band: 'Role skill',
+        uplift: '+7.0% if learned'
+      },
+      {
+        num: 2,
+        skill: 'AI Design Tools (Figma AI, Midjourney)',
+        band: 'AI literacy',
+        uplift: '+9.0% if learned'
+      },
+      {
+        num: 3,
+        skill: 'Prompt Engineering for UX Workflows',
+        band: 'AI literacy',
+        uplift: '+5.0% if learned'
+      }
     ],
-    build: [
-      { name: 'Modern AI-Driven SEO & Search Visibility', type: 'essential', uplift: 8, note: 'LLM citation readiness & intent-based semantic ranking' },
-      { name: 'Multi-Touch Funnel Analytics (GA4)', type: 'essential', uplift: 6, note: 'Full-funnel attribution models & conversion tracking' },
-      { name: 'AI Ad Creative & Copy Automation Tools', type: 'uplift', uplift: 5, note: 'Multivariate ad experimentation & asset scaling' }
-    ]
-  },
-  'customer-support': {
-    title: 'Customer Support Lead (Remote)',
-    isClosestMatch: false,
-    totalSkills: 10,
-    matchedCount: 8,
-    pct: 85,
-    projectedPct: 97,
-    upliftTotal: 12,
-    formulaExpl: 'Strong empathy, clear documentation, and conflict de-escalation give you a remarkable <b>85% starting readiness</b>. Adopting modern helpdesk AI tools pushes you to near-complete <b>97% readiness</b>.',
-    have: [
-      { name: 'Empathetic Client Communication', origin: 'CV' },
-      { name: 'Conflict Resolution & De-escalation', origin: 'CV' },
-      { name: 'Multi-channel Ticket Prioritization', origin: 'CV' },
-      { name: 'Knowledge Base Authoring & FAQs', origin: 'CV' },
-      { name: 'Customer Onboarding & Walkthroughs', origin: 'CV' },
-      { name: 'Patience & Active Listening', origin: 'Break' },
-      { name: 'Crisis Coordination & Calm Leadership', origin: 'Break' },
-      { name: 'Time & Schedule Organization', origin: 'Break' }
-    ],
-    build: [
-      { name: 'Omnichannel Helpdesk Suites (Zendesk / Intercom)', type: 'essential', uplift: 7, note: 'Automated ticket routing, macros & SLA monitoring' },
-      { name: 'AI Copilot Reply & Smart Triage Workflows', type: 'essential', uplift: 6, note: 'Leveraging assistive AI drafts to double response velocity' },
-      { name: 'CRM Health Scores & Churn Risk Reporting', type: 'uplift', uplift: 4, note: 'HubSpot customer telemetry & lifecycle retention tracking' }
-    ]
-  },
-  'bookkeeping': {
-    title: 'Bookkeeper & Financial Assistant (Flexible)',
-    isClosestMatch: false,
-    totalSkills: 10,
-    matchedCount: 6,
-    pct: 64,
-    projectedPct: 91,
-    upliftTotal: 27,
-    formulaExpl: 'Your budget tracking and spreadsheet diligence provide a <b>64% core foundation</b>. Mastering standard cloud accounting platforms yields a fast +27% readiness jump to <b>91%</b>.',
-    have: [
-      { name: 'Spreadsheet Modeling (Excel / Google Sheets)', origin: 'CV' },
-      { name: 'Expense Categorization & Audit Trails', origin: 'CV' },
-      { name: 'Invoice Verification & Payment Scheduling', origin: 'CV' },
-      { name: 'Attention to Detail & Accuracy Verification', origin: 'CV' },
-      { name: 'Household Budget & Cash Flow Management', origin: 'Break' },
-      { name: 'Vendor & Service Provider Negotiation', origin: 'Break' }
-    ],
-    build: [
-      { name: 'Cloud Accounting Platforms (Xero / QuickBooks)', type: 'essential', uplift: 12, note: 'Bank feeds reconciliation, chart of accounts & ledger audits' },
-      { name: 'AI Copilot for Financial Sheets & Formulas', type: 'essential', uplift: 9, note: 'Automated formula generation, OCR receipts & anomaly detection' },
-      { name: 'Digital Tax Compliance & E-Filing Prep', type: 'uplift', uplift: 6, note: 'Year-end compliance reporting & digital filing routines' }
-    ]
+    alsoMissing: []
   }
 };
 
-var currentSelectedRole = 'ux-ui';
+var currentSelectedRole = 'operation-research';
 var currentGaugeTween = null;
 
 var NS = 'http://www.w3.org/2000/svg';
@@ -983,138 +1180,143 @@ function renderGauge(pct, targetPct) {
   
   var defs = svgEl(svg, 'defs', {});
   var grad = svgEl(defs, 'linearGradient', { id: 'gaugeGrad', x1: '0%', y1: '0%', x2: '100%', y2: '0%' });
-  svgEl(grad, 'stop', { offset: '0%', 'stop-color': '#EE86AC' });
-  svgEl(grad, 'stop', { offset: '55%', 'stop-color': '#B98FC9' });
-  svgEl(grad, 'stop', { offset: '100%', 'stop-color': '#6E7BC0' });
+  svgEl(grad, 'stop', { offset: '0%', 'stop-color': '#DE8BA8' });
+  svgEl(grad, 'stop', { offset: '60%', 'stop-color': '#B4A2D4' });
+  svgEl(grad, 'stop', { offset: '100%', 'stop-color': '#7E92CA' });
 
-  var cx = 160, cy = 135, R0 = 85, A0 = -195, SW = 210;
+  // Semicircular / 200-deg gauge
+  var cx = 160, cy = 130, R = 86, startAngle = -190, sweep = 200;
 
-  for (var k = 0; k < 75; k++) {
-    var a = A0 + (k / 74) * SW;
-    var fraction = (k / 74) * 100;
-    var isCurrent = fraction <= pct;
-    var isTarget = fraction > pct && fraction <= targetPct;
-    var len = isCurrent ? 14 : (isTarget ? 11 : 6);
-    var p1 = pol(cx, cy, R0, a), p2 = pol(cx, cy, R0 + len, a);
+  // Background track
+  var bgPath = describeArc(cx, cy, R, startAngle, startAngle + sweep);
+  svgEl(svg, 'path', {
+    d: bgPath, fill: 'none', stroke: 'rgba(38, 43, 74, 0.1)',
+    'stroke-width': '14', 'stroke-linecap': 'round'
+  });
 
-    var strokeColor = isCurrent ? 'url(#gaugeGrad)' : (isTarget ? 'rgba(185,143,201,.38)' : 'rgba(35,42,82,.12)');
-    var strokeWidth = isCurrent ? 2.6 : (isTarget ? 1.8 : 1.2);
-
-    svgEl(svg, 'line', {
-      x1: p1[0], y1: p1[1], x2: p2[0], y2: p2[1],
-      stroke: strokeColor, 'stroke-width': strokeWidth,
-      'stroke-linecap': 'round'
+  // Target improvement track
+  if (targetPct > pct) {
+    var targetSweep = (targetPct / 100) * sweep;
+    var targetPath = describeArc(cx, cy, R, startAngle, startAngle + targetSweep);
+    svgEl(svg, 'path', {
+      d: targetPath, fill: 'none', stroke: 'rgba(180, 162, 212, 0.35)',
+      'stroke-width': '14', 'stroke-linecap': 'round'
     });
   }
 
-  [0, 25, 50, 75, 100].forEach(function(m) {
-    var a = A0 + (m / 100) * SW;
-    var d = pol(cx, cy, R0 - 6, a);
-    var t = pol(cx, cy, R0 - 18, a);
-    svgEl(svg, 'circle', { cx: d[0], cy: d[1], r: 1.5, fill: 'rgba(35,42,82,.3)' });
-    svgTxt(svg, { x: t[0], y: t[1] + 3, 'font-size': 9, 'font-weight': 700, fill: 'rgba(35,42,82,.4)', 'text-anchor': 'middle', 'font-family': 'inherit' }, m + '%');
+  // Active current readiness track
+  var currentSweep = Math.max(2, (pct / 100) * sweep);
+  var activePath = describeArc(cx, cy, R, startAngle, startAngle + currentSweep);
+  var activeArc = svgEl(svg, 'path', {
+    d: activePath, fill: 'none', stroke: 'url(#gaugeGrad)',
+    'stroke-width': '14', 'stroke-linecap': 'round'
   });
 
-  var aCurrent = A0 + (pct / 100) * SW;
-  var beadPos = pol(cx, cy, R0 + 20, aCurrent);
-  var dot = svgEl(svg, 'circle', { cx: beadPos[0], cy: beadPos[1], r: 4.5, fill: '#1E2243', stroke: '#fff', 'stroke-width': 1.5 });
+  var numText = svgTxt(svg, {
+    x: cx, y: cy - 2, 'font-size': '38', 'font-weight': '800',
+    fill: '#262B4A', 'text-anchor': 'middle', 'font-family': 'Plus Jakarta Sans, sans-serif'
+  }, '0%');
 
-  var numText = svgTxt(svg, { x: cx, y: cy - 4, 'font-size': 38, 'font-weight': 800, fill: '#1E2243', 'text-anchor': 'middle', 'font-family': 'Bricolage Grotesque' }, '0%');
-  svgTxt(svg, { x: cx, y: cy + 18, 'font-size': 10, 'font-weight': 800, fill: '#7C84AD', 'text-anchor': 'middle', 'letter-spacing': '.08em' }, 'READY TODAY');
+  svgTxt(svg, {
+    x: cx, y: cy + 22, 'font-size': '10', 'font-weight': '800',
+    fill: 'rgba(38, 43, 74, 0.5)', 'text-anchor': 'middle', 'letter-spacing': '.09em', 'text-transform': 'uppercase'
+  }, 'READY TODAY');
 
+  var displayVal = (pct % 1 !== 0) ? pct.toFixed(1) : pct.toString();
   if (REDUCED) {
-    numText.textContent = pct + '%';
+    numText.textContent = displayVal + '%';
   } else {
-    gsap.fromTo(dot, { scale: 0, transformOrigin: '50% 50%' }, { scale: 1, duration: 0.5, delay: 0.25, ease: 'back.out(2.2)' });
     var counter = { val: 0 };
     if (currentGaugeTween) currentGaugeTween.kill();
     currentGaugeTween = gsap.to(counter, {
       val: pct, duration: 1.1, ease: 'power2.out',
-      onUpdate: function () { numText.textContent = Math.round(counter.val) + '%'; }
+      onUpdate: function () {
+        numText.textContent = ((counter.val % 1 !== 0) ? counter.val.toFixed(1) : Math.round(counter.val)) + '%';
+      }
     });
   }
+}
+
+function describeArc(x, y, radius, startAngle, endAngle) {
+  var start = pol(x, y, radius, endAngle);
+  var end = pol(x, y, radius, startAngle);
+  var largeArcFlag = endAngle - startAngle <= 180 ? '0' : '1';
+  return ['M', start[0], start[1], 'A', radius, radius, 0, largeArcFlag, 0, end[0], end[1]].join(' ');
 }
 
 var gapInitialized = false;
 function renderRole(key) {
   currentSelectedRole = key;
-  var p = PRESETS[key];
-  if (!p) return;
+  var p = PRESETS[key] || PRESETS['operation-research'];
 
   renderGauge(p.pct, p.projectedPct);
+
+  var roleTitleEl = document.getElementById('gauge-role-title');
+  if (roleTitleEl) roleTitleEl.textContent = p.title;
 
   var trb = document.getElementById('target-role-badge');
   if (trb) trb.textContent = p.title;
 
-  var projPill = document.getElementById('projected-tag-pill');
-  if (projPill) {
-    projPill.innerHTML = p.pct + '% today &rarr; ' + p.projectedPct + '% target';
+  var bannerPill = document.getElementById('projected-banner-pill');
+  if (bannerPill) {
+    var todayStr = (p.pct % 1 !== 0) ? p.pct.toFixed(1) : p.pct;
+    var targetStr = (p.projectedPct % 1 !== 0) ? p.projectedPct.toFixed(1) : p.projectedPct;
+    bannerPill.innerHTML = todayStr + '% today &rarr; ' + targetStr + '% after your focus areas';
   }
 
-  var countHead = document.getElementById('skill-count-headline');
-  if (countHead) countHead.textContent = 'You already have ' + p.matchedCount + ' of ' + p.totalSkills + ' key skills for this role.';
-  var countBadge = document.getElementById('skill-count-badge');
-  if (countBadge) countBadge.textContent = Math.round(p.matchedCount / p.totalSkills * 100) + '% Base Count';
+  var countBadge = document.getElementById('missing-count-badge');
+  if (countBadge) countBadge.textContent = p.requirementsCount + (p.requirementsCount === 1 ? ' requirement' : ' requirements');
 
-  var dotMeter = document.getElementById('skill-dot-meter');
-  if (dotMeter) {
-    var pips = '';
-    for (var i = 0; i < p.totalSkills; i++) {
-      if (i < p.matchedCount) {
-        pips += '<div class="dot-pip have" title="Skill ' + (i+1) + ': Matched from your CV / break"></div>';
-      } else {
-        pips += '<div class="dot-pip target" title="Skill ' + (i+1) + ': Target gap"></div>';
-      }
-    }
-    dotMeter.innerHTML = pips;
+  var top3ListEl = document.getElementById('gap-top3-list');
+  if (top3ListEl) {
+    top3ListEl.innerHTML = p.focusAreas.map(function(item){
+      return '<div class="gap-item-card">' +
+        '<div class="gap-num-badge">' + item.num + '</div>' +
+        '<div style="flex:1;min-width:0;">' +
+          '<div style="font-size:14px;font-weight:700;color:var(--ink);">' + item.skill + '</div>' +
+          '<div style="font-size:12px;color:var(--ink-faint);margin-top:2px;">' + item.band + '</div>' +
+        '</div>' +
+        '<div class="uplift-pill">' + item.uplift + '</div>' +
+      '</div>';
+    }).join('');
+  }
+
+  var alsoMissingWrap = document.getElementById('gap-also-missing');
+  var alsoMissingListEl = document.getElementById('gap-also-missing-list');
+  if (p.alsoMissing && p.alsoMissing.length > 0) {
+    alsoMissingWrap.style.display = 'block';
+    alsoMissingListEl.innerHTML = p.alsoMissing.map(function(skill){
+      return '<span class="skill-chip" style="font-size:12px;">' + skill + '</span>';
+    }).join('');
+  } else if (alsoMissingWrap) {
+    alsoMissingWrap.style.display = 'none';
   }
 
   var formulaText = document.getElementById('formula-expl-text');
   if (formulaText) formulaText.innerHTML = p.formulaExpl;
 
-  var projSummary = document.getElementById('projected-summary-text');
-  if (projSummary) projSummary.textContent = p.pct + '% today \u2192 ' + p.projectedPct + '% after your 3 focus areas';
-  var upliftBadge = document.getElementById('uplift-sum-badge');
-  if (upliftBadge) upliftBadge.textContent = '+' + p.upliftTotal + '% Total Uplift';
-
-  var haveEl = document.getElementById('gap-have');
-  var haveCount = document.getElementById('gap-have-count');
-  if (haveCount) haveCount.textContent = p.matchedCount + ' matched';
-  
-  var haveHtml = p.have.map(function(s){
-    var originBadge = s.origin === 'Break' ? '<span class="tag" style="background:var(--mint-100);color:var(--mint-700);font-size:10px;">Reframed from break</span>' : '<span class="tag" style="background:rgba(70,83,158,.1);color:var(--blue-600);font-size:10px;">CV</span>';
-    return '<div class="row-item have-skill"><div style="display:flex;align-items:center;gap:10px;"><span style="color:var(--mint-600);font-weight:800;font-size:13px;">&#10003;</span><div style="font-size:13px;font-weight:600;color:var(--ink);">' + s.name + '</div></div>' + originBadge + '</div>';
-  }).join('');
-
-  var buildEl = document.getElementById('gap-build');
-  var sorted = p.build.slice().sort(function(a,b){ return b.uplift - a.uplift; });
-  var buildHtml = sorted.map(function(b, i){
-    var tagClass = b.type === 'essential' ? 'essential' : 'uplift';
-    return '<div class="row-item" style="flex-direction:column;align-items:flex-start;gap:6px;padding:14px 16px;">' +
-      '<div style="display:flex;align-items:center;justify-content:space-between;width:100%;">' +
-        '<div style="display:flex;align-items:center;gap:8px;"><span style="width:20px;height:20px;border-radius:50%;background:var(--grad-btn);color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;">' + (i+1) + '</span><span style="font-size:13.5px;font-weight:700;color:var(--ink);">' + b.name + '</span></div>' +
-        '<span class="tag ' + tagClass + '">+' + b.uplift + '% if learned</span>' +
-      '</div>' +
-      '<div style="font-size:12px;color:var(--ink-soft);padding-left:28px;line-height:1.4;">' + b.note + '</div>' +
-    '</div>';
-  }).join('');
-
-  if (!REDUCED && gapInitialized) {
-    var tl = gsap.timeline();
-    tl.to([haveEl, buildEl], { opacity: 0, y: 8, duration: 0.2, ease: 'power1.in' })
-      .call(function () { haveEl.innerHTML = haveHtml; buildEl.innerHTML = buildHtml; })
-      .fromTo([haveEl, buildEl], { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.4, ease: 'power2.out', stagger: 0.05 });
-  } else {
-    haveEl.innerHTML = haveHtml;
-    buildEl.innerHTML = buildHtml;
+  var haveListEl = document.getElementById('gap-have-list');
+  if (haveListEl) {
+    haveListEl.innerHTML = p.have.map(function(s){
+      var originTag = s.origin === 'Break' ? '<span style="font-size:10.5px;font-weight:700;background:var(--mint-100);color:var(--mint-700);padding:2px 8px;border-radius:999px;">Break</span>' : '<span style="font-size:10.5px;font-weight:700;background:rgba(70,83,158,.1);color:var(--blue-600);padding:2px 8px;border-radius:999px;">CV</span>';
+      return '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:12.5px;padding:3px 0;">' +
+        '<span style="color:var(--ink);font-weight:600;">&bull; ' + s.name + '</span>' +
+        originTag +
+      '</div>';
+    }).join('');
   }
-  gapInitialized = true;
+
+  // Update role buttons active state
+  document.querySelectorAll('#role-selector-container .role-pill').forEach(function(el){
+    if (el.getAttribute('data-role') === key) {
+      el.classList.add('on');
+    } else {
+      el.classList.remove('on');
+    }
+  });
 }
 
 function pickRole(key) {
-  document.querySelectorAll('#view-gap .role-pill').forEach(function(el){ el.classList.remove('on'); });
-  var activeBtn = document.querySelector('#view-gap .role-pill[data-role="' + key + '"]');
-  if (activeBtn) activeBtn.classList.add('on');
   renderRole(key);
 }
 
@@ -1122,7 +1324,7 @@ function pickRole(key) {
    INITIALIZATION
    ========================================================= */
 restoreIntake();
-renderRole('ux-ui');
+renderRole('operation-research');
 renderSnapshot();
 showView('landing');
 initScrollReveals();
@@ -1130,6 +1332,9 @@ initScrollReveals();
 </body>
 </html>`;
 
-fs.mkdirSync('site', { recursive: true });
-fs.writeFileSync('site/index.html', html, 'utf8');
-console.log('wrote site/index.html', html.length, 'bytes');
+// Write to site/index.html inside the prototype folder
+const outputDir = path.resolve(path.dirname(new URL(import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1')), 'site');
+fs.mkdirSync(outputDir, { recursive: true });
+fs.writeFileSync(path.join(outputDir, 'index.html'), html, 'utf8');
+console.log('wrote', path.join(outputDir, 'index.html'), html.length, 'bytes');
+
