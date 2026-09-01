@@ -32,8 +32,9 @@ export default function Landing() {
 
   return (
     <div className="flex min-h-svh flex-col">
-      {/* One screenful of gradient on any display; the page below starts at the fold. */}
-      <div className="relative flex min-h-svh flex-col overflow-hidden bg-grad-hero">
+      {/* Just under one screenful so the section below peeks past the fold, signalling
+          there is more to scroll to. */}
+      <div className="relative flex min-h-[88svh] flex-col overflow-hidden bg-grad-hero">
         {/* Runs the full height of the gradient and bleeds off the right edge.
             The radial mask feathers the artwork into the gradient. */}
         <HeroArt className="pointer-events-none absolute inset-y-0 right-0 h-full w-auto max-w-[72%] object-contain object-right opacity-[0.35] [mask-image:radial-gradient(ellipse_75%_85%_at_52%_48%,#000_35%,rgb(0_0_0/0.85)_60%,transparent_95%)] md:max-w-[46%] md:opacity-[0.85]" />
@@ -62,7 +63,7 @@ export default function Landing() {
         </section>
       </div>
 
-      <main className="flex-1 bg-grad-soft">
+      <main id="how-it-works" className="flex-1 scroll-mt-4 bg-grad-soft">
         <div className="mx-auto w-full max-w-[1100px] px-4 py-16 sm:px-6 md:py-20">
           <h2 className="font-display text-3xl font-bold text-ink sm:text-4xl">
             Three steps. No signup.
@@ -86,6 +87,29 @@ export default function Landing() {
           </div>
         </div>
       </main>
+
+      {/* Fixed scroll cue: a clear, always-visible button pinned to the bottom-centre of the
+          viewport (any screen size) so the content below the hero is never missed. */}
+      <button
+        type="button"
+        onClick={() =>
+          document.getElementById('how-it-works')?.scrollIntoView({ behavior: 'smooth' })
+        }
+        aria-label="Scroll to how it works"
+        className="fixed bottom-6 left-1/2 z-30 flex -translate-x-1/2 items-center gap-2 rounded-full border border-ink/10 bg-white/60 px-5 py-2.5 text-sm font-semibold text-ink shadow-lg backdrop-blur-md transition hover:bg-white/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40"
+      >
+        How it works
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          className="h-4 w-4 animate-bounce"
+          aria-hidden="true"
+        >
+          <path d="M6 9l6 6 6-6" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </button>
     </div>
   );
 }
