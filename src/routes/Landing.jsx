@@ -32,9 +32,9 @@ export default function Landing() {
 
   return (
     <div className="flex min-h-svh flex-col">
-      {/* Just under one screenful so the section below peeks past the fold, signalling
-          there is more to scroll to. */}
-      <div className="relative flex min-h-[88svh] flex-col overflow-hidden bg-grad-hero">
+      {/* One screenful of gradient on any display; the fixed scroll-cue button below
+          signals there is more to scroll to. */}
+      <div className="relative flex min-h-svh flex-col overflow-hidden bg-grad-hero">
         {/* Runs the full height of the gradient and bleeds off the right edge.
             The radial mask feathers the artwork into the gradient. */}
         <HeroArt className="pointer-events-none absolute inset-y-0 right-0 h-full w-auto max-w-[72%] object-contain object-right opacity-[0.35] [mask-image:radial-gradient(ellipse_75%_85%_at_52%_48%,#000_35%,rgb(0_0_0/0.85)_60%,transparent_95%)] md:max-w-[46%] md:opacity-[0.85]" />
