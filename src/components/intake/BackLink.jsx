@@ -1,8 +1,8 @@
-import { useNavigate } from 'react-router-dom';
+import useSmoothNavigate from '../../hooks/useSmoothNavigate.js';
 
 /** Return to the previous step. Sits under the stepper on every screen. */
 export default function BackLink({ to, children }) {
-  const navigate = useNavigate();
+  const navigate = useSmoothNavigate();
 
   return (
     <button

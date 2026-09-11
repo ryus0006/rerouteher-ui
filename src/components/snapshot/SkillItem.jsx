@@ -10,10 +10,10 @@ export default function SkillItem({ skill }) {
     <li
       className={[
         'rounded-2xl border px-4 py-3',
-        fromBreak ? 'border-mint-600/25 bg-mint-100/70' : 'border-ink-faint/15 bg-white/60',
+        fromBreak ? 'border-verify/25 bg-verify-soft' : 'border-line bg-canvas',
       ].join(' ')}
     >
-      <p className={`text-sm font-medium ${fromBreak ? 'text-mint-700' : 'text-ink'}`}>
+      <p className={`text-sm font-medium ${fromBreak ? 'text-verify' : 'text-ink'}`}>
         {skill.skill}
       </p>
 

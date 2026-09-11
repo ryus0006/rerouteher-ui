@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import useSmoothNavigate from '../../hooks/useSmoothNavigate.js';
 import GlassCard from '../../components/ui/GlassCard.jsx';
 import GradientButton from '../../components/ui/GradientButton.jsx';
 import IntakeLayout from '../../components/intake/IntakeLayout.jsx';
@@ -10,7 +10,7 @@ import { generateSnapshot } from '../../api/snapshot.js';
 import { useIntakeStore } from '../../store/intakeStore.js';
 
 export default function CareerBreak() {
-  const navigate = useNavigate();
+  const navigate = useSmoothNavigate();
   const cv = useIntakeStore((state) => state.cv);
   const careerBreak = useIntakeStore((state) => state.break);
   const setBreakDuration = useIntakeStore((state) => state.setBreakDuration);

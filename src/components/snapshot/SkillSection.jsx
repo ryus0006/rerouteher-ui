@@ -39,7 +39,7 @@ export default function SkillSection({ title, note, skills, emptyMessage }) {
             <button
               type="button"
               onClick={() => setExpanded((v) => !v)}
-              className="mt-3 text-sm font-semibold text-pink-600 hover:underline"
+              className="mt-3 rounded-lg text-sm font-semibold text-pink-600 underline-offset-2 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
             >
               {expanded ? 'Show fewer' : `Show all ${skills.length}`}
             </button>

@@ -2,20 +2,20 @@ import { Fragment } from 'react';
 import { FLOW_STEPS } from '../../config/flowSteps.js';
 
 const MARKER_STATE = {
-  complete: 'bg-grad-btn text-white',
-  current: 'bg-grad-btn text-white shadow-card',
-  upcoming: 'bg-white/60 text-ink-soft ring-1 ring-ink-faint/40',
+  complete: 'border-ink bg-ink text-white',
+  current: 'border-ink bg-ink text-white shadow-card',
+  upcoming: 'border-line-strong bg-surface text-ink-faint',
 };
 
 const LABEL_STATE = {
   complete: 'text-ink-soft',
   current: 'font-semibold text-ink',
-  upcoming: 'text-ink-soft',
+  upcoming: 'text-ink-faint',
 };
 
 // Markers size to their labels and the connectors absorb the slack, so the
 // track always reaches both edges of the content column.
-const CONNECTOR = 'mt-[17px] h-0.5 flex-1 rounded-full';
+const CONNECTOR = 'mt-[15px] h-px flex-1';
 
 /**
  * Progress across the four diagnostic screens. Steps before `currentIndex` read
@@ -37,7 +37,7 @@ export default function IntakeStepper({ currentIndex }) {
             {index > 0 && (
               <li
                 aria-hidden="true"
-                className={`${CONNECTOR} ${travelled ? 'bg-grad-btn' : 'bg-ink-faint/25'}`}
+                className={`${CONNECTOR} ${travelled ? 'bg-ink/45' : 'bg-line-strong'}`}
               />
             )}
 
@@ -47,12 +47,12 @@ export default function IntakeStepper({ currentIndex }) {
               className="flex shrink-0 flex-col items-center gap-2 px-2"
             >
               <span
-                className={`flex size-9 items-center justify-center rounded-full text-sm font-semibold transition ${MARKER_STATE[state]}`}
+                className={`flex size-8 items-center justify-center rounded-full border text-xs font-semibold tabular transition ${MARKER_STATE[state]}`}
               >
                 {complete ? '✓' : index + 1}
               </span>
 
-              <span className={`text-xs ${LABEL_STATE[state]}`}>
+              <span className={`text-center text-[0.6875rem] leading-tight ${LABEL_STATE[state]}`}>
                 {step.label}
                 <span className="sr-only">
                   {complete ? ' completed' : current ? ' current step' : ' not started'}

@@ -1,7 +1,8 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
-import { BrowserRouter } from 'react-router-dom';
-import App from './App.jsx';
+import { createBrowserRouter, RouterProvider } from 'react-router-dom';
+import { routes } from './routes.jsx';
+import { startPlanSync } from './store/planSync.js';
 import './index.css';
 
 async function start() {
@@ -10,11 +11,13 @@ async function start() {
     await worker.start({ onUnhandledRequest: 'bypass' });
   }
 
+  startPlanSync();
+
+  const router = createBrowserRouter(routes);
+
   createRoot(document.getElementById('root')).render(
     <StrictMode>
-      <BrowserRouter>
-        <App />
-      </BrowserRouter>
+      <RouterProvider router={router} />
     </StrictMode>
   );
 }

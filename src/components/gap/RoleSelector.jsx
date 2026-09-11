@@ -23,7 +23,7 @@ export default function RoleSelector({ roles, selected, onSelect, disabled = fal
                 'has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-blue-600',
                 checked
                   ? 'border-blue-600 bg-blue-600 font-semibold text-white shadow-card'
-                  : 'border-ink-faint/25 bg-white/60 text-ink-soft hover:border-blue-600/45 hover:text-ink',
+                  : 'border-line-strong bg-surface text-ink-soft hover:border-blue-600/45 hover:text-ink',
               ].join(' ')}
             >
               <input
@@ -39,7 +39,7 @@ export default function RoleSelector({ roles, selected, onSelect, disabled = fal
                 <span
                   className={[
                     'ml-2 rounded-full px-2 py-0.5 text-xs font-medium',
-                    checked ? 'bg-white text-blue-600' : 'bg-ink-faint/12 text-ink-soft',
+                    checked ? 'bg-white text-blue-600' : 'bg-canvas-sunk text-ink-soft',
                   ].join(' ')}
                 >
                   Closest match

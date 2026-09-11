@@ -1,0 +1,180 @@
+{
+  "employers": [
+    {
+      "id": "maybank",
+      "name": "Maybank",
+      "industry": "Financial Services",
+      "location": "Kuala Lumpur",
+      "logo": {
+        "text": "Maybank",
+        "bg": "#ffcc00",
+        "fg": "#1f2a44"
+      },
+      "website": "https://www.maybank.com/",
+      "summary": "Maybank reports flexible working arrangements, parental support and initiatives to promote workplace inclusion in its sustainability reporting.",
+      "discloses": [
+        "flexible_work",
+        "childcare_support",
+        "inclusive_workplace"
+      ],
+      "report": {
+        "label": "Sustainability Report 2024",
+        "url": "https://www.maybank.com/en/sustainability.page"
+      }
+    },
+    {
+      "id": "petronas",
+      "name": "PETRONAS",
+      "industry": "Energy",
+      "location": "Kuala Lumpur",
+      "logo": {
+        "text": "PETRONAS",
+        "bg": "#00a19c",
+        "fg": "#ffffff"
+      },
+      "website": "https://www.petronas.com/",
+      "summary": "PETRONAS discloses parental leave provisions, a returner programme and workplace flexibility initiatives in its sustainability reporting.",
+      "discloses": [
+        "flexible_work",
+        "parental_support",
+        "returning_to_work",
+        "inclusive_workplace"
+      ],
+      "report": {
+        "label": "Sustainability Report 2023",
+        "url": "https://www.petronas.com/sustainability/reports"
+      }
+    },
+    {
+      "id": "cimb",
+      "name": "CIMB",
+      "industry": "Financial Services",
+      "location": "Kuala Lumpur",
+      "logo": {
+        "text": "CIMB",
+        "bg": "#c4161c",
+        "fg": "#ffffff"
+      },
+      "website": "https://www.cimb.com/",
+      "summary": "CIMB reports flexible work arrangements and diversity and inclusion programmes in its sustainability reporting.",
+      "discloses": [
+        "flexible_work",
+        "inclusive_workplace"
+      ],
+      "report": {
+        "label": "Sustainability Report 2024",
+        "url": "https://www.cimb.com/en/sustainability.html"
+      }
+    },
+    {
+      "id": "tm",
+      "name": "Telekom Malaysia",
+      "industry": "Telecommunications",
+      "location": "Kuala Lumpur",
+      "logo": {
+        "text": "TM",
+        "bg": "#ff6600",
+        "fg": "#ffffff"
+      },
+      "website": "https://www.tm.com.my/",
+      "summary": "Telekom Malaysia reports childcare facilities, parental leave provisions and flexible working in its sustainability reporting.",
+      "discloses": [
+        "flexible_work",
+        "childcare_support",
+        "parental_support"
+      ],
+      "report": {
+        "label": "Sustainability Report 2024",
+        "url": "https://www.tm.com.my/sustainability"
+      }
+    },
+    {
+      "id": "ihh",
+      "name": "IHH Healthcare",
+      "industry": "Healthcare",
+      "location": "Kuala Lumpur",
+      "logo": {
+        "text": "IHH",
+        "bg": "#6b2c91",
+        "fg": "#ffffff"
+      },
+      "website": "https://www.ihhhealthcare.com/",
+      "summary": "IHH Healthcare reports childcare provision, parental support and reintegration for returning staff in its sustainability reporting.",
+      "discloses": [
+        "childcare_support",
+        "parental_support",
+        "returning_to_work"
+      ],
+      "report": {
+        "label": "Sustainability Report 2024",
+        "url": "https://www.ihhhealthcare.com/sustainability"
+      }
+    },
+    {
+      "id": "nestle",
+      "name": "Nestle Malaysia",
+      "industry": "Consumer Goods",
+      "location": "Petaling Jaya",
+      "logo": {
+        "text": "Nestle",
+        "bg": "#00539f",
+        "fg": "#ffffff"
+      },
+      "website": "https://www.nestle.com.my/",
+      "summary": "Nestle Malaysia reports parental leave, a return-to-work policy and gender balance targets in its sustainability reporting.",
+      "discloses": [
+        "flexible_work",
+        "parental_support",
+        "returning_to_work",
+        "inclusive_workplace"
+      ],
+      "report": {
+        "label": "Sustainability Report 2024",
+        "url": "https://www.nestle.com.my/csv"
+      }
+    },
+    {
+      "id": "celcomdigi",
+      "name": "CelcomDigi",
+      "industry": "Telecommunications",
+      "location": "Kuala Lumpur",
+      "logo": {
+        "text": "CelcomDigi",
+        "bg": "#e4007c",
+        "fg": "#ffffff"
+      },
+      "website": "https://www.celcomdigi.com/",
+      "summary": "CelcomDigi reports hybrid working, a career reboot programme and diversity commitments in its sustainability reporting.",
+      "discloses": [
+        "flexible_work",
+        "returning_to_work",
+        "inclusive_workplace"
+      ],
+      "report": {
+        "label": "Sustainability Report 2024",
+        "url": "https://www.celcomdigi.com/sustainability"
+      }
+    },
+    {
+      "id": "sime-darby",
+      "name": "Sime Darby",
+      "industry": "Industrial",
+      "location": "Petaling Jaya",
+      "logo": {
+        "text": "Sime Darby",
+        "bg": "#003da5",
+        "fg": "#ffffff"
+      },
+      "website": "https://www.simedarby.com/",
+      "summary": "Sime Darby reports parental leave provisions and women in leadership targets in its sustainability reporting.",
+      "discloses": [
+        "parental_support",
+        "inclusive_workplace"
+      ],
+      "report": {
+        "label": "Sustainability Report 2024",
+        "url": "https://www.simedarby.com/sustainability"
+      }
+    }
+  ]
+}

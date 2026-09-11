@@ -1,14 +1,14 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import useSmoothNavigate from '../../hooks/useSmoothNavigate.js';
 import GlassCard from '../../components/ui/GlassCard.jsx';
 import GradientButton from '../../components/ui/GradientButton.jsx';
 import IntakeLayout from '../../components/intake/IntakeLayout.jsx';
-import PreferenceAccordion from '../../components/intake/PreferenceAccordion.jsx';
+import NeedPicker from '../../components/intake/NeedPicker.jsx';
 import { generateSnapshot } from '../../api/snapshot.js';
 import { useIntakeStore } from '../../store/intakeStore.js';
 
 export default function Preferences() {
-  const navigate = useNavigate();
+  const navigate = useSmoothNavigate();
   const cv = useIntakeStore((state) => state.cv);
   const careerBreak = useIntakeStore((state) => state.break);
   const preferences = useIntakeStore((state) => state.preferences);
@@ -39,8 +39,8 @@ export default function Preferences() {
       title="What are you looking for now?"
       intro="Pick anything that fits — this shapes which roles we show you."
     >
-      <GlassCard className="px-6 py-1">
-        <PreferenceAccordion selections={preferences} onChange={setPreference} />
+      <GlassCard className="p-6">
+        <NeedPicker selections={preferences} onChange={setPreference} />
       </GlassCard>
 
       {error && (

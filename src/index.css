@@ -10,10 +10,29 @@
   --font-sans: 'Plus Jakarta Sans', 'Segoe UI', system-ui, sans-serif;
   --font-display: 'Familjen Grotesk Variable', 'Segoe UI', system-ui, sans-serif;
 
-  --color-ink: #232a52;
-  /* Design specifies 0.64; raised to clear AA for 16px body on grad-soft. */
-  --color-ink-soft: rgb(35 42 82 / 0.68);
-  --color-ink-faint: rgb(35 42 82 / 0.4);
+  /* ── Ground ──────────────────────────────────────────────────────────────
+     A flat canvas, not a wash. The gradient is an accent now: it appears on
+     the landing hero band and on the readiness arc, and nowhere else. */
+  --color-canvas: #faf9fc;
+  --color-canvas-sunk: #f2f0f7;
+  --color-surface: #ffffff;
+
+  /* Hairlines. Every card gets one, so every card has an edge. */
+  --color-line: rgb(44 33 66 / 0.1);
+  --color-line-strong: rgb(44 33 66 / 0.18);
+
+  --color-ink: #2c2142;
+  --color-ink-soft: rgb(44 33 66 / 0.68);
+  /* Raised from 0.4: the old value did not clear AA at 12–14px. */
+  --color-ink-faint: rgb(44 33 66 / 0.55);
+
+  /* The dark plane. One per long page — it is what gives a layout structure.
+     Aubergine rather than navy: navy pulled the palette cold and corporate
+     against the pink and lilac it has to sit beside. */
+  --color-plane: #2c2142;
+  --color-plane-2: #3a2c56;
+  --color-on-plane: #eceaf4;
+  --color-on-plane-soft: rgb(236 234 244 / 0.7);
 
   --color-pink-100: #fbf0f4;
   --color-pink-500: #e85d8a;
@@ -22,26 +41,21 @@
   --color-violet-400: #a99fd0;
   --color-violet-600: #8e80b8;
 
+  /* Selection. Replaces the green that used to mark a chosen chip: 6.3:1 with
+     white, and it belongs to the palette. */
   --color-blue-600: #4a57a0;
+  --color-blue-100: #eef0f8;
 
-  --color-mint-100: #e6f5ed;
-  --color-mint-600: #337857;
-  --color-mint-700: #235c41;
+  /* Semantic "met" / "verified" only. Never a selection state. */
+  --color-verify: #1d6a4c;
+  --color-verify-soft: #eaf4ef;
 
   --color-amber-50: #fff9f0;
   --color-amber-100: #fef0da;
   --color-amber-600: #c07018;
   --color-amber-700: #96540d;
 
-  /* Soft page tint behind the diagnostic screens. */
-  --background-image-grad-page: linear-gradient(
-    135deg,
-    #fbf0f4 0%,
-    #f5e4ed 24%,
-    #ebe3f4 52%,
-    #dee4f5 78%,
-    #c9d5f0 100%
-  );
+  /* Reserved for the landing hero band and the readiness arc. */
   --background-image-grad-hero: linear-gradient(
     135deg,
     #fbdce6 0%,
@@ -50,24 +64,13 @@
     #9faad6 68%,
     #5661a6 100%
   );
-  --background-image-grad-btn: linear-gradient(120deg, #ee86ac 0%, #b98fc9 50%, #6e7bc0 100%);
-  --background-image-grad-btn-hover: linear-gradient(120deg, #f296b8 0%, #c49dd3 50%, #838eca 100%);
-  --background-image-grad-soft: linear-gradient(160deg, #fcf8fa 0%, #f8f4fa 45%, #f3f6fc 100%);
-  --background-image-grad-card: linear-gradient(
-    145deg,
-    rgb(255 255 255 / 0.86) 0%,
-    rgb(255 255 255 / 0.6) 100%
-  );
-  --background-image-grad-glow: linear-gradient(
-    135deg,
-    rgb(226 155 183 / 0.2) 0%,
-    rgb(126 146 202 / 0.2) 100%
-  );
+  --background-image-grad-rule: linear-gradient(90deg, #ee86ac 0%, #b98fc9 50%, #6e7bc0 100%);
 
-  --shadow-soft: 0 16px 36px -14px rgb(46 42 94 / 0.12), inset 0 0 1px 1px rgb(255 255 255 / 0.7);
-  --shadow-lift: 0 24px 50px -18px rgb(46 42 94 / 0.2), inset 0 0 1px 1px rgb(255 255 255 / 0.85);
-  --shadow-card: 0 12px 28px -10px rgb(35 42 82 / 0.08), 0 1px 2px rgb(35 42 82 / 0.04);
-  --shadow-card-hover: 0 20px 40px -12px rgb(35 42 82 / 0.14), 0 2px 6px rgb(35 42 82 / 0.06);
+  /* Tight and low. The old 36–50px blurs are what made cards float. */
+  --shadow-card: 0 1px 2px rgb(44 33 66 / 0.05), 0 4px 12px -6px rgb(44 33 66 / 0.1);
+  --shadow-card-hover: 0 2px 4px rgb(44 33 66 / 0.07), 0 12px 26px -12px rgb(44 33 66 / 0.16);
+  --shadow-plane: 0 2px 6px rgb(44 33 66 / 0.14), 0 18px 40px -20px rgb(44 33 66 / 0.4);
+  --shadow-sheet: 0 24px 60px -20px rgb(44 33 66 / 0.35);
 
   --ease-spring: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
@@ -75,12 +78,207 @@
 
 @layer base {
   body {
-    @apply bg-grad-soft font-sans text-ink antialiased;
+    @apply bg-canvas font-sans text-ink antialiased;
     min-height: 100vh;
+  }
+
+  /* The whole atmosphere budget: one soft bloom, top right, behind everything. */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: -1;
+    background:
+      radial-gradient(760px 380px at 88% -10%, rgb(232 93 138 / 0.07), transparent 68%),
+      radial-gradient(620px 340px at 6% 4%, rgb(110 123 192 / 0.05), transparent 70%);
   }
 
   :focus-visible {
     @apply outline-2 outline-offset-2 outline-blue-600;
+  }
+
+  /* Figures line up in columns wherever they are compared. */
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+@layer components {
+  /* Uppercase micro-label. Used for eyebrows and group headings, where the
+     label is naming a category rather than titling a section. */
+  .eyebrow {
+    @apply text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-ink-faint;
+  }
+}
+
+/* The dashboard's one banded surface. Light rather than the dark plane used
+   elsewhere: the readiness arc is the bold element here, and it needs a quiet
+   ground to be the brightest thing on the page. */
+.journey-hero {
+  background: linear-gradient(102deg, #ece6f5 0%, #f4effa 46%, #fdfcfe 100%);
+}
+
+/* Keep the full-bleed photograph visible while supporting overlaid copy. */
+.learning-banner {
+  background: #f1ecf7;
+}
+
+/* Vertical on wide screens, where the two halves sit side by side; horizontal
+   below the breakpoint, where the photograph stacks above the words. */
+.learning-banner-blend {
+  background: linear-gradient(180deg, transparent 55%, #f1ecf7 100%);
+}
+
+@media (min-width: 48rem) {
+  .learning-banner-blend {
+    background: linear-gradient(90deg, #f1ecf7 0%, rgb(241 236 247 / 0) 22%);
+  }
+}
+
+.landing-hero-shade {
+  background: linear-gradient(
+    180deg,
+    rgb(26 31 62 / 0.12) 0%,
+    rgb(26 31 62 / 0.45) 30%,
+    rgb(26 31 62 / 0.9) 55%,
+    rgb(26 31 62 / 0.96) 100%
+  );
+}
+
+@media (min-width: 48rem) {
+  .landing-hero-shade {
+    background: linear-gradient(
+      90deg,
+      rgb(26 31 62 / 0.9) 0%,
+      rgb(26 31 62 / 0.82) 35%,
+      rgb(26 31 62 / 0.35) 65%,
+      rgb(26 31 62 / 0.08) 100%
+    );
+  }
+}
+
+/* Landing accents echo the logo: rose, lavender, then blue. */
+#how-it-works {
+  --journey-rose: #a6315e;
+  --journey-lavender: #68518f;
+  --journey-blue: var(--color-blue-600);
+}
+
+#how-it-works li:nth-child(1),
+.landing-value-card:nth-child(1) {
+  --step-accent: var(--journey-rose);
+  --step-surface: #fcf0f4;
+  --step-border: #ebc7d5;
+}
+
+#how-it-works li:nth-child(2),
+.landing-value-card:nth-child(2) {
+  --step-accent: var(--journey-lavender);
+  --step-surface: #f3eff9;
+  --step-border: #d9cdea;
+}
+
+#how-it-works li:nth-child(3),
+.landing-value-card:nth-child(3) {
+  --step-accent: var(--journey-blue);
+  --step-surface: var(--color-blue-100);
+  --step-border: #cdd3eb;
+}
+
+#how-it-works .journey-marker {
+  border-color: var(--step-accent);
+  background: var(--step-accent);
+  color: white;
+  box-shadow: 0 0 0 5px var(--step-surface);
+}
+
+#how-it-works .landing-value-card {
+  background: var(--step-surface);
+  border-color: var(--step-border);
+}
+
+#how-it-works .landing-value-card:hover {
+  border-color: var(--step-accent);
+}
+
+#how-it-works .landing-value-card > span {
+  border-color: var(--step-border);
+  background: var(--color-surface);
+}
+
+#how-it-works .landing-value-card svg {
+  color: var(--step-accent);
+}
+
+main h1[tabindex='-1']:focus,
+#how-it-works h2[tabindex='-1']:focus {
+  outline: none;
+}
+
+@keyframes sheet-backdrop-arrive {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes page-arrive {
+  from {
+    opacity: 0.78;
+    filter: blur(1.5px);
+  }
+  to {
+    opacity: 1;
+    filter: blur(0);
+  }
+}
+
+@keyframes companion-arrive {
+  from {
+    opacity: 0;
+    translate: 0 8px;
+    scale: 0.98;
+  }
+  to {
+    opacity: 1;
+    translate: 0 0;
+    scale: 1;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  button {
+    transition-property:
+      color, background-color, border-color, box-shadow, opacity, transform, translate, scale;
+    transition-duration: 180ms;
+    transition-timing-function: var(--ease-spring);
+  }
+
+  button:active:not(:disabled):not([data-no-press]) {
+    scale: 0.97;
+    transition-duration: 90ms;
+  }
+
+  .account-sheet-backdrop {
+    animation: sheet-backdrop-arrive 180ms ease-out both;
+  }
+
+  .account-sheet-panel {
+    animation: page-arrive 300ms var(--ease-spring) both;
+  }
+
+  /* Rises from its own trigger, so the panel reads as that button opening
+     rather than as a new surface arriving from nowhere. */
+  .companion-panel {
+    animation: companion-arrive 220ms var(--ease-spring) both;
+    transform-origin: bottom right;
+  }
+
+  #root main {
+    animation: page-arrive 220ms ease-out both;
   }
 }
 

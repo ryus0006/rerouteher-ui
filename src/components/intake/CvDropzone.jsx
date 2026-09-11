@@ -36,13 +36,13 @@ export default function CvDropzone({ onSelect, disabled = false }) {
       className={[
         'block rounded-2xl border border-dashed p-8 text-center transition',
         'has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-blue-600',
-        dragging ? 'border-pink-500 bg-pink-100/60' : 'border-ink-faint/35 bg-white/40',
-        disabled ? 'opacity-50' : 'cursor-pointer hover:border-pink-500/55 hover:bg-white/60',
+        dragging ? 'border-pink-500 bg-pink-100' : 'border-line-strong bg-canvas',
+        disabled ? 'opacity-50' : 'cursor-pointer hover:border-ink/30 hover:bg-canvas-sunk',
       ].join(' ')}
     >
       <span
         aria-hidden="true"
-        className="mx-auto flex size-13 items-center justify-center rounded-2xl bg-pink-500/12 text-pink-500"
+        className="mx-auto flex size-12 items-center justify-center rounded-2xl border border-line bg-surface text-pink-600"
       >
         <svg
           viewBox="0 0 24 24"

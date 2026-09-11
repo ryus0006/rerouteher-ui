@@ -60,9 +60,13 @@ describe('intake store', () => {
     expect(store().gapResult).toBeNull();
   });
 
-  it('persists the session under the shared storage key', () => {
+  it('persists the session for the tab, not for the browser', () => {
     store().setBreakDuration(5);
-    expect(localStorage.getItem('rerouteher.guestSession')).toContain('"duration_years":5');
+
+    // sessionStorage, so a reload keeps her answers and closing the tab does
+    // not leave them on a shared machine.
+    expect(sessionStorage.getItem('rerouteher.guestSession')).toContain('"duration_years":5');
+    expect(localStorage.getItem('rerouteher.guestSession')).toBeNull();
   });
 });
 

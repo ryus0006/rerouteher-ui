@@ -10,7 +10,7 @@ const PATHS = {
 /** Badge glyph on the landing value cards. */
 export default function ValueIcon({ name }) {
   return (
-    <span className="flex size-10 items-center justify-center rounded-xl bg-grad-glow">
+    <span className="flex size-10 items-center justify-center rounded-xl border border-line bg-surface">
       <svg
         aria-hidden="true"
         viewBox="0 0 24 24"
