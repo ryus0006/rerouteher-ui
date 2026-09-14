@@ -9,6 +9,7 @@
   },
   "scripts": {
     "dev": "vite",
+    "dev:mock": "VITE_USE_MOCKS=1 vite",
     "build": "vite build",
     "preview": "vite preview --port 4174",
     "lint": "eslint . && prettier --check .",
@@ -51,5 +52,10 @@
     "tailwindcss": "^4.3.3",
     "vite": "^8.2.2",
     "vitest": "^4.1.11"
+  },
+  "msw": {
+    "workerDirectory": [
+      "public"
+    ]
   }
 }

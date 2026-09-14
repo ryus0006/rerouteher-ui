@@ -15,12 +15,14 @@ React 19 · Vite · Tailwind CSS 4 · React Router · Zustand · MSW · Vitest �
 ```bash
 npm install
 npm run dev          # http://localhost:5174, calls the real API at VITE_API_BASE_URL
+npm run dev:mock     # http://localhost:5174, served from src/mocks — no backend needed
 ```
 
-The backend is a separate FastAPI service; start it first (see
+The backend is a separate FastAPI service; start it first for `npm run dev` (see
 `../rerouteher-system`, `scripts/local-start.sh`). `npm run dev` always talks to the
-real API — there is no in-browser mock mode. MSW is used only for unit tests
-(`tests/setup.js` -> `src/mocks/server.js`).
+real API. For frontend-only work without a backend, `npm run dev:mock` sets
+`VITE_USE_MOCKS=1` and serves every endpoint from `src/mocks` (the same fixtures the
+unit tests use). The default `npm run dev` never uses mocks.
 
 | Variable             | Purpose                                                         |
 | -------------------- | --------------------------------------------------------------- |

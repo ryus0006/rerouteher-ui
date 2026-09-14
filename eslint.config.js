@@ -7,7 +7,14 @@ import jsxA11y from 'eslint-plugin-jsx-a11y';
 
 export default [
   {
-    ignores: ['dist/', 'results/', 'playwright-report/', '_prototype/', 'figma-plugin/'],
+    ignores: [
+      'dist/',
+      'results/',
+      'playwright-report/',
+      '_prototype/',
+      'figma-plugin/',
+      'public/mockServiceWorker.js',
+    ],
   },
   js.configs.recommended,
   {
