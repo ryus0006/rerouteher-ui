@@ -79,7 +79,9 @@ function Chip({ tone = 'neutral', children }) {
   };
 
   return (
-    <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${tones[tone]}`}>{children}</span>
+    <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${tones[tone]}`}>
+      {children}
+    </span>
   );
 }
 
@@ -146,8 +148,8 @@ export default function Learning() {
   const [closed, setClosed] = useState([]);
 
   const focusAreas = gapResult ? pickFocusAreas(gapResult.gaps, MAX_FOCUS_AREAS) : [];
-  const skills = focusAreas.map((gap) => gap.skill);
-  const skillKey = skills.join('|');
+  const skillIds = focusAreas.map((gap) => gap.skill_id);
+  const skillKey = skillIds.join('|');
 
   useEffect(() => {
     if (!gapResult || !selectedRole) return undefined;
@@ -156,7 +158,7 @@ export default function Learning() {
     let live = true;
 
     recommendLearning({
-      skills: skillKey.split('|'),
+      skillIds: skillKey.split('|'),
       targetRoleId: selectedRole.role_id,
       targetRole: selectedRole.role,
     })
@@ -298,19 +300,19 @@ export default function Learning() {
 
         {plan &&
           focusAreas.map((gap) => {
-            const group = plan.groups?.find((entry) => entry.skill === gap.skill);
-            const forGap = shown.filter((resource) => resource.skill === gap.skill);
+            const group = plan.groups?.find((entry) => entry.skill_id === gap.skill_id);
+            const forGap = shown.filter((resource) => resource.skill_id === gap.skill_id);
             const total = plan.resources.filter(
-              (resource) => resource.skill === gap.skill
+              (resource) => resource.skill_id === gap.skill_id
             ).length;
 
             if (total === 0) return null;
 
-            const open = !closed.includes(gap.skill);
+            const open = !closed.includes(gap.skill_id);
 
             return (
               <section
-                key={gap.skill}
+                key={gap.skill_id}
                 className="mt-5 overflow-hidden rounded-2xl border border-line bg-surface"
               >
                 <div className="flex flex-wrap items-center gap-x-4 gap-y-3 p-5 sm:px-6">
@@ -337,9 +339,9 @@ export default function Learning() {
                     aria-expanded={open}
                     onClick={() =>
                       setClosed((current) =>
-                        current.includes(gap.skill)
-                          ? current.filter((skill) => skill !== gap.skill)
-                          : [...current, gap.skill]
+                        current.includes(gap.skill_id)
+                          ? current.filter((id) => id !== gap.skill_id)
+                          : [...current, gap.skill_id]
                       )
                     }
                     className="flex shrink-0 items-center gap-2 rounded-full px-2 py-1 text-sm text-ink-soft transition hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"

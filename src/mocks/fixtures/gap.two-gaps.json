@@ -12,12 +12,14 @@
   ],
   "gaps": [
     {
+      "skill_id": "mock-ai-design",
       "skill": "AI Design Tools (Figma AI, Midjourney)",
       "band": "ai_usage",
       "importance": 0.81,
       "uplift": 6
     },
     {
+      "skill_id": "mock-design-ops",
       "skill": "Design Ops & Handoff Automation",
       "band": "role",
       "importance": 0.52,

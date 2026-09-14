@@ -31,16 +31,16 @@ export default defineConfig({
       : []),
   ],
   // Skipped when E2E_BASE_URL points at a deployed environment. With E2E_FULLSTACK
-  // the real UI (mocks off) runs against the real API; the API + DB are brought up
-  // separately (see tests/e2e/helpers/fullstack-README.md).
+  // the real UI runs against the real API; the API + DB are brought up separately
+  // (see tests/e2e/helpers/fullstack-README.md).
   webServer: process.env.E2E_BASE_URL
     ? undefined
     : process.env.E2E_FULLSTACK
       ? {
-          // Must NOT reuse a plain `npm run dev` (VITE_USE_MOCKS=1) already on 5173, or
-          // the tests hit MSW mocks instead of the real API. Always start dev:live
-          // (mocks off); it reads VITE_API_BASE_URL from .env.development (or .env.local).
-          command: 'npm run dev:live',
+          // `npm run dev` talks to the real API (VITE_API_BASE_URL from
+          // .env.development / .env.local); the API + DB are brought up separately
+          // (see tests/e2e/helpers/fullstack-README.md).
+          command: 'npm run dev',
           url: 'http://localhost:5173',
           reuseExistingServer: false,
         }

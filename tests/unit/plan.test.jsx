@@ -10,14 +10,27 @@ let router;
 const OPENERS_FIRST = 'What does my readiness score actually mean?';
 
 const GAPS = [
-  { skill: 'AI Design Tools (Figma AI, Midjourney)', band: 'ai_usage', importance: 0.81, uplift: 9 },
   {
+    skill_id: 'mock-ai-design',
+    skill: 'AI Design Tools (Figma AI, Midjourney)',
+    band: 'ai_usage',
+    importance: 0.81,
+    uplift: 9,
+  },
+  {
+    skill_id: 'mock-design-systems',
     skill: 'Scalable Design Systems (Tokens & Multi-brand)',
     band: 'role',
     importance: 0.74,
     uplift: 7,
   },
-  { skill: 'Design Ops & Handoff Automation', band: 'role', importance: 0.52, uplift: 3 },
+  {
+    skill_id: 'mock-design-ops',
+    skill: 'Design Ops & Handoff Automation',
+    band: 'role',
+    importance: 0.52,
+    uplift: 3,
+  },
 ];
 
 beforeEach(() => {
@@ -206,7 +219,9 @@ describe('companion', () => {
     open(['/journey']);
 
     fireEvent.click(await screen.findByRole('button', { name: /Ask me/ }));
-    fireEvent.click(await screen.findByRole('button', { name: 'Which focus area should I start with?' }));
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'Which focus area should I start with?' })
+    );
 
     expect(await screen.findByText(/Scalable Design Systems/)).toBeVisible();
     expect(screen.getByText(/From Your gap result/)).toBeVisible();

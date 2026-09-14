@@ -3,15 +3,15 @@ import { postJson } from './client.js';
 /**
  * Learning resources for the focus areas the gap surfaced (US6.1).
  *
- * Sent as skills rather than free text so a resource can be tied back to the
- * exact gap it closes, which is what the page has to show her (US6.2).
+ * Sent as skill ids rather than names so a resource is tied to the exact gap it
+ * closes deterministically; names are resolved server-side for display.
  *
- * @param {{ skills: string[], targetRoleId: string, targetRole: string }} request
- * @returns {Promise<{ resources: import('../types/api.js').LearningResource[] }>}
+ * @param {{ skillIds: string[], targetRoleId: string, targetRole: string }} request
+ * @returns {Promise<{ groups: import('../types/api.js').LearningGroup[], resources: import('../types/api.js').LearningResource[] }>}
  */
-export function recommendLearning({ skills, targetRoleId, targetRole }) {
+export function recommendLearning({ skillIds, targetRoleId, targetRole }) {
   return postJson('/api/learning/recommend', {
-    skills,
+    skill_ids: skillIds,
     target_role_id: targetRoleId,
     target_role: targetRole,
   });

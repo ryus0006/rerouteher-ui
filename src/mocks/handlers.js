@@ -33,16 +33,16 @@ export const handlers = [
     return HttpResponse.json(targetRoleId === DEFAULT_ROLE_ID ? gapDefault : gapAltRole);
   }),
 
-  /* Learning resources for the gaps she was actually shown (E6). Filtering by
-     the requested skills is the point: a resource that answers no gap of hers
-     would break the promise the page makes about relevance. */
+  /* Learning resources for the gaps she was actually shown (E6). Keyed by
+     skill_id to match the real endpoint's deterministic contract. Used only by
+     unit tests now (the running app always calls the real backend). */
   http.post('*/api/learning/recommend', async ({ request }) => {
-    const { skills = [] } = await request.json();
+    const { skill_ids: skillIds = [] } = await request.json();
 
     const resources = learningDefault.resources.filter((resource) =>
-      skills.includes(resource.skill)
+      skillIds.includes(resource.skill_id)
     );
-    const groups = learningDefault.groups.filter((group) => skills.includes(group.skill));
+    const groups = learningDefault.groups.filter((group) => skillIds.includes(group.skill_id));
 
     return HttpResponse.json({ groups, resources });
   }),
