@@ -46,22 +46,48 @@ function open(initialEntries = ['/']) {
 
 describe('resume point', () => {
   it('offers the beginning only to someone who has not begun', () => {
-    expect(resumePoint({ cvParsed: false, snapshot: null, gapResult: null, signedIn: false })).toEqual(
-      { label: 'Get started', to: '/diagnostic/background', started: false }
-    );
+    expect(
+      resumePoint({
+        cvParsed: false,
+        activities: [],
+        snapshot: null,
+        gapResult: null,
+        signedIn: false,
+      })
+    ).toEqual({ label: 'Get started', to: '/diagnostic/background', started: false });
   });
 
   it('offers the next unfinished step to someone partway through', () => {
-    expect(resumePoint({ cvParsed: true, snapshot: null, gapResult: null, signedIn: false }).to).toBe(
+    const partway = { snapshot: null, gapResult: null, signedIn: false };
+
+    expect(resumePoint({ ...partway, cvParsed: true, activities: [] }).to).toBe(
       '/diagnostic/break'
     );
-    expect(resumePoint({ cvParsed: true, snapshot: SNAPSHOT, gapResult: null, signedIn: false }).to).toBe(
-      '/diagnostic/snapshot'
+
+    // The break is finished once an activity is named, so the question after it
+    // is the one she is waiting on.
+    expect(resumePoint({ ...partway, cvParsed: true, activities: ['caregiving'] }).to).toBe(
+      '/diagnostic/priorities'
     );
+
+    expect(
+      resumePoint({
+        cvParsed: true,
+        activities: ['caregiving'],
+        snapshot: SNAPSHOT,
+        gapResult: null,
+        signedIn: false,
+      }).to
+    ).toBe('/diagnostic/snapshot');
   });
 
   it('sends a finished guest to her results and a finished account to her journey', () => {
-    const finished = { cvParsed: true, snapshot: SNAPSHOT, gapResult: { readiness: 78 } };
+    const finished = {
+      cvParsed: true,
+      activities: ['caregiving'],
+      snapshot: SNAPSHOT,
+      gapResult: { readiness: 78 },
+    };
 
     expect(resumePoint({ ...finished, signedIn: false }).to).toBe('/diagnostic/gap');
     expect(resumePoint({ ...finished, signedIn: true }).to).toBe('/journey');
@@ -191,16 +217,16 @@ describe('signing up before starting', () => {
     });
   });
 
-  it('gives a signed-in woman somewhere to go from her gap result', async () => {
-    useAccountStore.setState({ user: { username: 'ccc', displayName: 'Chee Yeong' } });
+  it('opens both doors from the gap result without an account', async () => {
+    useAccountStore.setState({ user: null });
     useIntakeStore.setState(finished);
 
     open(['/diagnostic/gap']);
 
-    // The guest is asked for an account here; she is handed the two things it
-    // would have unlocked.
+    // An account saves the journey rather than buying the plan, so a guest is
+    // handed both halves of it and asked for nothing.
     expect(await screen.findByRole('link', { name: /Open your learning plan/ })).toBeVisible();
-    expect(screen.getByRole('link', { name: /Find employers/ })).toBeVisible();
+    expect(screen.getByRole('link', { name: /See your matches/ })).toBeVisible();
     expect(screen.queryByRole('button', { name: 'Create a free account' })).toBeNull();
   });
 });

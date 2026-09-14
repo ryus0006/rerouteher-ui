@@ -160,9 +160,9 @@ export default function AccountSheet() {
       /* Signing up before starting is a decision to begin, so she is taken to
          the beginning rather than left on the page she signed up from. */
       else if (!hasJourney(onDevice)) navigate('/diagnostic/background');
-      /* Signing up with work in hand keeps her where she is by default (US5.2.3),
-         unless the opener asked for a destination — the "What's next" card sends
-         her to the journey dashboard (US5.2.2). */
+      /* Signing up with work in hand leaves her on the page she signed up from,
+         so she carries on from where the offer reached her. An opener that wants
+         her somewhere else passes a destination. */
       else if (sheetRedirect) navigate(sheetRedirect);
     } catch (cause) {
       setErrors({ form: cause.message });

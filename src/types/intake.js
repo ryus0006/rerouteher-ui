@@ -18,7 +18,6 @@
  * @property {StoredCv | null} cv
  * @property {boolean} cvParsed
  * @property {{ duration_years: number, activities: string[] }} break
- * @property {Record<string, string[]>} preferences
  * @property {Snapshot | null} snapshot
  * @property {RecommendedRole | null} selectedRole
  * @property {GapResult | null} gapResult

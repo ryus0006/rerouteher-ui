@@ -2,12 +2,14 @@ import { useEffect, useMemo, useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import Header from '../../components/layout/Header.jsx';
 import BackLink from '../../components/intake/BackLink.jsx';
+import TargetRoleSelect from '../../components/plan/TargetRoleSelect.jsx';
 import Photo from '../../components/ui/Photo.jsx';
 import LearningIcon from '../../components/plan/LearningIcon.jsx';
 import { MAX_FOCUS_AREAS } from '../../components/gap/FocusAreaList.jsx';
 import { pickFocusAreas } from '../../lib/focusAreas.js';
 import { formatUplift } from '../../lib/formatters.js';
 import { recommendLearning } from '../../api/learning.js';
+import { useAccountStore } from '../../store/accountStore.js';
 import { useIntakeStore } from '../../store/intakeStore.js';
 
 import bannerWebp from '../../assets/learning-desk.webp';
@@ -140,6 +142,7 @@ function Resource({ resource }) {
 export default function Learning() {
   const snapshot = useIntakeStore((state) => state.snapshot);
   const selectedRole = useIntakeStore((state) => state.selectedRole);
+  const user = useAccountStore((state) => state.user);
   const gapResult = useIntakeStore((state) => state.gapResult);
 
   const [plan, setPlan] = useState(null);
@@ -197,7 +200,13 @@ export default function Learning() {
       <Header />
 
       <main className="mx-auto w-full max-w-[1080px] flex-1 px-5 py-8 sm:px-6 sm:py-10">
-        <BackLink to="/journey">Back to your journey</BackLink>
+        {/* The journey for an account, the gap screen for a guest, who has no
+            journey to be sent to. */}
+        {user ? (
+          <BackLink to="/journey">Back to your journey</BackLink>
+        ) : (
+          <BackLink to="/diagnostic/gap">Back to your readiness</BackLink>
+        )}
 
         <div className="mt-3 flex flex-wrap items-start justify-between gap-x-8 gap-y-4">
           <div className="min-w-0">
@@ -210,27 +219,7 @@ export default function Learning() {
             </p>
           </div>
 
-          {/* A readout, not a second switcher: the role is chosen on the
-              journey, and two places to change it is two answers to keep level. */}
-          <div className="flex shrink-0 items-center gap-3 rounded-2xl border border-line bg-surface px-4 py-3">
-            <svg
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.5"
-              aria-hidden="true"
-              className="size-5 text-pink-600"
-            >
-              <circle cx="12" cy="12" r="8.5" />
-              <circle cx="12" cy="12" r="4" />
-              <circle cx="12" cy="12" r="0.75" fill="currentColor" />
-            </svg>
-
-            <div>
-              <p className="text-xs text-ink-faint">For your target role</p>
-              <p className="font-semibold text-ink">{selectedRole.role}</p>
-            </div>
-          </div>
+          <TargetRoleSelect />
         </div>
 
         <section className="learning-banner mt-6 grid overflow-hidden rounded-3xl md:grid-cols-[1fr_1fr]">

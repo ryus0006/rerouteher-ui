@@ -24,10 +24,10 @@ export default function Snapshot() {
       <SavedStrip />
 
       <main className="mx-auto w-full max-w-[1000px] flex-1 px-5 py-8 sm:px-6 sm:py-10">
-        <IntakeStepper currentIndex={2} />
+        <IntakeStepper currentIndex={3} />
 
         <div className="mt-8">
-          <BackLink to="/diagnostic/break">Back to Career Break</BackLink>
+          <BackLink to="/diagnostic/priorities">Back to Work Priorities</BackLink>
         </div>
 
         <h1 className="mt-3 font-display text-2xl font-bold tracking-[-0.015em] text-ink sm:text-3xl">

@@ -7,6 +7,7 @@
 export const FLOW_STEPS = [
   { id: 'upload-cv', label: 'Upload CV' },
   { id: 'career-break', label: 'Career Break' },
+  { id: 'work-priorities', label: 'Work Priorities' },
   { id: 'skill-snapshot', label: 'Skill Snapshot' },
   { id: 'target-role-gap', label: 'Target Role & Gap' },
 ];

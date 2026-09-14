@@ -19,18 +19,21 @@ const OPENERS = [
   'Does my career break count as experience?',
 ];
 
-/** The mark on the trigger and in the panel header — one shape, two sizes. */
+/**
+ * The companion's face: one shape, two sizes.
+ *
+ * Drawn as a single evenodd path, so the eyes and mouth are holes rather than
+ * painted features. The head takes `currentColor` and whatever sits behind it
+ * shows through the gaps, which is what lets the same mark read white on the
+ * gradient trigger and pink inside the panel header.
+ */
 function CompanionMark({ className = 'size-4' }) {
   return (
-    <svg viewBox="0 0 20 20" aria-hidden="true" className={className}>
+    <svg viewBox="0 0 24 24" aria-hidden="true" className={className}>
       <path
         fill="currentColor"
-        d="M10 2.5a7.5 7.5 0 0 0-6.6 11.05l-.86 3.04a.6.6 0 0 0 .74.74l3.04-.86A7.5 7.5 0 1 0 10 2.5Z"
-        opacity="0.25"
-      />
-      <path
-        fill="currentColor"
-        d="M7.2 8.1a2.85 2.85 0 0 1 5.6.75c0 1.2-.75 1.85-1.45 2.35-.55.4-.85.65-.85 1.1v.2a.75.75 0 0 1-1.5 0v-.2c0-1.25.8-1.9 1.45-2.35.6-.42.85-.66.85-1.1a1.35 1.35 0 0 0-2.66-.35.75.75 0 0 1-1.44-.4Zm2.55 6.15a.9.9 0 1 1 0 1.8.9.9 0 0 1 0-1.8Z"
+        fillRule="evenodd"
+        d="M13.4 2.2a1.4 1.4 0 1 1-2.8 0 1.4 1.4 0 0 1 2.8 0ZM11.25 3.6h1.5V6h-1.5V3.6ZM8 6h8a4 4 0 0 1 4 4v5a4 4 0 0 1-4 4H8a4 4 0 0 1-4-4v-5a4 4 0 0 1 4-4Zm-5 4.5h1v4H3a1 1 0 0 1-1-1v-2a1 1 0 0 1 1-1Zm17 0h1a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1h-1v-4ZM10.65 11.6a1.35 1.35 0 1 1-2.7 0 1.35 1.35 0 0 1 2.7 0Zm5.4 0a1.35 1.35 0 1 1-2.7 0 1.35 1.35 0 0 1 2.7 0ZM9.3 14.75q2.7 2.6 5.4 0-2.7 1.5-5.4 0Z"
       />
     </svg>
   );
@@ -180,36 +183,56 @@ export default function Companion({ defaultMode = 'ask' }) {
 
   return (
     <>
+      {/* The round bubble a chat widget is expected to be, carrying the
+          palette's accent rather than its dark plane: at 56px a navy circle
+          reads as a stray chip on a page with no other navy on it. The mark
+          swaps for a close chevron while the panel is up, so one control does
+          both. */}
       <button
         ref={openerRef}
         type="button"
         onClick={() => toggleCompanion(defaultMode)}
         aria-expanded={open}
-        className={`fixed bottom-5 right-5 z-40 flex items-center gap-2 rounded-full py-3 pl-4 pr-5 text-sm font-semibold text-white shadow-card transition duration-200 ease-spring hover:-translate-y-px hover:bg-plane-2 hover:shadow-card-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 sm:bottom-6 sm:right-6 ${
-          open ? 'bg-plane-2 ring-2 ring-ink/25 ring-offset-2' : 'bg-ink'
+        aria-label={open ? 'Close Hera' : 'Ask Hera'}
+        className={`fixed bottom-5 right-5 z-40 flex size-14 items-center justify-center rounded-full bg-grad-companion text-white shadow-companion transition duration-200 ease-spring hover:-translate-y-px hover:brightness-110 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-pink-600 sm:bottom-6 sm:right-6 ${
+          open ? 'brightness-110' : ''
         }`}
       >
-        <CompanionMark />
-        Ask me
+        {open ? (
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+            className="size-5"
+          >
+            <path d="m6 9 6 6 6-6" />
+          </svg>
+        ) : (
+          <CompanionMark className="size-7" />
+        )}
       </button>
 
       {open && (
         <div
           ref={panelRef}
           role="dialog"
-          aria-label="Ask me"
+          aria-label="Ask Hera"
           /* A settled height rather than one that grows with every message: at
              400px the text still sets to a readable measure, and a panel that
              resizes as she talks is both flimsy and distracting to read. */
           className="companion-panel fixed inset-x-3 bottom-20 z-40 flex h-[min(32rem,70vh)] flex-col overflow-hidden rounded-3xl border border-line bg-surface shadow-sheet sm:inset-x-auto sm:bottom-24 sm:right-6 sm:h-[min(34rem,72vh)] sm:w-[25rem]"
         >
           <header className="flex items-start gap-3 border-b border-line py-4 pl-5 pr-3">
-            <span className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-full bg-canvas-sunk text-ink">
+            <span className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-full bg-pink-100 text-pink-600">
               <CompanionMark className="size-4" />
             </span>
 
             <div className="min-w-0 flex-1">
-              <h2 className="font-display text-base font-bold text-ink">Ask me</h2>
+              <h2 className="font-display text-base font-bold text-ink">Hera</h2>
               <p className="mt-0.5 text-xs leading-relaxed text-ink-soft">
                 {building
                   ? INTERVIEW_INTRO
@@ -253,7 +276,7 @@ export default function Companion({ defaultMode = 'ask' }) {
               className="h-0.5 w-full bg-canvas-sunk"
             >
               <div
-                className="h-full bg-ink transition-[width] duration-500 ease-spring"
+                className="h-full bg-pink-600 transition-[width] duration-500 ease-spring"
                 style={{ width: `${(asked / INTERVIEW.length) * 100}%` }}
               />
             </div>
@@ -356,7 +379,7 @@ export default function Companion({ defaultMode = 'ask' }) {
             <button
               type="submit"
               disabled={!question.trim() || thinking}
-              className="shrink-0 rounded-xl bg-ink px-3.5 py-2 text-sm font-semibold text-white transition hover:bg-plane-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 disabled:pointer-events-none disabled:opacity-40"
+              className="shrink-0 rounded-xl bg-pink-600 px-3.5 py-2 text-sm font-semibold text-white transition hover:bg-pink-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-pink-600 disabled:pointer-events-none disabled:opacity-40"
             >
               {building ? 'Send' : 'Ask'}
             </button>

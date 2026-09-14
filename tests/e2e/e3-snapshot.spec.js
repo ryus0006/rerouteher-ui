@@ -15,18 +15,21 @@ async function reachSnapshot(page) {
 
   await page.getByRole('slider').fill('5');
   await page.getByText('Childcare', { exact: true }).click();
+  await page.getByRole('button', { name: 'Continue to Work Priorities' }).click();
+
+  await page.getByText('Flexible Work').click();
   await page.getByRole('button', { name: 'Continue to Skill Snapshot' }).click();
   await expect(page).toHaveURL(/\/diagnostic\/snapshot$/);
 }
 
 test.describe('E3 — Skill Snapshot & Career Reframing', () => {
-  test('AC 3.1.1 — the stepper shows Upload CV and Career Break completed and Skill Snapshot current', async ({
+  test('AC 3.1.1 — the stepper shows the three steps before Skill Snapshot completed and Skill Snapshot current', async ({
     page,
   }) => {
     await mockApi(page);
     await reachSnapshot(page);
 
-    await expect(page.locator('[data-state="complete"]')).toHaveCount(2);
+    await expect(page.locator('[data-state="complete"]')).toHaveCount(3);
     await expect(page.locator('[data-state="current"]')).toHaveCount(1);
     await expect(page.locator('[data-state="current"]')).toContainText('Skill Snapshot');
   });
@@ -58,16 +61,18 @@ test.describe('E3 — Skill Snapshot & Career Reframing', () => {
     await expect(page.getByRole('button', { name: /show all/i })).toBeVisible();
   });
 
-  test('AC 3.1.4 — Back to Career Break reopens the step with its answers intact', async ({
+  test('AC 3.1.4 — stepping back reopens the career break with its answers intact', async ({
     page,
   }) => {
     await mockApi(page);
     await reachSnapshot(page);
 
-    await page.getByRole('button', { name: 'Back to Career Break' }).click();
+    await page.getByRole('button', { name: 'Back to Work Priorities' }).click();
+    await page.getByRole('button', { name: 'Back to career break' }).click();
     await expect(page).toHaveURL(/\/diagnostic\/break$/);
     await expect(page.getByRole('checkbox', { checked: true })).toHaveCount(1);
 
+    await page.getByRole('button', { name: 'Continue to Work Priorities' }).click();
     await page.getByRole('button', { name: 'Continue to Skill Snapshot' }).click();
     await expect(page.getByRole('heading', { name: 'Your skill snapshot' })).toBeVisible();
   });

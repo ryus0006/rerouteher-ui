@@ -23,7 +23,6 @@ const initialState = {
   cv: null,
   cvParsed: false,
   break: { duration_years: 0, activities: [] },
-  preferences: {},
   employerPriorities: [],
   snapshot: null,
   selectedRole: null,
@@ -54,7 +53,6 @@ export const PLAN_FIELDS = [
   'cv',
   'cvParsed',
   'break',
-  'preferences',
   'employerPriorities',
   'snapshot',
   'selectedRole',
@@ -121,9 +119,6 @@ export const useIntakeStore = create(
             ...resetAfterBreak(),
           };
         }),
-
-      setPreference: (categoryId, optionIds) =>
-        set((state) => ({ preferences: { ...state.preferences, [categoryId]: optionIds } })),
 
       /* Replaced wholesale rather than toggled here: the cap on how many she
          may pick belongs to the screen that shows the cap, not to the store. */

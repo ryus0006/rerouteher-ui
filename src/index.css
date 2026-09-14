@@ -23,7 +23,7 @@
 
   --color-ink: #2c2142;
   --color-ink-soft: rgb(44 33 66 / 0.68);
-  /* Raised from 0.4: the old value did not clear AA at 12–14px. */
+  /* High enough to clear AA at 12–14px, where this is mostly used. */
   --color-ink-faint: rgb(44 33 66 / 0.55);
 
   /* The dark plane. One per long page — it is what gives a layout structure.
@@ -41,8 +41,8 @@
   --color-violet-400: #a99fd0;
   --color-violet-600: #8e80b8;
 
-  /* Selection. Replaces the green that used to mark a chosen chip: 6.3:1 with
-     white, and it belongs to the palette. */
+  /* Selection. 6.3:1 with white, and it belongs to the palette — green here
+     would read as a sourced claim rather than as a choice she has made. */
   --color-blue-600: #4a57a0;
   --color-blue-100: #eef0f8;
 
@@ -66,10 +66,20 @@
   );
   --background-image-grad-rule: linear-gradient(90deg, #ee86ac 0%, #b98fc9 50%, #6e7bc0 100%);
 
-  /* Tight and low. The old 36–50px blurs are what made cards float. */
+  /* The companion's trigger. The hero's pink-to-periwinkle run, turned down the
+     diagonal of a 56px circle: the same three hues, weighted to the pink so a
+     control this small still reads as the accent rather than as a third brand. */
+  --background-image-grad-companion: linear-gradient(145deg, #e85d8a 0%, #be3f6c 55%, #8e80b8 100%);
+
+  /* Tight and low, so a card sits on the page rather than floating above it.
+     Blurs past ~30px lose the contact edge that keeps it seated. */
   --shadow-card: 0 1px 2px rgb(44 33 66 / 0.05), 0 4px 12px -6px rgb(44 33 66 / 0.1);
   --shadow-card-hover: 0 2px 4px rgb(44 33 66 / 0.07), 0 12px 26px -12px rgb(44 33 66 / 0.16);
   --shadow-plane: 0 2px 6px rgb(44 33 66 / 0.14), 0 18px 40px -20px rgb(44 33 66 / 0.4);
+
+  /* The one control that floats over the page, so the only shadow that reads
+     as lift rather than as an edge. Tinted to the accent it sits on. */
+  --shadow-companion: 0 2px 6px rgb(190 63 108 / 0.22), 0 12px 28px -10px rgb(190 63 108 / 0.42);
   --shadow-sheet: 0 24px 60px -20px rgb(44 33 66 / 0.35);
 
   --ease-spring: cubic-bezier(0.16, 1, 0.3, 1);
@@ -117,6 +127,14 @@
    ground to be the brightest thing on the page. */
 .journey-hero {
   background: linear-gradient(102deg, #ece6f5 0%, #f4effa 46%, #fdfcfe 100%);
+}
+
+/* The readiness page's closing band. Light, because the dark plane belongs to
+   the readiness rail above it and a second one would leave the page with two
+   anchors and no focus. Runs downward into more tint rather than out of it, so
+   it settles the foot of the page where the journey hero opens the head of one. */
+.chapter-break {
+  background: linear-gradient(168deg, #f6f2fb 0%, #eee7f6 55%, #e6dcf1 100%);
 }
 
 /* Keep the full-bleed photograph visible while supporting overlaid copy. */

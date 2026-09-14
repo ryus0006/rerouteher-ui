@@ -100,11 +100,16 @@ export default function Landing() {
           </div>
           <div aria-hidden="true" className="landing-hero-shade absolute inset-0" />
 
-          <div className="relative mx-auto flex min-h-[42rem] w-full max-w-[1280px] items-end px-5 py-12 sm:px-8 md:min-h-[38rem] md:items-center md:py-20">
+          {/* Height follows the viewport rather than sitting at a fixed rem,
+              so the slice of the next section left showing stays the same on
+              every screen. The 9rem is the header plus that section's own top
+              padding, so the cut lands on empty ground: a band of the surface
+              below to scroll towards, with none of its words half shown. The
+              floor keeps the copy off the edges on a short window, where the
+              viewport is the smaller constraint. */}
+          <div className="relative mx-auto flex min-h-[42rem] w-full max-w-[1280px] items-end px-5 py-12 sm:px-8 md:min-h-[max(34rem,calc(100svh-9rem))] md:items-center md:py-20">
             <div className="max-w-[34rem]">
-              <p className="eyebrow text-white/90">Career re-entry readiness</p>
-
-              <h1 className="mt-3 font-display text-4xl font-bold leading-[1.04] tracking-[-0.025em] text-white sm:text-5xl md:text-[3.5rem]">
+              <h1 className="font-display text-4xl font-bold leading-[1.04] tracking-[-0.025em] text-white sm:text-5xl md:text-[3.5rem]">
                 See what you still
                 <br />
                 have to offer
@@ -136,7 +141,7 @@ export default function Landing() {
               <p className="mt-5 max-w-[44ch] text-sm text-white/90">
                 {resume.started
                   ? 'Your plan is where you left it.'
-                  : 'Free, and no signup to see your skills, readiness and focus areas.'}
+                  : 'Free. No signup until you want to keep it.'}
               </p>
             </div>
           </div>
@@ -153,7 +158,7 @@ export default function Landing() {
               How it works
             </h2>
             <p className="mt-3 max-w-[46ch] text-ink-soft">
-              Three stages, four screens, about ten minutes. Your break is skill-building, not a gap
+              Three stages, five screens, about ten minutes. Your break is skill-building, not a gap
               to explain away.
             </p>
 
@@ -182,8 +187,8 @@ export default function Landing() {
               </h2>
               <p className="mt-3 max-w-[48ch] text-sm leading-relaxed text-on-plane-soft sm:text-base">
                 {user
-                  ? 'Your skill snapshot, readiness and focus areas are saved to your account, alongside your learning plan and employer matches.'
-                  : 'Your skill snapshot, readiness and focus areas need no account. Create one to keep your plan on any device, and to add your learning plan and employer matches.'}
+                  ? 'Your plan saves itself as you go, and opens on any device you sign in on.'
+                  : 'Signing up is optional. An account keeps your plan, so closing this tab does not start you over.'}
               </p>
             </div>
 

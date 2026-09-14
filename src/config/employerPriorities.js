@@ -2,10 +2,9 @@
  * What an employer can be asked for, at the grain a sustainability report
  * actually answers.
  *
- * Deliberately coarser than the workplace preferences in the intake: a company
- * discloses "flexible working arrangements", not "hybrid, three days". Asking
- * her for detail the source cannot answer would promise a precision the match
- * does not have.
+ * Deliberately coarse: a company discloses "flexible working arrangements", not
+ * "hybrid, three days". Asking her for detail the source cannot answer would
+ * promise a precision the match does not have.
  *
  * Ids are the join key to each employer's disclosures, so they are stable.
  */

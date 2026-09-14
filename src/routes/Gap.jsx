@@ -53,7 +53,7 @@ export default function Gap() {
       <SavedStrip />
 
       <main className="mx-auto w-full max-w-[1000px] flex-1 px-5 py-8 sm:px-6 sm:py-10">
-        <IntakeStepper currentIndex={3} />
+        <IntakeStepper currentIndex={4} />
 
         <div className="mt-8">
           <BackLink to="/diagnostic/snapshot">Back to Skill Snapshot</BackLink>
@@ -80,8 +80,9 @@ export default function Gap() {
 
         {gapResult && (
           /* The score is a narrow summary rail; the focus areas are the work, so
-             they take the dominant column. The rail is the page's one dark
-             plane — it anchors the layout and the arc reads brightest on it. */
+             they take the dominant column. The rail is the page's only dark
+             plane, including the closing band below it: the arc is what she came
+             for, and it reads brightest when nothing else on the page is dark. */
           <div className="mt-6 grid items-start gap-5 md:grid-cols-[19.5rem_1fr]">
             <section className="overflow-hidden rounded-2xl bg-plane text-on-plane shadow-plane">
               <div className="p-6">

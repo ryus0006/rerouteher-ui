@@ -18,7 +18,7 @@ const LABEL_STATE = {
 const CONNECTOR = 'mt-[15px] h-px flex-1';
 
 /**
- * Progress across the four diagnostic screens. Steps before `currentIndex` read
+ * Progress across the five diagnostic screens. Steps before `currentIndex` read
  * as complete; the rest are upcoming.
  */
 export default function IntakeStepper({ currentIndex }) {

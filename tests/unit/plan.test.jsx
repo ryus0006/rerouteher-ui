@@ -44,7 +44,6 @@ beforeEach(() => {
   useIntakeStore.setState({
     cv: { fileName: 'cv.pdf', fileSize: 1 },
     break: { duration_years: 7, activities: ['a'] },
-    preferences: {},
     employerPriorities: [],
     snapshot: {
       previous_occupation: { role: 'Senior UX/UI Designer', role_id: 'role_ux', confidence: 0.9 },
@@ -154,10 +153,10 @@ describe('employer fit finder', () => {
     open(['/plan/employers']);
 
     expect(
-      await screen.findByRole('heading', { name: 'Find employers that support your return' })
+      await screen.findByRole('heading', { name: 'Change what you are asking for' })
     ).toBeVisible();
 
-    const find = screen.getByRole('button', { name: /Find employers/ });
+    const find = screen.getByRole('button', { name: /See your matches/ });
     expect(find).toBeDisabled();
 
     fireEvent.click(screen.getByLabelText(/Flexible Work/));
@@ -207,7 +206,7 @@ describe('employer fit finder', () => {
     open(['/plan/employers/matches']);
 
     expect(
-      await screen.findByRole('heading', { name: 'Find employers that support your return' })
+      await screen.findByRole('heading', { name: 'Change what you are asking for' })
     ).toBeVisible();
     expect(router.state.location.pathname).toBe('/plan/employers');
   });
@@ -218,7 +217,7 @@ describe('companion', () => {
     useAccountStore.setState({ user: { username: 'ccc', displayName: 'Chee Yeong' } });
     open(['/journey']);
 
-    fireEvent.click(await screen.findByRole('button', { name: /Ask me/ }));
+    fireEvent.click(await screen.findByRole('button', { name: /Ask Hera/ }));
     fireEvent.click(
       await screen.findByRole('button', { name: 'Which focus area should I start with?' })
     );
@@ -251,7 +250,7 @@ describe('companion', () => {
     useIntakeStore.setState({ cv: null, cvParsed: false, snapshot: null, gapResult: null });
     open(['/diagnostic/background']);
 
-    fireEvent.click(await screen.findByRole('button', { name: /Ask me/ }));
+    fireEvent.click(await screen.findByRole('button', { name: /Ask Hera/ }));
     // Before a snapshot exists it opens for the interview, but is never stuck there.
     expect(await screen.findByText(/Question 1 of 3/)).toBeVisible();
 
@@ -266,6 +265,6 @@ describe('companion', () => {
     open(['/']);
 
     expect(await screen.findByRole('heading', { level: 1 })).toBeVisible();
-    expect(screen.queryByRole('button', { name: /Ask me/ })).toBeNull();
+    expect(screen.queryByRole('button', { name: /Ask Hera/ })).toBeNull();
   });
 });

@@ -160,6 +160,6 @@ test.describe('E2 — Career Background (US2.1)', () => {
     page,
   }) => {
     await expect(page.locator('[data-state="current"]')).toHaveCount(1);
-    await expect(page.locator('[data-state="upcoming"]')).toHaveCount(3);
+    await expect(page.locator('[data-state="upcoming"]')).toHaveCount(4);
   });
 });

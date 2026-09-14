@@ -28,8 +28,10 @@ export const useAccountStore = create(
 
       /**
        * Where to go after a successful create when guest work is being kept.
-       * Set by the "What's next" card (US5.2.2 -> the journey dashboard); left
-       * null by the header, so a mid-journey sign-up stays put (US5.2.3).
+       * Null leaves her on the page she signed up from, which is what every
+       * opener wants: the offer reaches her mid-journey, and moving her would
+       * interrupt the thing she signed up to keep. An opener that wants her
+       * somewhere else passes a path to `openSheet`.
        * @type {string | null}
        */
       sheetRedirect: null,

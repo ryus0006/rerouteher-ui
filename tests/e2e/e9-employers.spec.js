@@ -10,7 +10,6 @@ const GUEST_SESSION = {
     cv: { fileName: 'cv.pdf', fileSize: 1 },
     cvParsed: true,
     break: { duration_years: 5, activities: ['caregiving'] },
-    preferences: {},
     employerPriorities: ['flexible_work', 'parental_support', 'inclusive_workplace'],
     snapshot: {
       previous_occupation: { role: 'Software Developer', role_id: 'role_dev', confidence: 0.9 },

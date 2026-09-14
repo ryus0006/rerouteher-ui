@@ -134,8 +134,8 @@ export default function Journey() {
   const projected = markers.length > 0 ? markers[markers.length - 1].at : null;
 
   /* The band says what she gets out of the next chapter; the panel below says
-     only where that chapter stands. Sharing one string put the same sentence on
-     screen twice, a few centimetres apart. */
+     only where that chapter stands. Two strings rather than one, because a
+     shared one would sit on screen twice, a few centimetres apart. */
   const upNext = {
     story: 'Your CV, and what filled your break. About five minutes.',
     skills: 'We read your CV and your time away, and name the skills in both.',
@@ -143,8 +143,7 @@ export default function Journey() {
   };
 
   /* An open chapter says what to do; a blocked one says what it is waiting for.
-     Using one string for both told her the story was missing while a tick sat
-     beside it. */
+     One string for both would claim the story is missing beside its own tick. */
   const ready = {
     story: 'Not started yet',
     skills: 'Ready to build from your story',
@@ -388,7 +387,7 @@ export default function Journey() {
                 <GradientButton
                   size="md"
                   className="mt-5 self-start"
-                  onClick={() => navigate('/plan/employers')}
+                  onClick={() => navigate('/plan/employers/matches')}
                 >
                   Find your next opportunity
                   <span aria-hidden="true">→</span>

@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react';
 import { Navigate } from 'react-router-dom';
+import useSmoothNavigate from '../../hooks/useSmoothNavigate.js';
 import Header from '../../components/layout/Header.jsx';
 import BackLink from '../../components/intake/BackLink.jsx';
 import { PRIORITY_NAMES } from '../../config/employerPriorities.js';
 import { matchEmployers } from '../../api/employers.js';
+import { useAccountStore } from '../../store/accountStore.js';
 import { useIntakeStore } from '../../store/intakeStore.js';
 
 /**
@@ -40,10 +42,10 @@ function LogoTile({ logo, name }) {
 /**
  * One employer, answered against her three priorities.
  *
- * One source, not one per priority. Every disclosure was read from the same
- * document, so citing it beside each chip repeated a single link three times
- * and made one reading look like three. The chips say what was found; the
- * report link is where she can check all of it at once.
+ * One source, not one per priority. Every disclosure comes from the same
+ * document, so citing it beside each chip would repeat a single link three
+ * times and make one reading look like three. The chips say what was found;
+ * the report link is where she can check all of it at once.
  */
 function EmployerCard({ employer }) {
   const total = employer.met.length + employer.unmet.length;
@@ -154,10 +156,12 @@ function EmployerCard({ employer }) {
  * asked for (E9).
  */
 export default function EmployerMatches() {
+  const navigate = useSmoothNavigate();
   const snapshot = useIntakeStore((state) => state.snapshot);
   const selectedRole = useIntakeStore((state) => state.selectedRole);
   const gapResult = useIntakeStore((state) => state.gapResult);
   const priorities = useIntakeStore((state) => state.employerPriorities);
+  const user = useAccountStore((state) => state.user);
 
   const [employers, setEmployers] = useState(null);
   const [error, setError] = useState(null);
@@ -192,7 +196,13 @@ export default function EmployerMatches() {
       <Header />
 
       <main className="mx-auto w-full max-w-[980px] flex-1 px-5 py-10 sm:px-6 sm:py-14">
-        <BackLink to="/plan/employers">Back to selection</BackLink>
+        {/* The journey for an account, the gap screen for a guest, who has no
+            journey to be sent to. */}
+        {user ? (
+          <BackLink to="/journey">Back to your journey</BackLink>
+        ) : (
+          <BackLink to="/diagnostic/gap">Back to your readiness</BackLink>
+        )}
 
         <div className="mt-3 flex flex-wrap items-end justify-between gap-x-6 gap-y-2">
           <div className="min-w-0 flex-1">
@@ -206,11 +216,24 @@ export default function EmployerMatches() {
             </p>
           </div>
 
-          {employers && (
-            <p className="shrink-0 text-sm text-ink-soft">
-              {employers.length} {employers.length === 1 ? 'company' : 'companies'} found
-            </p>
-          )}
+          {/* The count and the way to change it, together: the answer to "why
+              these companies" is the priorities she picked, so the control that
+              rewrites them belongs beside the number they produced. */}
+          <div className="flex shrink-0 flex-col items-start gap-1 sm:items-end">
+            {employers && (
+              <p className="text-sm text-ink-soft">
+                {employers.length} {employers.length === 1 ? 'company' : 'companies'} found
+              </p>
+            )}
+
+            <button
+              type="button"
+              onClick={() => navigate('/plan/employers')}
+              className="-mx-2 rounded-full px-2 py-1 text-sm text-ink-soft underline underline-offset-2 transition hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
+            >
+              Adjust priorities
+            </button>
+          </div>
         </div>
 
         {error && (

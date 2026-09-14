@@ -11,6 +11,9 @@ async function reachGap(page) {
 
   await page.getByRole('slider').fill('5');
   await page.getByText('Childcare', { exact: true }).click();
+  await page.getByRole('button', { name: 'Continue to Work Priorities' }).click();
+
+  await page.getByText('Flexible Work').click();
   await page.getByRole('button', { name: 'Continue to Skill Snapshot' }).click();
 
   await page.getByRole('button', { name: 'See my readiness & gaps' }).click();

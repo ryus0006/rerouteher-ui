@@ -3,7 +3,7 @@ import App from './App.jsx';
 import Landing from './routes/Landing.jsx';
 import Background from './routes/diagnostic/Background.jsx';
 import CareerBreak from './routes/diagnostic/CareerBreak.jsx';
-import Preferences from './routes/diagnostic/Preferences.jsx';
+import Priorities from './routes/diagnostic/Priorities.jsx';
 import Snapshot from './routes/Snapshot.jsx';
 import Gap from './routes/Gap.jsx';
 import Journey from './routes/Journey.jsx';
@@ -19,7 +19,7 @@ export const routes = [
       { index: true, element: <Landing /> },
       { path: 'diagnostic/background', element: <Background /> },
       { path: 'diagnostic/break', element: <CareerBreak /> },
-      { path: 'diagnostic/preferences', element: <Preferences /> },
+      { path: 'diagnostic/priorities', element: <Priorities /> },
       { path: 'diagnostic/snapshot', element: <Snapshot /> },
       { path: 'diagnostic/gap', element: <Gap /> },
       { path: 'journey', element: <Journey /> },

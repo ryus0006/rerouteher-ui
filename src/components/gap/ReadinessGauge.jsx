@@ -39,8 +39,8 @@ const TONES = {
  * uplifts, all three dots land inside the last fifth of the arc and overlap.
  *
  * The segments carry no labels of their own. The ranked focus-area list sits
- * beside this and names them in the same order, so labelling them here put the
- * same three strings on screen twice, a few centimetres apart.
+ * beside this and names them in the same order, so labelling them here would
+ * set the same three strings on screen twice, a few centimetres apart.
  *
  * @param {{ value: number, label?: string, tone?: 'plane' | 'light', markers?: { at: number, skill: string }[] }} props
  */

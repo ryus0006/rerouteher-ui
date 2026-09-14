@@ -3,8 +3,8 @@
  *
  * One model, not two: the same three chapters that appear on the journey page
  * are what the percentage counts, so the number on screen is always something
- * she can point at. Preferences are left out deliberately — they refine the
- * employer matching rather than gate anything, so counting them would show an
+ * she can point at. The work priorities step is left out — it feeds the
+ * employer matching rather than any chapter, and counting it would show an
  * incomplete journey to someone who has finished the diagnostic.
  */
 export const JOURNEY_CHAPTERS = [
@@ -46,8 +46,8 @@ export const PLAN_SECTIONS = [
   {
     id: 'employers',
     name: 'Employer fit finder',
-    to: '/plan/employers',
-    blurb: 'Pick what matters most, and see which companies have published it.',
+    to: '/plan/employers/matches',
+    blurb: 'The companies that have published what matters most to you.',
   },
 ];
 
