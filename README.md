@@ -55,6 +55,7 @@ docker build --build-arg VITE_API_BASE_URL=https://api.uat.example -t rerouteher
 ```
 
 `VITE_API_BASE_URL` is inlined at build time, so each environment gets its own image.
+The production nginx container listens on port `5174`, matching the iteration 2 deployment route.
 `nginx.conf` serves `index.html` for unknown paths so client-side routes survive a direct hit.
 
 ## Layout
