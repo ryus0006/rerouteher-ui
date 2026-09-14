@@ -67,7 +67,9 @@ function EmployerCard({ employer }) {
         </div>
 
         <div className="shrink-0 text-right">
-          <span className={`inline-block rounded-full px-2.5 py-1 text-xs font-semibold ${label.tone}`}>
+          <span
+            className={`inline-block rounded-full px-2.5 py-1 text-xs font-semibold ${label.tone}`}
+          >
             {label.text}
           </span>
           <p className="mt-1 text-xs text-ink-soft">
@@ -123,21 +125,25 @@ function EmployerCard({ employer }) {
           <span className="sr-only">, opens {employer.name} in a new tab</span>
         </a>
 
-        <p className="text-xs text-ink-soft">
-          Read from{' '}
-          <a
-            href={employer.report.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="font-medium text-ink-soft underline underline-offset-2 transition hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
-          >
-            {employer.report.label}
-            <span aria-hidden="true" className="ml-0.5">
-              ↗
-            </span>
-            <span className="sr-only">, opens in a new tab</span>
-          </a>
-        </p>
+        {employer.report ? (
+          <p className="text-xs text-ink-soft">
+            Read from{' '}
+            <a
+              href={employer.report.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-medium text-ink-soft underline underline-offset-2 transition hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
+            >
+              {employer.report.label}
+              <span aria-hidden="true" className="ml-0.5">
+                ↗
+              </span>
+              <span className="sr-only">, opens in a new tab</span>
+            </a>
+          </p>
+        ) : (
+          <p className="text-xs text-ink-faint">Source report not yet published</p>
+        )}
       </div>
     </article>
   );

@@ -94,4 +94,19 @@
  * @property {string | null} [blurb]
  */
 
+/**
+ * @typedef {Object} EmployerMatch
+ * @property {string} id
+ * @property {string} name
+ * @property {string} [industry]
+ * @property {string} [location]
+ * @property {{ text: string, bg: string, fg: string } | null} [logo]
+ * @property {string} [website]
+ * @property {string} [summary]
+ * @property {string[]} discloses
+ * @property {{ label: string, url: string } | null} [report]
+ * @property {string[]} met
+ * @property {string[]} unmet
+ */
+
 export {};
