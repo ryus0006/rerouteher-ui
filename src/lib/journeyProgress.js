@@ -1,11 +1,7 @@
 /**
- * How far along the journey is, measured in the chapters she can actually see.
- *
- * One model, not two: the same three chapters that appear on the journey page
- * are what the percentage counts, so the number on screen is always something
- * she can point at. The work priorities step is left out — it feeds the
- * employer matching rather than any chapter, and counting it would show an
- * incomplete journey to someone who has finished the diagnostic.
+ * The three chapters the journey page is written in. They title the sections
+ * and say what each one is for; the measure of how far she has come is
+ * `DIAGNOSTIC_STEPS`, which is finer.
  */
 export const JOURNEY_CHAPTERS = [
   {
@@ -52,14 +48,59 @@ export const PLAN_SECTIONS = [
 ];
 
 /**
- * @param {{ cv: object | null, activities: string[], snapshot: object | null, gapResult: object | null }} state
+ * The five screens of the diagnostic, in the order she walks them.
+ *
+ * Ids are the ones `FLOW_STEPS` uses, so the stepper she sees on her way
+ * through and the count she sees on her dashboard name the same things. Each
+ * step carries the chapter it belongs to: the screen is what gets measured,
+ * the chapter is what gets titled.
  */
-export function journeyProgress({ cv, activities = [], snapshot, gapResult }) {
-  const done = {
-    story: Boolean(cv) && activities.length > 0,
-    skills: Boolean(snapshot),
-    'next-move': Boolean(gapResult),
-  };
+export const DIAGNOSTIC_STEPS = [
+  { id: 'upload-cv', chapter: 'story', to: '/diagnostic/background' },
+  { id: 'career-break', chapter: 'story', to: '/diagnostic/break' },
+  { id: 'work-priorities', chapter: 'skills', to: '/diagnostic/priorities' },
+  { id: 'skill-snapshot', chapter: 'skills', to: '/diagnostic/snapshot' },
+  { id: 'target-role-gap', chapter: 'next-move', to: '/diagnostic/gap' },
+];
+
+/**
+ * How far along the journey is, counted in screens and grouped into chapters.
+ *
+ * Counted in screens because that is what she experiences: a CV on its own is
+ * real progress, and a measure that only moves on whole chapters would show her
+ * an empty bar for work she has done.
+ *
+ * @param {{ cvParsed: boolean, activities: string[], employerPriorities: string[], snapshot: object | null, gapResult: object | null }} state
+ */
+export function journeyProgress({
+  cvParsed,
+  activities = [],
+  employerPriorities = [],
+  snapshot,
+  gapResult,
+}) {
+  const answered = [
+    Boolean(cvParsed),
+    activities.length > 0,
+    employerPriorities.length > 0,
+    Boolean(snapshot),
+    Boolean(gapResult),
+  ];
+
+  /* Completion runs forward only: reaching a screen is proof of the ones before
+     it, since none of them can be passed without an answer. Reading the furthest
+     answer rather than each one on its own also keeps a plan saved before a
+     screen existed whole, instead of showing a hole in a finished journey. */
+  const furthest = answered.lastIndexOf(true);
+  const steps = DIAGNOSTIC_STEPS.map((step, index) => ({ ...step, done: index <= furthest }));
+  const completed = furthest + 1;
+
+  const done = Object.fromEntries(
+    JOURNEY_CHAPTERS.map((chapter) => [
+      chapter.id,
+      steps.filter((step) => step.chapter === chapter.id).every((step) => step.done),
+    ])
+  );
 
   /* Chapters run in order, so one is open when everything before it is done.
      The distinction matters for copy: an open chapter is an invitation, a
@@ -71,14 +112,13 @@ export function journeyProgress({ cv, activities = [], snapshot, gapResult }) {
     return row;
   });
 
-  const completed = chapters.filter((chapter) => chapter.done).length;
-
   return {
     chapters,
+    steps,
     completed,
-    total: chapters.length,
-    percent: Math.round((completed / chapters.length) * 100),
-    /** The first unfinished chapter, or null once the diagnostic is done. */
-    next: chapters.find((chapter) => !chapter.done) ?? null,
+    total: steps.length,
+    percent: Math.round((completed / steps.length) * 100),
+    /** The first unfinished screen, or null once the diagnostic is done. */
+    next: steps.find((step) => !step.done) ?? null,
   };
 }

@@ -61,11 +61,18 @@ export default function Header({ onGround = false }) {
   const navigate = useSmoothNavigate();
   const { pathname } = useLocation();
 
-  const cv = useIntakeStore((state) => state.cv);
+  const cvParsed = useIntakeStore((state) => state.cvParsed);
   const activities = useIntakeStore((state) => state.break?.activities);
+  const employerPriorities = useIntakeStore((state) => state.employerPriorities);
   const snapshot = useIntakeStore((state) => state.snapshot);
   const gapResult = useIntakeStore((state) => state.gapResult);
-  const progress = journeyProgress({ cv, activities, snapshot, gapResult });
+  const progress = journeyProgress({
+    cvParsed,
+    activities,
+    employerPriorities,
+    snapshot,
+    gapResult,
+  });
 
   // Never read `displayName` straight: an account stored before display names
   // existed has only a username, and the bar must still render.

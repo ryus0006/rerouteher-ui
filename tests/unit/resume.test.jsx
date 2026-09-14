@@ -70,15 +70,18 @@ describe('resume point', () => {
       '/diagnostic/priorities'
     );
 
+    // Her snapshot exists, so that screen is answered and the role is what is
+    // left; sending her back to the snapshot would be a step she has done.
     expect(
       resumePoint({
         cvParsed: true,
         activities: ['caregiving'],
+        employerPriorities: ['flexible_work'],
         snapshot: SNAPSHOT,
         gapResult: null,
         signedIn: false,
       }).to
-    ).toBe('/diagnostic/snapshot');
+    ).toBe('/diagnostic/gap');
   });
 
   it('sends a finished guest to her results and a finished account to her journey', () => {

@@ -76,14 +76,15 @@ export default function ChapterBreak() {
         {/* The only place after the diagnostic that says where her work lives.
             She is holding a readiness score here, so the tab it sits in is
             worth naming; on the landing page the same sentence lands before
-            there is anything to lose. No redirect is passed, so signing up
-            leaves her on this card to carry on through one of the panels. */}
+            there is anything to lose. Signing up hands her the dashboard the
+            account just bought, which carries both of this card's doors plus
+            the progress behind them. */}
         {!user && (
           <p className="mt-5 text-sm text-ink-soft">
             Your plan lives in this tab.{' '}
             <button
               type="button"
-              onClick={() => openSheet('create')}
+              onClick={() => openSheet('create', '/journey')}
               className="rounded font-semibold text-ink underline underline-offset-4 transition hover:text-pink-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
             >
               Keep it with an account

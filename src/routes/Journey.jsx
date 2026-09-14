@@ -111,8 +111,9 @@ export default function Journey() {
   const navigate = useSmoothNavigate();
   const user = useAccountStore((state) => state.user);
 
-  const cv = useIntakeStore((state) => state.cv);
+  const cvParsed = useIntakeStore((state) => state.cvParsed);
   const careerBreak = useIntakeStore((state) => state.break);
+  const employerPriorities = useIntakeStore((state) => state.employerPriorities);
   const snapshot = useIntakeStore((state) => state.snapshot);
   const selectedRole = useIntakeStore((state) => state.selectedRole);
   const gapResult = useIntakeStore((state) => state.gapResult);
@@ -124,7 +125,13 @@ export default function Journey() {
 
   const activities = careerBreak?.activities ?? [];
   const displayName = user ? resolveDisplayName(user) : null;
-  const progress = journeyProgress({ cv, activities, snapshot, gapResult });
+  const progress = journeyProgress({
+    cvParsed,
+    activities,
+    employerPriorities,
+    snapshot,
+    gapResult,
+  });
 
   // The journey belongs to an account. A guest has no saved journey to open.
   if (!user) return <Navigate to="/" replace />;
@@ -133,13 +140,27 @@ export default function Journey() {
   const markers = gapResult ? markersFor(gapResult.readiness, focusAreas) : [];
   const projected = markers.length > 0 ? markers[markers.length - 1].at : null;
 
-  /* The band says what she gets out of the next chapter; the panel below says
-     only where that chapter stands. Two strings rather than one, because a
-     shared one would sit on screen twice, a few centimetres apart. */
+  /* The band says what the screen she is returning to asks of her; the panels
+     below say only where each chapter stands. Two sets of strings rather than
+     one, because a shared one would sit on screen twice, a few centimetres
+     apart. Keyed by screen, so coming back mid-chapter names the half she has
+     left rather than the half she has already answered. */
   const upNext = {
-    story: 'Your CV, and what filled your break. About five minutes.',
-    skills: 'We read your CV and your time away, and name the skills in both.',
-    'next-move': 'Pick a role, and see how much of it you can already do.',
+    'upload-cv': 'Your CV first, then what filled your break.',
+    'career-break': 'What filled your break — the part a CV leaves out.',
+    'work-priorities': 'What matters most for your return, in your own order.',
+    'skill-snapshot': 'Your CV and your break, read together and named as skills.',
+    'target-role-gap': 'Pick a role, and see how much of it you can already do.',
+  };
+
+  /* Named for what the screen does, not for the chapter it sits in: she is
+     being sent to one screen, and two of the chapters take more than one. */
+  const resumeCta = {
+    'upload-cv': 'Start your story',
+    'career-break': 'Continue your story',
+    'work-priorities': 'Continue to your skills',
+    'skill-snapshot': 'See your skills',
+    'target-role-gap': 'Choose your target role',
   };
 
   /* An open chapter says what to do; a blocked one says what it is waiting for.
@@ -186,7 +207,7 @@ export default function Journey() {
 
         <p className="mt-2 max-w-[52ch] text-sm leading-relaxed text-ink-soft sm:text-base">
           {progress.completed === 0
-            ? 'Nothing here yet. Three chapters, and the first one takes about five minutes.'
+            ? 'Nothing here yet. Five steps, and about ten minutes in total.'
             : 'Everything is where you left it.'}
         </p>
 
@@ -202,12 +223,12 @@ export default function Journey() {
 
             <div className="md:order-1">
               <p className="eyebrow">
-                {gapResult
-                  ? 'Working towards'
-                  : `${progress.completed} of ${progress.total} chapters`}
+                {gapResult ? 'Working towards' : `${progress.completed} of ${progress.total} steps`}
               </p>
               <h2 className="mt-1 font-display text-2xl font-bold tracking-[-0.015em] text-ink sm:text-[2rem]">
-                {gapResult ? (selectedRole?.role ?? 'Your target role') : progress.next.name}
+                {gapResult
+                  ? (selectedRole?.role ?? 'Your target role')
+                  : byId[progress.next.chapter].name}
               </h2>
 
               <p className="mt-3 max-w-[38ch] text-sm leading-relaxed text-ink-soft">
@@ -240,9 +261,7 @@ export default function Journey() {
                   </div>
 
                   <GradientButton className="mt-6" onClick={() => navigate(progress.next.to)}>
-                    {progress.completed === 0
-                      ? 'Start your story'
-                      : `Continue: ${progress.next.name.toLowerCase()}`}
+                    {resumeCta[progress.next.id]}
                   </GradientButton>
                 </>
               )}

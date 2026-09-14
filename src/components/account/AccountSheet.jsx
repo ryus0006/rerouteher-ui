@@ -52,9 +52,11 @@ export default function AccountSheet() {
     closeSheet();
   }
 
+  /* The destination rides along: toggling between the two modes is a change of
+     mind about having an account, not about where she was heading. */
   function switchMode() {
     setErrors({});
-    openSheet(creating ? 'signIn' : 'create');
+    openSheet(creating ? 'signIn' : 'create', sheetRedirect);
   }
 
   useEffect(() => {

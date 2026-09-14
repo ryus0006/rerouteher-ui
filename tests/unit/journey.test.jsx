@@ -25,6 +25,7 @@ beforeEach(() => {
   );
   useIntakeStore.setState({
     cv: { fileName: 'hr-officer-cv.pdf', fileSize: 1 },
+    cvParsed: true,
     break: {
       duration_years: 7,
       activities: ['care_household.cared_for_children', 'finance.managed_budget_finances'],
@@ -118,7 +119,14 @@ describe('journey', () => {
 
   it('gives an account holder with an empty journey somewhere to start', async () => {
     useAccountStore.setState({ user: { username: 'ccc', displayName: 'Chee Yeong' } });
-    useIntakeStore.setState({ cv: null, break: undefined, snapshot: null, gapResult: null });
+    useIntakeStore.setState({
+      cv: null,
+      cvParsed: false,
+      break: undefined,
+      employerPriorities: [],
+      snapshot: null,
+      gapResult: null,
+    });
     open();
 
     expect(await screen.findByRole('heading', { name: 'Welcome back, Chee Yeong' })).toBeVisible();
@@ -133,10 +141,31 @@ describe('journey', () => {
 
     // The panel names the payoff; the row names the state. Never the same words.
     expect(
-      await screen.findByText('We read your CV and your time away, and name the skills in both.')
+      await screen.findByText('What matters most for your return, in your own order.')
     ).toBeVisible();
     expect(screen.getByText('Ready to build from your story')).toBeVisible();
     expect(screen.getByText('Ready once your skills are named')).toBeVisible();
+  });
+
+  it('resumes the screen she stopped on, counting the ones behind it', async () => {
+    useAccountStore.setState({ user: { username: 'ccc', displayName: 'Chee Yeong' } });
+    // A CV and nothing else: half of the first chapter, one of the five screens.
+    useIntakeStore.setState({
+      break: { duration_years: null, activities: [] },
+      employerPriorities: [],
+      snapshot: null,
+      selectedRole: null,
+      gapResult: null,
+    });
+    open();
+
+    expect(await screen.findByText('1 of 5 steps')).toBeVisible();
+    expect(screen.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '20');
+    expect(screen.queryByText(/Nothing here yet/)).toBeNull();
+
+    // The CV screen is answered, so Continue opens the break question.
+    fireEvent.click(screen.getByRole('button', { name: 'Continue your story' }));
+    expect(router.state.location.pathname).toBe('/diagnostic/break');
   });
 
   it('keeps the landing page reachable from the logo while signed in', async () => {
