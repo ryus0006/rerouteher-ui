@@ -27,5 +27,5 @@ Runs the real UI against the real FastAPI backend and a fresh Postgres.
 Notes:
 - The account spec uses a unique username per run, so the persistent DB does not collide.
 - Without E2E_FULLSTACK the suite runs mock-backed against `npm run preview`, as before.
-- CORS: the backend allows http://localhost:5173 by default; the API port can differ (8080/8081) without affecting CORS, which keys off the frontend origin, not the API port.
+- CORS: the backend allows http://localhost:5173 and http://localhost:5174 by default (iteration 2 UI runs on 5174); the API port can differ (8080/8081) without affecting CORS, which keys off the frontend origin, not the API port.
 - Stop: Ctrl-C the uvicorn (API), then ./scripts/local-stop.sh (add nothing to reset the DB, or --keep-data to preserve it).

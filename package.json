@@ -10,13 +10,13 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview --port 4173",
+    "preview": "vite preview --port 4174",
     "lint": "eslint . && prettier --check .",
     "format": "prettier --write .",
     "test:unit": "vitest run --coverage",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
-    "test:e2e:live": "E2E_FULLSTACK=1 E2E_BASE_URL=http://localhost:5173 playwright test",
+    "test:e2e:live": "E2E_FULLSTACK=1 E2E_BASE_URL=http://localhost:5174 playwright test",
     "test:e2e:ui": "playwright test --ui",
     "gate": "npm run lint && npm run test:unit && npm run build && npm run test:e2e && node scripts/record-run.mjs"
   },

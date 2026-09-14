@@ -5,7 +5,8 @@ import tailwindcss from '@tailwindcss/vite';
 export default defineConfig({
   plugins: [react(), tailwindcss()],
   server: {
-    port: 5173,
+    // Iteration 2 uses 5174 (iteration 1 keeps 5173) so both UIs can run at once.
+    port: 5174,
     // Mirrors production, where nginx proxies /api/ to the backend service.
     // Same-origin /api in dev too, so no CORS and the same relative URLs work everywhere.
     // The path is not rewritten, so /api/... reaches the backend's /api/... endpoints.
@@ -17,11 +18,11 @@ export default defineConfig({
       },
     },
   },
-  preview: { port: 4173 },
+  preview: { port: 4174 },
   test: {
     environment: 'jsdom',
     // jsdom needs a real origin before it will expose localStorage.
-    environmentOptions: { jsdom: { url: 'http://localhost:4173/' } },
+    environmentOptions: { jsdom: { url: 'http://localhost:4174/' } },
     globals: true,
     setupFiles: './tests/setup.js',
     include: ['tests/unit/**/*.test.{js,jsx}'],

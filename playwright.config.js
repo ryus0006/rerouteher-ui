@@ -13,7 +13,7 @@ export default defineConfig({
   use: {
     baseURL:
       process.env.E2E_BASE_URL ??
-      (process.env.E2E_FULLSTACK ? 'http://localhost:5173' : 'http://localhost:4173'),
+      (process.env.E2E_FULLSTACK ? 'http://localhost:5174' : 'http://localhost:4174'),
     trace: 'retain-on-failure',
     video: 'retain-on-failure',
   },
@@ -41,12 +41,12 @@ export default defineConfig({
           // .env.development / .env.local); the API + DB are brought up separately
           // (see tests/e2e/helpers/fullstack-README.md).
           command: 'npm run dev',
-          url: 'http://localhost:5173',
+          url: 'http://localhost:5174',
           reuseExistingServer: false,
         }
       : {
           command: 'npm run preview',
-          port: 4173,
+          port: 4174,
           reuseExistingServer: true,
         },
 });

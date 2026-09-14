@@ -14,7 +14,7 @@ React 19 · Vite · Tailwind CSS 4 · React Router · Zustand · MSW · Vitest �
 
 ```bash
 npm install
-npm run dev          # http://localhost:5173, calls the real API at VITE_API_BASE_URL
+npm run dev          # http://localhost:5174, calls the real API at VITE_API_BASE_URL
 ```
 
 The backend is a separate FastAPI service; start it first (see
