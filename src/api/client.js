@@ -22,6 +22,7 @@ export async function postJson(path, payload) {
   const response = await fetch(`${BASE_URL}${path}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
     body: JSON.stringify(payload),
   });
 
@@ -33,7 +34,11 @@ export async function postFile(path, file, field = 'file') {
   const body = new FormData();
   body.append(field, file);
 
-  const response = await fetch(`${BASE_URL}${path}`, { method: 'POST', body });
+  const response = await fetch(`${BASE_URL}${path}`, {
+    method: 'POST',
+    credentials: 'include',
+    body,
+  });
 
   if (!response.ok) throw new ApiError(await parseError(response), response.status);
   return response.json();

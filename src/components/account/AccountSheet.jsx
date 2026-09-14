@@ -30,6 +30,7 @@ export default function AccountSheet() {
   const closeSheet = useAccountStore((state) => state.closeSheet);
   const openSheet = useAccountStore((state) => state.openSheet);
   const setUser = useAccountStore((state) => state.setUser);
+  const sheetRedirect = useAccountStore((state) => state.sheetRedirect);
 
   const panelRef = useRef(null);
   const firstFieldRef = useRef(null);
@@ -149,17 +150,20 @@ export default function AccountSheet() {
 
       // Her work is now the account's only copy, and the sync's baseline was
       // just set to it, so this is the one save it will not make by itself.
+      // The server reads the session cookie the create/sign-in just set, so no
+      // username travels in the body.
       if (keptDevice && hasJourney(onDevice)) {
-        await savePlan({ username: result.username, plan: onDevice });
+        await savePlan({ plan: onDevice });
       }
 
       if (!creating) navigate('/journey');
       /* Signing up before starting is a decision to begin, so she is taken to
          the beginning rather than left on the page she signed up from. */
-      if (creating && !hasJourney(onDevice)) navigate('/diagnostic/background');
-      /* Creating an account happens mid-journey, on top of the screen she is
-         already reading. Moving her would take away the very result she just
-         chose to keep, so the sheet simply closes. */
+      else if (!hasJourney(onDevice)) navigate('/diagnostic/background');
+      /* Signing up with work in hand keeps her where she is by default (US5.2.3),
+         unless the opener asked for a destination — the "What's next" card sends
+         her to the journey dashboard (US5.2.2). */
+      else if (sheetRedirect) navigate(sheetRedirect);
     } catch (cause) {
       setErrors({ form: cause.message });
     } finally {

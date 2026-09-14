@@ -12,6 +12,9 @@ const DEFAULT_ROLE_ID = 'role_ux';
 /** Accounts created this session, so a sign-in can hand the journey back. */
 const accounts = new Map();
 
+/** Stands in for the session cookie: who the mock currently treats as signed in. */
+let sessionUser = null;
+
 export const handlers = [
   http.post('*/api/cv/parse', async ({ request }) => {
     const form = await request.formData();
@@ -139,20 +142,21 @@ export const handlers = [
 
     const account = { username, display_name: displayName || username, plan: plan ?? null };
     accounts.set(username.toLowerCase(), account);
+    sessionUser = username.toLowerCase();
 
     return HttpResponse.json({ username: account.username, display_name: account.display_name });
   }),
 
   http.post('*/api/account/plan', async ({ request }) => {
-    const { username, plan } = await request.json();
-    const account = accounts.get(username?.toLowerCase());
-
-    if (!account) {
-      return HttpResponse.json({ error: 'That account no longer exists.' }, { status: 404 });
+    if (!sessionUser) {
+      return HttpResponse.json({ error: 'Not signed in.' }, { status: 401 });
     }
 
-    account.plan = plan ?? null;
-    return HttpResponse.json({ saved: true });
+    const { plan } = await request.json();
+    const account = accounts.get(sessionUser);
+    if (account) account.plan = plan ?? null;
+
+    return HttpResponse.json({ status: 'saved' });
   }),
 
   http.post('*/api/account/sign-in', async ({ request }) => {
@@ -166,11 +170,17 @@ export const handlers = [
     }
 
     const account = accounts.get(username.toLowerCase());
+    sessionUser = username.toLowerCase();
 
     return HttpResponse.json({
       username,
       display_name: account?.display_name ?? username,
       plan: account?.plan ?? null,
     });
+  }),
+
+  http.post('*/api/account/sign-out', () => {
+    sessionUser = null;
+    return HttpResponse.json({ status: 'signed_out' });
   }),
 ];

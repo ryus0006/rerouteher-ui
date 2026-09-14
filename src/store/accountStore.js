@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { signOut as signOutRequest } from '../api/account.js';
 import { sessionBacked, useIntakeStore } from './intakeStore.js';
 
 export const ACCOUNT_STORAGE_KEY = 'rerouteher.account';
@@ -25,10 +26,18 @@ export const useAccountStore = create(
       /** @type {'create' | 'signIn' | null} — which mode the sheet is open in */
       sheet: null,
 
-      openSheet: (mode) => set({ sheet: mode }),
-      closeSheet: () => set({ sheet: null }),
+      /**
+       * Where to go after a successful create when guest work is being kept.
+       * Set by the "What's next" card (US5.2.2 -> the journey dashboard); left
+       * null by the header, so a mid-journey sign-up stays put (US5.2.3).
+       * @type {string | null}
+       */
+      sheetRedirect: null,
 
-      setUser: (user) => set({ user, sheet: null }),
+      openSheet: (mode, redirect = null) => set({ sheet: mode, sheetRedirect: redirect }),
+      closeSheet: () => set({ sheet: null, sheetRedirect: null }),
+
+      setUser: (user) => set({ user, sheet: null, sheetRedirect: null }),
       setDisplayName: (displayName) =>
         set((state) => (state.user ? { user: { ...state.user, displayName } } : state)),
       /**
@@ -41,6 +50,9 @@ export const useAccountStore = create(
        * `planSync`), so signing back in brings it all back.
        */
       signOut: () => {
+        // Best-effort: drop the server session cookie. The local clear happens
+        // regardless, so a failed request never traps her signed in on the device.
+        signOutRequest().catch(() => {});
         set({ user: null, sheet: null });
         useIntakeStore.getState().reset();
       },

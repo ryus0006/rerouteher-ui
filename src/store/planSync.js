@@ -29,10 +29,10 @@ export function startPlanSync() {
   // The write the debounce is still holding, kept so it can be sent early.
   let queued = null;
 
-  function send({ username, plan }) {
+  function send({ plan }) {
     saved = plan;
 
-    savePlan({ username, plan: JSON.parse(plan) }).catch(() => {
+    savePlan({ plan: JSON.parse(plan) }).catch(() => {
       /* Losing the round trip must not lose the edit: clearing the baseline
          means the next change she makes carries this one to the server too.
          Nothing is said on screen — she did not ask for a save, and her work
@@ -71,7 +71,7 @@ export function startPlanSync() {
     if (plan === saved) return;
 
     clearTimeout(timer);
-    queued = { username: user.username, plan };
+    queued = { plan };
     timer = setTimeout(flush, QUIET_MS);
   });
 

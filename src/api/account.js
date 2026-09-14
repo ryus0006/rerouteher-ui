@@ -75,11 +75,16 @@ export function signIn({ username, password }) {
  * every later change lives only on the device that made it — so signing in
  * anywhere hands back the original and silently discards the rest.
  *
- * The real service reads the session cookie to know whose plan this is;
- * `username` is here because the mock has no session to read.
+ * The server reads the session cookie to know whose plan this is, so no
+ * username travels in the body.
  *
- * @param {{ username: string, plan: object }} payload
+ * @param {{ plan: object }} payload
  */
-export function savePlan({ username, plan }) {
-  return postJson('/api/account/plan', { username: username.trim(), plan });
+export function savePlan({ plan }) {
+  return postJson('/api/account/plan', { plan });
+}
+
+/** Clears the server session cookie. */
+export function signOut() {
+  return postJson('/api/account/sign-out', {});
 }

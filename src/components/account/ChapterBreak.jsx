@@ -85,7 +85,7 @@ export default function ChapterBreak() {
           <>
             <button
               type="button"
-              onClick={() => openSheet('create')}
+              onClick={() => openSheet('create', '/journey')}
               className="mt-6 inline-flex items-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-semibold text-ink shadow-card transition duration-200 ease-spring hover:-translate-y-px hover:shadow-card-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
             >
               Create a free account
