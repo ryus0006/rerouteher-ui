@@ -106,6 +106,17 @@ export const useIntakeStore = create(
           ...resetAfterBreak(),
         })),
 
+      // Whole-break set used when the companion returns a break in journey_update;
+      // mirrors the page path's downstream reset so chat and page stay interchangeable.
+      setBreak: (careerBreak) =>
+        set(() => ({
+          break: {
+            duration_years: careerBreak?.duration_years ?? 0,
+            activities: careerBreak?.activities ?? [],
+          },
+          ...resetAfterBreak(),
+        })),
+
       toggleActivity: (id) =>
         set((state) => {
           const selected = state.break.activities;

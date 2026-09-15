@@ -67,61 +67,46 @@ export const handlers = [
     return HttpResponse.json({ employers });
   }),
 
-  /* The conversational route into a snapshot (US8.1). It returns the same
-     payload the CV route returns, so nothing downstream can tell the two
-     apart — which is the requirement, not a shortcut in the stand-in. */
-  http.post('*/api/companion/profile', async ({ request }) => {
-    const { answers = {} } = await request.json();
-
-    if (!answers.occupation?.trim()) {
-      return HttpResponse.json(
-        { error: 'Tell me what your job was and I can build the rest.' },
-        { status: 400 }
-      );
-    }
-
-    return HttpResponse.json({
-      ...snapshotHighConfidence,
-      previous_occupation: {
-        ...snapshotHighConfidence.previous_occupation,
-        role: answers.occupation.trim(),
-        method: 'conversation',
-      },
-    });
-  }),
-
-  /* The re-entry companion (E8). Answers are assembled from the journey sent
-     with the question, so the stand-in demonstrates the one thing that matters
-     about this feature: it talks about her numbers, not about careers. */
+  /* The re-entry companion (E8). One conversational endpoint, guest-usable. When
+     she has no snapshot yet the stand-in plays the profile-build role and returns
+     a journey_update (cv + break) the frontend applies to its store, exactly as
+     the real agent's update_profile tool does; once she has results it answers
+     from the journey sent with the question. */
   http.post('*/api/companion/ask', async ({ request }) => {
-    const { question = '', context = {} } = await request.json();
-    const { readiness, role, focusAreas = [], skillCount } = context;
+    const { question = '', journey = {} } = await request.json();
+    const { snapshot, gapResult, selectedRole } = journey;
     const asked = question.toLowerCase();
 
-    if (!readiness) {
+    // Pre-snapshot: behave as the profile builder and hand back a structured profile.
+    if (!snapshot) {
       return HttpResponse.json({
         answer:
-          'I can answer once your readiness is worked out. Finish the gap step and ask me again — I will have your score and your focus areas to work from.',
-        sources: [],
+          'Thanks - I have turned that into a profile covering your occupation, skills and break. Head to your snapshot when you are ready.',
+        sources: ['Our conversation'],
+        journey_update: {
+          cv: {
+            raw_text: question,
+            experiences: [],
+            skill_mentions: ['coordination', 'scheduling'],
+          },
+          break: { duration_years: 2, activities: ['caregiving'] },
+        },
       });
     }
+
+    const readiness = gapResult?.readiness ?? null;
+    const role = selectedRole?.role ?? 'your target role';
 
     if (asked.includes('gap') || asked.includes('focus') || asked.includes('learn')) {
+      const focusAreas = (gapResult?.gaps ?? []).map((g) => g.skill);
       return HttpResponse.json({
-        answer: `Your focus areas are ${focusAreas.join(', ')}. They are ranked by how much readiness each one adds for ${role}, not by how hard they are — so the first one is the one worth your next free evening.`,
-        sources: ['Your gap result', 'O*NET role requirements'],
-      });
-    }
-
-    if (asked.includes('break') || asked.includes('experience')) {
-      return HttpResponse.json({
-        answer: `${skillCount} of the skills on your snapshot came from your CV and your time away combined. Budgeting, scheduling and coordination are mapped to the same O*NET taxonomy an employer reads, so they count as experience, not as a gap.`,
-        sources: ['Your skill snapshot', 'O*NET skill taxonomy'],
+        answer: `Your focus areas are ${focusAreas.join(', ')}. They are ranked by how much readiness each one adds for ${role}, so the first one is the one worth your next free evening.`,
+        sources: ['Your gap result'],
       });
     }
 
     return HttpResponse.json({
-      answer: `You are ${readiness}% ready for ${role} today. That is the share of the role's requirements already covered by skills on your snapshot — it is not a pass mark, and most people apply well below 100%.`,
+      answer: `You are ${readiness}% ready for ${role} today. That is the share of the role's requirements already covered by skills on your snapshot - it is not a pass mark, and most people apply well below 100%.`,
       sources: ['Your gap result'],
     });
   }),

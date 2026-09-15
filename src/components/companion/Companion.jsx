@@ -1,9 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import useSmoothNavigate from '../../hooks/useSmoothNavigate.js';
-import { MAX_FOCUS_AREAS } from '../gap/FocusAreaList.jsx';
-import { pickFocusAreas } from '../../lib/focusAreas.js';
-import { askCompanion, buildProfile } from '../../api/companion.js';
-import { INTERVIEW, INTERVIEW_INTRO } from '../../lib/profileInterview.js';
+import { useLocation } from 'react-router-dom';
+import { askCompanion } from '../../api/companion.js';
 import { useIntakeStore } from '../../store/intakeStore.js';
 import { useCompanionStore } from '../../store/companionStore.js';
 
@@ -11,13 +8,31 @@ import { useCompanionStore } from '../../store/companionStore.js';
  * Openers that are only worth offering because they are about her.
  *
  * A generic "How can I help?" puts the work of finding a question back on the
- * person who does not yet know what the system can answer.
+ * person who does not yet know what the system can answer. Build mode offers
+ * ways to start a profile; ask mode offers questions about her results.
  */
-const OPENERS = [
+const ASK_OPENERS = [
   'What does my readiness score actually mean?',
   'Which focus area should I start with?',
   'Does my career break count as experience?',
 ];
+
+const BUILD_OPENERS = [
+  'I was a teacher for six years, then home with my kids.',
+  'Help me build my profile without a CV.',
+  'Use the CV I uploaded.',
+];
+
+/** A stable per-browser conversation id, so history survives reloads (E8). */
+function getSessionId() {
+  const KEY = 'rerouteher.companionSession';
+  let id = localStorage.getItem(KEY);
+  if (!id) {
+    id = crypto.randomUUID();
+    localStorage.setItem(KEY, id);
+  }
+  return id;
+}
 
 /**
  * The companion's face: one shape, two sizes.
@@ -40,11 +55,15 @@ function CompanionMark({ className = 'size-4' }) {
 }
 
 export default function Companion({ defaultMode = 'ask' }) {
-  const navigate = useSmoothNavigate();
+  const location = useLocation();
+  const cv = useIntakeStore((state) => state.cv);
+  const careerBreak = useIntakeStore((state) => state.break);
   const snapshot = useIntakeStore((state) => state.snapshot);
   const selectedRole = useIntakeStore((state) => state.selectedRole);
   const gapResult = useIntakeStore((state) => state.gapResult);
-  const setSnapshot = useIntakeStore((state) => state.setSnapshot);
+  const employerPriorities = useIntakeStore((state) => state.employerPriorities);
+  const setCv = useIntakeStore((state) => state.setCv);
+  const setBreak = useIntakeStore((state) => state.setBreak);
 
   const open = useCompanionStore((state) => state.open);
   const mode = useCompanionStore((state) => state.mode);
@@ -55,7 +74,8 @@ export default function Companion({ defaultMode = 'ask' }) {
   const [question, setQuestion] = useState('');
   const [thread, setThread] = useState([]);
   const [thinking, setThinking] = useState(false);
-  const [answers, setAnswers] = useState({});
+  // A profile the agent drafted, held for her review before it touches the store.
+  const [proposed, setProposed] = useState(null);
 
   const panelRef = useRef(null);
   const inputRef = useRef(null);
@@ -64,8 +84,7 @@ export default function Companion({ defaultMode = 'ask' }) {
 
   // A screen that opened it for a job wins; otherwise the route decides.
   const building = (open ? mode : defaultMode) === 'build';
-  const asked = Object.keys(answers).length;
-  const step = building ? INTERVIEW[asked] : null;
+  const openers = building ? BUILD_OPENERS : ASK_OPENERS;
 
   useEffect(() => {
     if (!open) return undefined;
@@ -109,56 +128,33 @@ export default function Companion({ defaultMode = 'ask' }) {
     endRef.current?.scrollIntoView({ block: 'end' });
   }, [thread, thinking]);
 
-  /** One answer in the guided conversation, and the profile once it is done. */
-  async function answer(text) {
-    const given = text.trim();
-    if (!given || thinking || !step) return;
-
-    const next = { ...answers, [step.id]: given };
-    setQuestion('');
-    setAnswers(next);
-    setThread((current) => [...current, { from: 'you', text: given }]);
-
-    if (Object.keys(next).length < INTERVIEW.length) return;
-
-    setThinking(true);
-    try {
-      const built = await buildProfile({ answers: next });
-      setSnapshot(built);
-      closeCompanion();
-      navigate('/diagnostic/snapshot');
-    } catch (cause) {
-      setAnswers(answers);
-      setThread((current) => [
-        ...current,
-        { from: 'companion', text: cause.message, sources: [], failed: true },
-      ]);
-    } finally {
-      setThinking(false);
-    }
-  }
-
-  async function ask(text) {
-    const question = text.trim();
-    if (!question || thinking) return;
+  /**
+   * One turn. Both modes talk to the same conversational endpoint; build mode
+   * differs only in what she is there to do, which the backend reads from the
+   * page and the conversation. A profile the model commits comes back in
+   * journey_update and is applied through the same store mutators the intake
+   * pages use, so a chat-built profile is indistinguishable from an uploaded one.
+   */
+  async function send(text) {
+    const asked = text.trim();
+    if (!asked || thinking) return;
 
     setQuestion('');
-    setThread((current) => [...current, { from: 'you', text: question }]);
+    setThread((current) => [...current, { from: 'you', text: asked }]);
     setThinking(true);
-
-    const focusAreas = gapResult ? pickFocusAreas(gapResult.gaps, MAX_FOCUS_AREAS) : [];
 
     try {
       const result = await askCompanion({
-        question,
-        context: {
-          readiness: gapResult?.readiness ?? null,
-          role: selectedRole?.role ?? null,
-          focusAreas: focusAreas.map((gap) => gap.skill),
-          skillCount:
-            (snapshot?.professional_skills?.length ?? 0) + (snapshot?.reframed_skills?.length ?? 0),
-        },
+        question: asked,
+        sessionId: getSessionId(),
+        journey: { cv, break: careerBreak, snapshot, selectedRole, gapResult, employerPriorities },
+        currentPage: location.pathname,
       });
+
+      // The drafted profile is held for her review, not applied yet (US8.1: she
+      // confirms before it becomes her journey).
+      const update = result.journey_update;
+      if (update?.cv || update?.break) setProposed(update);
 
       setThread((current) => [
         ...current,
@@ -174,10 +170,38 @@ export default function Companion({ defaultMode = 'ask' }) {
     }
   }
 
+  /** She accepts the drafted profile; only now does it enter her journey, through
+   * the same store mutators the pages use, so it is identical to an uploaded CV. */
+  function confirmProfile() {
+    if (!proposed) return;
+    // setCv resets everything downstream (incl. the break), which is right for a
+    // fresh upload but wrong for a refinement: keep her existing break unless this
+    // draft changes it, so a cv-only update does not wipe it.
+    const keptBreak = careerBreak;
+    if (proposed.cv) {
+      setCv({
+        ...proposed.cv,
+        fileName: cv?.fileName ?? 'Built from our chat',
+        fileSize: cv?.fileSize ?? 0,
+      });
+    }
+    if (proposed.break) setBreak(proposed.break);
+    else if (proposed.cv) setBreak(keptBreak);
+    setProposed(null);
+    setThread((current) => [
+      ...current,
+      {
+        from: 'companion',
+        text: 'Saved to your journey. Continue to the next step whenever you are ready.',
+        sources: [],
+      },
+    ]);
+  }
+
   function switchTo(next) {
     setThread([]);
-    setAnswers({});
     setQuestion('');
+    setProposed(null);
     openCompanion(next);
   }
 
@@ -235,7 +259,7 @@ export default function Companion({ defaultMode = 'ask' }) {
               <h2 className="font-display text-base font-bold text-ink">Hera</h2>
               <p className="mt-0.5 text-xs leading-relaxed text-ink-soft">
                 {building
-                  ? INTERVIEW_INTRO
+                  ? 'No CV needed. Tell me about your work and your time away, and I will build your profile.'
                   : gapResult
                     ? `I read your snapshot and your gap${selectedRole ? ` for ${selectedRole.role}` : ''}, and answer from those.`
                     : 'I answer from your own results, once you have them.'}
@@ -265,31 +289,14 @@ export default function Companion({ defaultMode = 'ask' }) {
             </button>
           </header>
 
-          {/* Where she is in the three questions, without a second heading. */}
-          {building && (
-            <div
-              role="progressbar"
-              aria-valuenow={asked}
-              aria-valuemin={0}
-              aria-valuemax={INTERVIEW.length}
-              aria-label="Questions answered"
-              className="h-0.5 w-full bg-canvas-sunk"
-            >
-              <div
-                className="h-full bg-pink-600 transition-[width] duration-500 ease-spring"
-                style={{ width: `${(asked / INTERVIEW.length) * 100}%` }}
-              />
-            </div>
-          )}
-
           <div className="flex-1 overflow-y-auto px-5 py-4">
-            {!building && thread.length === 0 && (
+            {thread.length === 0 && (
               <ul className="space-y-2">
-                {OPENERS.map((opener) => (
+                {openers.map((opener) => (
                   <li key={opener}>
                     <button
                       type="button"
-                      onClick={() => ask(opener)}
+                      onClick={() => send(opener)}
                       className="w-full rounded-xl border border-line px-3.5 py-2.5 text-left text-sm text-ink transition hover:border-line-strong hover:bg-canvas-sunk focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
                     >
                       {opener}
@@ -307,12 +314,12 @@ export default function Companion({ defaultMode = 'ask' }) {
                       {turn.text}
                     </p>
                   ) : (
-                    <div className="max-w-[92%]">
-                      <p
-                        className={`text-sm leading-relaxed ${turn.failed ? 'text-pink-600' : 'text-ink'}`}
+                    <div className="mr-auto w-fit max-w-[92%]">
+                      <div
+                        className={`w-fit whitespace-pre-line rounded-2xl rounded-bl-sm bg-canvas-sunk px-3.5 py-2 text-sm leading-relaxed ${turn.failed ? 'text-pink-600' : 'text-ink'}`}
                       >
                         {turn.text}
-                      </p>
+                      </div>
                       {turn.sources?.length > 0 && (
                         <p className="mt-1.5 text-xs text-ink-faint">
                           From {turn.sources.join(' · ')}
@@ -324,21 +331,70 @@ export default function Companion({ defaultMode = 'ask' }) {
               ))}
             </ul>
 
-            {/* The live question sits with the thread, so it reads as the next
-                thing said rather than as a form label pinned above it. */}
-            {building && step && !thinking && (
-              <div className="mt-4">
-                <p className="text-xs font-medium text-ink-faint">
-                  Question {asked + 1} of {INTERVIEW.length}
-                </p>
-                <p className="mt-1 text-sm leading-relaxed text-ink">{step.ask}</p>
-              </div>
-            )}
-
             {thinking && (
               <p className="mt-4 text-sm text-ink-faint" role="status">
-                {building ? 'Building your snapshot…' : 'Reading your results…'}
+                {building ? 'Building your profile…' : 'Reading your results…'}
               </p>
+            )}
+
+            {/* The drafted profile, laid out for her to read and accept or change
+                before it becomes her journey (US8.1). */}
+            {proposed && (
+              <div className="mt-4 rounded-2xl border border-line bg-canvas-sunk p-4">
+                <p className="text-xs font-semibold uppercase tracking-wide text-ink-faint">
+                  Your profile so far
+                </p>
+
+                {proposed.cv?.experiences?.[0]?.title && (
+                  <p className="mt-2 text-sm font-semibold text-ink">
+                    {proposed.cv.experiences[0].title}
+                    {proposed.cv.experiences[0].organisation
+                      ? ` · ${proposed.cv.experiences[0].organisation}`
+                      : ''}
+                  </p>
+                )}
+
+                {proposed.cv?.skill_mentions?.length > 0 && (
+                  <div className="mt-2 flex flex-wrap gap-1.5">
+                    {proposed.cv.skill_mentions.map((skill) => (
+                      <span
+                        key={skill}
+                        className="rounded-full bg-surface px-2.5 py-1 text-xs text-ink-soft"
+                      >
+                        {skill}
+                      </span>
+                    ))}
+                  </div>
+                )}
+
+                {proposed.break && (
+                  <p className="mt-2.5 text-xs text-ink-soft">
+                    <span className="font-medium text-ink">Career break:</span>{' '}
+                    {proposed.break.duration_years}{' '}
+                    {proposed.break.duration_years === 1 ? 'year' : 'years'}
+                    {proposed.break.activities?.length
+                      ? ` — ${proposed.break.activities.join(', ')}`
+                      : ''}
+                  </p>
+                )}
+
+                <div className="mt-3.5 flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={confirmProfile}
+                    className="rounded-xl bg-pink-600 px-3.5 py-1.5 text-xs font-semibold text-white transition hover:bg-pink-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-pink-600"
+                  >
+                    Use this profile
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setProposed(null)}
+                    className="rounded-xl border border-line-strong px-3.5 py-1.5 text-xs font-medium text-ink-soft transition hover:border-ink/30 hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
+                  >
+                    Change something
+                  </button>
+                </div>
+              </div>
             )}
 
             <div ref={endRef} />
@@ -352,7 +408,7 @@ export default function Companion({ defaultMode = 'ask' }) {
                 onClick={() => switchTo(building ? 'ask' : 'build')}
                 className="text-xs font-medium text-pink-600 underline underline-offset-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
               >
-                {building ? 'Ask a question instead' : 'Build my snapshot without a CV'}
+                {building ? 'Ask a question instead' : 'Build my profile without a CV'}
               </button>
             </div>
           )}
@@ -360,20 +416,19 @@ export default function Companion({ defaultMode = 'ask' }) {
           <form
             onSubmit={(event) => {
               event.preventDefault();
-              if (building) answer(question);
-              else ask(question);
+              send(question);
             }}
             className="flex items-center gap-2 border-t border-line px-4 py-3"
           >
             <label htmlFor="companion-question" className="sr-only">
-              {building ? (step?.ask ?? 'Your answer') : 'Ask about your results'}
+              {building ? 'Tell me about your work' : 'Ask about your results'}
             </label>
             <input
               ref={inputRef}
               id="companion-question"
               value={question}
               onChange={(event) => setQuestion(event.target.value)}
-              placeholder={building ? (step?.placeholder ?? '') : 'Ask about your results'}
+              placeholder={building ? 'Tell me about your work' : 'Ask about your results'}
               className="min-w-0 flex-1 rounded-xl border border-line-strong bg-surface px-3 py-2 text-sm text-ink placeholder:text-ink-faint focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-blue-600"
             />
             <button

@@ -1,29 +1,18 @@
 import { postJson } from './client.js';
 
 /**
- * One question to the re-entry companion (E8).
+ * One turn with the re-entry companion (E8). Guest-usable; the whole journey and
+ * the current page travel so the backend can ground its answer and, when building
+ * a profile, return the updated cv/break in journey_update.
  *
- * The whole journey travels with the question. The companion's value is that it
- * answers about *her* readiness and *her* gaps rather than in general, and it
- * can only do that if it is given them.
- *
- * @param {{ question: string, context: object }} request
- * @returns {Promise<{ answer: string, sources: string[] }>}
+ * @param {{ question: string, sessionId: string, journey: object, currentPage?: string }} r
+ * @returns {Promise<{ answer: string, sources: string[], journey_update?: { cv?: object, break?: object } }>}
  */
-export function askCompanion({ question, context }) {
-  return postJson('/api/companion/ask', { question, context });
-}
-
-/**
- * Turn the guided conversation into a skill snapshot (US8.1).
- *
- * The same shape the CV route produces, because everything downstream — the
- * gap, the learning plan, the employer match — reads a snapshot and must not
- * care which way she got here.
- *
- * @param {{ answers: Record<string, string> }} request
- * @returns {Promise<import('../types/api.js').Snapshot>}
- */
-export function buildProfile({ answers }) {
-  return postJson('/api/companion/profile', { answers });
+export function askCompanion({ question, sessionId, journey, currentPage }) {
+  return postJson('/api/companion/ask', {
+    question,
+    session_id: sessionId,
+    journey,
+    current_page: currentPage ?? null,
+  });
 }

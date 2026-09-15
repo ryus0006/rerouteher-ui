@@ -99,8 +99,8 @@ export default function Background() {
         )}
 
         {/* Plenty of women returning after years away have no CV to hand, and
-            being stopped at the first screen is where they leave. The
-            conversation reaches the same snapshot (US8.1). */}
+            being stopped at the first screen is where they leave. Chatting builds
+            the same profile the upload does (US8.1). */}
         {!cvParsed && (
           <p className="mt-4 border-t border-line pt-4 text-sm text-ink-soft">
             No CV?{' '}
@@ -111,7 +111,7 @@ export default function Background() {
             >
               Talk to our AI
             </button>{' '}
-            — three questions, and we build the same snapshot from what you tell us.
+            and build your profile by chatting about what you have done.
           </p>
         )}
       </GlassCard>

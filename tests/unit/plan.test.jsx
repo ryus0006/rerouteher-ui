@@ -226,24 +226,28 @@ describe('companion', () => {
     expect(screen.getByText(/From Your gap result/)).toBeVisible();
   });
 
-  it('builds a snapshot from the conversation when there is no CV (US8.1)', async () => {
+  it('drafts a profile from the conversation and applies it on confirm (US8.1)', async () => {
     useIntakeStore.setState({ cv: null, cvParsed: false, snapshot: null, gapResult: null });
     open(['/diagnostic/background']);
 
-    fireEvent.click(await screen.findByRole('button', { name: 'Talk to our AI' }));
+    // Pre-snapshot, the companion opens in build mode.
+    fireEvent.click(await screen.findByRole('button', { name: /Ask Hera/ }));
+    fireEvent.change(screen.getByRole('textbox'), {
+      target: { value: 'I was an HR officer for five years, then two years at home.' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }));
 
-    const field = await screen.findByLabelText(/What was your job before your break/);
-    for (const reply of ['HR Officer', 'Payroll and hiring', 'Family budget and school runs']) {
-      fireEvent.change(screen.getByRole('textbox'), { target: { value: reply } });
-      fireEvent.click(screen.getByRole('button', { name: 'Send' }));
-    }
-    expect(field).toBeDefined();
+    // The drafted profile is shown for review, not silently applied.
+    expect(await screen.findByText(/Your profile so far/i)).toBeVisible();
+    expect(useIntakeStore.getState().cvParsed).toBe(false);
 
-    expect(await screen.findByRole('heading', { name: 'Your skill snapshot' })).toBeVisible();
-    expect(useIntakeStore.getState().snapshot.previous_occupation.role).toBe('HR Officer');
-    // It must not credit a CV she never uploaded.
-    expect(screen.getByText(/based on what you told us/)).toBeVisible();
-    expect(screen.queryByText('From your CV')).toBeNull();
+    // On confirm it enters the store through the same mutators the pages use, so
+    // the CV step reads as complete - no snapshot is produced here (next step).
+    fireEvent.click(screen.getByRole('button', { name: 'Use this profile' }));
+    expect(useIntakeStore.getState().cvParsed).toBe(true);
+    expect(useIntakeStore.getState().cv).not.toBeNull();
+    expect(useIntakeStore.getState().break.activities).toContain('caregiving');
+    expect(useIntakeStore.getState().snapshot).toBeNull();
   });
 
   it('keeps both jobs reachable from inside the panel', async () => {
@@ -251,14 +255,16 @@ describe('companion', () => {
     open(['/diagnostic/background']);
 
     fireEvent.click(await screen.findByRole('button', { name: /Ask Hera/ }));
-    // Before a snapshot exists it opens for the interview, but is never stuck there.
-    expect(await screen.findByText(/Question 1 of 3/)).toBeVisible();
-
-    fireEvent.click(screen.getByRole('button', { name: 'Ask a question instead' }));
+    // Before a snapshot exists it opens in build mode, but is never stuck there.
+    fireEvent.click(await screen.findByRole('button', { name: 'Ask a question instead' }));
     expect(await screen.findByRole('button', { name: OPENERS_FIRST })).toBeVisible();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Build my snapshot without a CV' }));
-    expect(await screen.findByText(/Question 1 of 3/)).toBeVisible();
+    fireEvent.click(screen.getByRole('button', { name: 'Build my profile without a CV' }));
+    expect(
+      await screen.findByRole('button', {
+        name: 'I was a teacher for six years, then home with my kids.',
+      })
+    ).toBeVisible();
   });
 
   it('stays off the landing page, where there is nothing of hers to read', async () => {
