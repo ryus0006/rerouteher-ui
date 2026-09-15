@@ -90,6 +90,7 @@ export const handlers = [
             skill_mentions: ['coordination', 'scheduling'],
           },
           break: { duration_years: 2, activities: ['caregiving'] },
+          employerPriorities: ['flexible_work', 'childcare_support'],
         },
       });
     }
@@ -102,6 +103,8 @@ export const handlers = [
       return HttpResponse.json({
         answer: `Your focus areas are ${focusAreas.join(', ')}. They are ranked by how much readiness each one adds for ${role}, so the first one is the one worth your next free evening.`,
         sources: ['Your gap result'],
+        // As the real point_to_step tool does: offer an optional link to her plan.
+        cta: { label: 'Open your learning plan', to: '/plan/learning' },
       });
     }
 

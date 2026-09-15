@@ -9,7 +9,7 @@ import { create } from 'zustand';
  *
  * @typedef {'ask' | 'build'} CompanionMode
  */
-export const useCompanionStore = create((set) => ({
+export const useCompanionStore = create((set, get) => ({
   open: false,
   /** @type {CompanionMode} */
   mode: 'ask',
@@ -18,4 +18,15 @@ export const useCompanionStore = create((set) => ({
   closeCompanion: () => set({ open: false }),
   toggleCompanion: (mode = 'ask') =>
     set((state) => (state.open ? { open: false } : { open: true, mode })),
+
+  // Set right before a companion-driven navigation so the chat survives it; the
+  // close-on-route effect consumes it once instead of closing. Normal link
+  // clicks (no flag) still close the chat, so it never lingers across unrelated moves.
+  keepOpenNav: false,
+  holdOpenAcrossNav: () => set({ keepOpenNav: true }),
+  consumeKeepOpen: () => {
+    const held = get().keepOpenNav;
+    if (held) set({ keepOpenNav: false });
+    return held;
+  },
 }));

@@ -9,6 +9,7 @@ import ReadinessGauge from '../components/gap/ReadinessGauge.jsx';
 import RoleSelector from '../components/gap/RoleSelector.jsx';
 import MetRequirements from '../components/gap/MetRequirements.jsx';
 import FocusAreaList, { MAX_FOCUS_AREAS } from '../components/gap/FocusAreaList.jsx';
+import AskHeraAboutResults from '../components/companion/AskHeraAboutResults.jsx';
 import { pickFocusAreas } from '../lib/focusAreas.js';
 import { markersFor } from '../lib/readiness.js';
 import { computeGap } from '../api/gap.js';
@@ -59,9 +60,12 @@ export default function Gap() {
           <BackLink to="/diagnostic/snapshot">Back to Skill Snapshot</BackLink>
         </div>
 
-        <h1 className="mt-3 font-display text-2xl font-bold tracking-[-0.015em] text-ink sm:text-3xl">
-          Where do you want to go next?
-        </h1>
+        <div className="mt-3 flex flex-wrap items-start justify-between gap-3">
+          <h1 className="font-display text-2xl font-bold tracking-[-0.015em] text-ink sm:text-3xl">
+            Where do you want to go next?
+          </h1>
+          <AskHeraAboutResults className="mt-1 shrink-0" />
+        </div>
 
         <div className="mt-5">
           <RoleSelector

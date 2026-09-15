@@ -226,6 +226,84 @@ describe('companion', () => {
     expect(screen.getByText(/From Your gap result/)).toBeVisible();
   });
 
+  it('opens results Q&A from her results page, guest-allowed (US8.2.1 entry)', async () => {
+    open(['/diagnostic/snapshot']);
+
+    // A contextual entry on her results page, not only the floating bubble.
+    fireEvent.click(await screen.findByRole('button', { name: 'Ask Hera about your results' }));
+
+    expect(await screen.findByRole('dialog', { name: 'Ask Hera' })).toBeVisible();
+    // ask mode: it offers questions about her results, not profile-build openers.
+    expect(screen.getByRole('button', { name: OPENERS_FIRST })).toBeVisible();
+  });
+
+  it('offers an optional learning link and keeps the chat open (US8.2)', async () => {
+    useAccountStore.setState({ user: { username: 'ccc', displayName: 'Chee Yeong' } });
+    open(['/journey']);
+
+    fireEvent.click(await screen.findByRole('button', { name: /Ask Hera/ }));
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'Which focus area should I start with?' })
+    );
+
+    const cta = await screen.findByRole('button', { name: 'Open your learning plan' });
+    fireEvent.click(cta);
+
+    expect(router.state.location.pathname).toBe('/plan/learning');
+    // the chat rides along the navigation instead of closing
+    expect(screen.getByRole('dialog', { name: 'Ask Hera' })).toBeVisible();
+  });
+
+  it('offers a snapshot link after a chat-built profile is confirmed (US8.1.13)', async () => {
+    useIntakeStore.setState({ cv: null, cvParsed: false, snapshot: null, gapResult: null });
+    open(['/diagnostic/background']);
+
+    fireEvent.click(await screen.findByRole('button', { name: /Ask Hera/ }));
+    fireEvent.change(screen.getByRole('textbox'), {
+      target: { value: 'I was an HR officer for five years, then two years at home.' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Use this profile' }));
+
+    const cta = await screen.findByRole('button', { name: 'See my skill snapshot' });
+    fireEvent.click(cta);
+
+    expect(router.state.location.pathname).toBe('/diagnostic/snapshot');
+    // The snapshot page has no snapshot yet, so it must generate from cv+break on
+    // arrival (skip-priorities path) and actually render - not sit on the loader.
+    expect(await screen.findByRole('heading', { name: 'Your skill snapshot' })).toBeVisible();
+    // and the chat rides along the navigation instead of closing
+    expect(screen.getByRole('dialog', { name: 'Ask Hera' })).toBeVisible();
+  });
+
+  it('captures work priorities in the chat and applies them on confirm', async () => {
+    useIntakeStore.setState({
+      cv: null,
+      cvParsed: false,
+      snapshot: null,
+      gapResult: null,
+      employerPriorities: [],
+    });
+    open(['/diagnostic/background']);
+
+    fireEvent.click(await screen.findByRole('button', { name: /Ask Hera/ }));
+    fireEvent.change(screen.getByRole('textbox'), {
+      target: {
+        value: 'HR officer for five years, then home. I most want flexible work and childcare.',
+      },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+
+    // The drafted profile shows her priorities before anything is saved.
+    expect(await screen.findByText(/Flexible Work/)).toBeVisible();
+    fireEvent.click(screen.getByRole('button', { name: 'Use this profile' }));
+
+    expect(useIntakeStore.getState().employerPriorities).toEqual([
+      'flexible_work',
+      'childcare_support',
+    ]);
+  });
+
   it('drafts a profile from the conversation and applies it on confirm (US8.1)', async () => {
     useIntakeStore.setState({ cv: null, cvParsed: false, snapshot: null, gapResult: null });
     open(['/diagnostic/background']);

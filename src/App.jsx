@@ -23,8 +23,11 @@ export default function App() {
   }, [pathname]);
 
   /* The companion closes on every move, and forgets which job it was opened
-     for. Left open across a navigation it would answer about the last screen. */
+     for. Left open across a navigation it would answer about the last screen.
+     Exception: a companion-driven navigation (a CTA button) sets keepOpenNav so
+     the chat rides along; that flag is consumed once here. */
   useEffect(() => {
+    if (useCompanionStore.getState().consumeKeepOpen()) return;
     closeCompanion();
   }, [pathname, closeCompanion]);
 

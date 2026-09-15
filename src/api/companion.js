@@ -6,7 +6,7 @@ import { postJson } from './client.js';
  * a profile, return the updated cv/break in journey_update.
  *
  * @param {{ question: string, sessionId: string, journey: object, currentPage?: string }} r
- * @returns {Promise<{ answer: string, sources: string[], journey_update?: { cv?: object, break?: object } }>}
+ * @returns {Promise<{ answer: string, sources: string[], journey_update?: { cv?: object, break?: object, employerPriorities?: string[] }, cta?: { label: string, to: string } }>}
  */
 export function askCompanion({ question, sessionId, journey, currentPage }) {
   return postJson('/api/companion/ask', {

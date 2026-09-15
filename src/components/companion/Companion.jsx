@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import ReactMarkdown from 'react-markdown';
 import { askCompanion } from '../../api/companion.js';
+import useSmoothNavigate from '../../hooks/useSmoothNavigate.js';
+import { PRIORITY_NAMES } from '../../config/employerPriorities.js';
 import { useIntakeStore } from '../../store/intakeStore.js';
 import { useCompanionStore } from '../../store/companionStore.js';
 
@@ -96,6 +98,7 @@ function CompanionMark({ className = 'size-4' }) {
 
 export default function Companion({ defaultMode = 'ask' }) {
   const location = useLocation();
+  const navigate = useSmoothNavigate();
   const cv = useIntakeStore((state) => state.cv);
   const careerBreak = useIntakeStore((state) => state.break);
   const snapshot = useIntakeStore((state) => state.snapshot);
@@ -104,12 +107,14 @@ export default function Companion({ defaultMode = 'ask' }) {
   const employerPriorities = useIntakeStore((state) => state.employerPriorities);
   const setCv = useIntakeStore((state) => state.setCv);
   const setBreak = useIntakeStore((state) => state.setBreak);
+  const setEmployerPriorities = useIntakeStore((state) => state.setEmployerPriorities);
 
   const open = useCompanionStore((state) => state.open);
   const mode = useCompanionStore((state) => state.mode);
   const openCompanion = useCompanionStore((state) => state.openCompanion);
   const toggleCompanion = useCompanionStore((state) => state.toggleCompanion);
   const closeCompanion = useCompanionStore((state) => state.closeCompanion);
+  const holdOpenAcrossNav = useCompanionStore((state) => state.holdOpenAcrossNav);
 
   const [question, setQuestion] = useState('');
   const [thread, setThread] = useState([]);
@@ -164,9 +169,15 @@ export default function Companion({ defaultMode = 'ask' }) {
     };
   }, [open, closeCompanion]);
 
+  // Keep the newest message in view: on every new turn, and whenever the panel
+  // is (re)opened with an existing thread, so she never lands on older messages.
+  // Set the scroll container to its full height rather than scrollIntoView on a
+  // sentinel, which can stop a little short of the true bottom (padding / late layout).
   useEffect(() => {
-    endRef.current?.scrollIntoView({ block: 'end' });
-  }, [thread, thinking]);
+    if (!open) return;
+    const scroller = endRef.current?.parentElement;
+    if (scroller) scroller.scrollTop = scroller.scrollHeight;
+  }, [open, thread, thinking]);
 
   /**
    * One turn. Both modes talk to the same conversational endpoint; build mode
@@ -194,11 +205,11 @@ export default function Companion({ defaultMode = 'ask' }) {
       // The drafted profile is held for her review, not applied yet (US8.1: she
       // confirms before it becomes her journey).
       const update = result.journey_update;
-      if (update?.cv || update?.break) setProposed(update);
+      if (update?.cv || update?.break || update?.employerPriorities?.length) setProposed(update);
 
       setThread((current) => [
         ...current,
-        { from: 'companion', text: result.answer, sources: result.sources },
+        { from: 'companion', text: result.answer, sources: result.sources, cta: result.cta },
       ]);
     } catch (cause) {
       setThread((current) => [
@@ -227,13 +238,19 @@ export default function Companion({ defaultMode = 'ask' }) {
     }
     if (proposed.break) setBreak(proposed.break);
     else if (proposed.cv) setBreak(keptBreak);
+    // Her work priorities, captured in the chat so E9 has them without the
+    // Priorities page (which the confirm-to-snapshot handoff skips).
+    if (proposed.employerPriorities?.length) setEmployerPriorities(proposed.employerPriorities);
     setProposed(null);
     setThread((current) => [
       ...current,
       {
         from: 'companion',
-        text: 'Saved to your journey. Continue to the next step whenever you are ready.',
+        text: 'Saved to your journey. When you are ready, I can take you to your skill snapshot.',
         sources: [],
+        // Her choice, not an auto-redirect (US8.1.13): a button to the snapshot step,
+        // which generates from the cv + break she just confirmed.
+        cta: { label: 'See my skill snapshot', to: '/diagnostic/snapshot' },
       },
     ]);
   }
@@ -365,6 +382,20 @@ export default function Companion({ defaultMode = 'ask' }) {
                           From {turn.sources.join(' · ')}
                         </p>
                       )}
+                      {/* An optional link she taps; nothing navigates on its own.
+                          holdOpenAcrossNav keeps the chat open across the move. */}
+                      {turn.cta && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            holdOpenAcrossNav();
+                            navigate(turn.cta.to);
+                          }}
+                          className="mt-2 rounded-full bg-pink-600 px-3.5 py-1.5 text-xs font-semibold text-white transition hover:bg-pink-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-pink-600"
+                        >
+                          {turn.cta.label}
+                        </button>
+                      )}
                     </div>
                   )}
                 </li>
@@ -415,6 +446,13 @@ export default function Companion({ defaultMode = 'ask' }) {
                     {proposed.break.activities?.length
                       ? ` — ${proposed.break.activities.join(', ')}`
                       : ''}
+                  </p>
+                )}
+
+                {proposed.employerPriorities?.length > 0 && (
+                  <p className="mt-2.5 text-xs text-ink-soft">
+                    <span className="font-medium text-ink">Priorities:</span>{' '}
+                    {proposed.employerPriorities.map((id) => PRIORITY_NAMES[id] ?? id).join(', ')}
                   </p>
                 )}
 
