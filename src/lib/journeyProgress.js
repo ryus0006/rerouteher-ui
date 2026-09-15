@@ -59,7 +59,10 @@ export const DIAGNOSTIC_STEPS = [
   { id: 'upload-cv', chapter: 'story', to: '/diagnostic/background' },
   { id: 'career-break', chapter: 'story', to: '/diagnostic/break' },
   { id: 'work-priorities', chapter: 'skills', to: '/diagnostic/priorities' },
-  { id: 'skill-snapshot', chapter: 'skills', to: '/diagnostic/snapshot' },
+  /* Resumes to the priorities screen, not its own: the snapshot is a readout
+     of what that screen generates, so arriving here without one would land
+     her on a page with nothing to show. */
+  { id: 'skill-snapshot', chapter: 'skills', to: '/diagnostic/priorities' },
   { id: 'target-role-gap', chapter: 'next-move', to: '/diagnostic/gap' },
 ];
 
@@ -87,13 +90,17 @@ export function journeyProgress({
     Boolean(gapResult),
   ];
 
-  /* Completion runs forward only: reaching a screen is proof of the ones before
-     it, since none of them can be passed without an answer. Reading the furthest
-     answer rather than each one on its own also keeps a plan saved before a
-     screen existed whole, instead of showing a hole in a finished journey. */
-  const furthest = answered.lastIndexOf(true);
-  const steps = DIAGNOSTIC_STEPS.map((step, index) => ({ ...step, done: index <= furthest }));
-  const completed = furthest + 1;
+  /* Only the unbroken run from the start counts, and a computed gap settles the
+     whole thing.
+
+     The run, because an answer further along is not proof of the ones before
+     it: replacing the CV clears the break and leaves the priorities standing,
+     and a screen counted on its own there would send her to one that has
+     nothing to show. The gap, because reaching it means every screen was
+     walked, whatever a plan saved before one of them existed happens to carry. */
+  const firstUnanswered = answered.indexOf(false);
+  const completed = gapResult || firstUnanswered === -1 ? DIAGNOSTIC_STEPS.length : firstUnanswered;
+  const steps = DIAGNOSTIC_STEPS.map((step, index) => ({ ...step, done: index < completed }));
 
   const done = Object.fromEntries(
     JOURNEY_CHAPTERS.map((chapter) => [

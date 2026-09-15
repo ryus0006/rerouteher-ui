@@ -3,6 +3,8 @@ import { Navigate } from 'react-router-dom';
 import useSmoothNavigate from '../hooks/useSmoothNavigate.js';
 import Header from '../components/layout/Header.jsx';
 import BackLink from '../components/intake/BackLink.jsx';
+import { ACTIVITY_LABELS } from '../config/activityTaxonomy.js';
+import { PRIORITY_NAMES } from '../config/employerPriorities.js';
 import { useAccountStore } from '../store/accountStore.js';
 import { useIntakeStore } from '../store/intakeStore.js';
 import {
@@ -17,35 +19,53 @@ const FIELD =
 const LABEL = 'text-sm font-medium text-ink';
 const HELP = 'mt-1.5 text-xs text-ink-soft';
 
-/** Reads the intake back as prose, so the page shows answers rather than field names. */
+/**
+ * Reads the intake back as prose, so the page shows answers rather than field
+ * names. Only what she typed or picked: results live on the journey page, and
+ * repeating them here would make both pages longer without making either
+ * clearer.
+ *
+ * Ids are stored, not labels, so each list is resolved through the config that
+ * owns it — the same source the screen that asked the question renders from.
+ */
 function useAnswers() {
   const cv = useIntakeStore((state) => state.cv);
   const careerBreak = useIntakeStore((state) => state.break);
-  const snapshot = useIntakeStore((state) => state.snapshot);
+  const employerPriorities = useIntakeStore((state) => state.employerPriorities);
 
   // A session stored before the break step was reached carries no break object.
   const years = careerBreak?.duration_years ?? 0;
   const activities = careerBreak?.activities ?? [];
+  const answered = activities.length > 0;
 
   return [
     { id: 'cv', label: 'CV', value: cv?.fileName ?? 'Not uploaded' },
     {
       id: 'break',
       label: 'Career break',
-      value:
-        years === 0
+      /* A duration of 0 is a real answer — "less than a year" — so an activity
+         is what separates it from a step she has not reached. The same signal
+         the break screen itself treats as answered. */
+      value: !answered
+        ? 'Not answered yet'
+        : years === 0
           ? 'Less than a year'
-          : `${years} ${years === 1 ? 'year' : 'years'} · ${activities.length} ${
-              activities.length === 1 ? 'activity' : 'activities'
-            }`,
+          : `${years} ${years === 1 ? 'year' : 'years'}`,
+      faint: !answered,
     },
     {
-      id: 'occupation',
-      label: 'Previous occupation',
-      // `previous_occupation` is the matched role object, not a string.
-      value: snapshot?.previous_occupation?.role ?? 'Not generated yet',
-      // Read off the CV rather than typed, so there is nothing here to edit.
-      note: 'Read from your CV',
+      id: 'activities',
+      label: 'What filled it',
+      // Named rather than counted: "3 activities" proves she answered without
+      // saying what, which is the one thing a record of her answers is for.
+      items: activities.map((activity) => ACTIVITY_LABELS[activity] ?? activity),
+      empty: 'Not answered yet',
+    },
+    {
+      id: 'priorities',
+      label: 'Work priorities',
+      items: employerPriorities.map((priority) => PRIORITY_NAMES[priority] ?? priority),
+      empty: 'Not answered yet',
     },
   ];
 }
@@ -63,6 +83,8 @@ export default function Profile() {
   const user = useAccountStore((state) => state.user);
   const setDisplayName = useAccountStore((state) => state.setDisplayName);
   const answers = useAnswers();
+  // `previous_occupation` is the matched role object, not a string.
+  const detectedRole = useIntakeStore((state) => state.snapshot?.previous_occupation?.role);
 
   /* Seeded once from the store rather than synced in an effect: the field is
      hers to edit from here on, and nothing else writes the name. */
@@ -155,23 +177,59 @@ export default function Profile() {
 
         <section className={`${CARD} mt-5`}>
           <h2 className="font-display text-lg font-bold text-ink">Your answers</h2>
-          <p className="mt-1 text-sm text-ink-soft">
-            What your skill snapshot and readiness were built from.
-          </p>
+          <p className="mt-1 text-sm text-ink-soft">What your plan was built from.</p>
 
           <dl className="mt-4 divide-y divide-line">
             {answers.map((answer) => (
-              <div key={answer.id} className="flex flex-wrap items-baseline gap-x-4 gap-y-0.5 py-3">
+              <div key={answer.id} className="flex flex-wrap items-baseline gap-x-4 gap-y-1 py-3">
                 <dt className="eyebrow w-full sm:w-44 sm:shrink-0">{answer.label}</dt>
                 <dd className="min-w-0 flex-1 text-sm text-ink">
-                  {answer.value}
-                  {answer.note && (
-                    <span className="ml-2 text-xs text-ink-faint">{answer.note}</span>
+                  {/* A list she built is shown as the things in it. Chips rather
+                      than a sentence because the break is uncapped: sixteen are
+                      selectable, and a comma run that long stops being read. */}
+                  {answer.items ? (
+                    answer.items.length === 0 ? (
+                      <span className="text-ink-faint">{answer.empty}</span>
+                    ) : (
+                      <ul className="flex flex-wrap gap-1.5">
+                        {answer.items.map((item) => (
+                          <li
+                            key={item}
+                            className="rounded-full border border-line bg-canvas-sunk px-2.5 py-1 text-xs text-ink-soft"
+                          >
+                            {item}
+                          </li>
+                        ))}
+                      </ul>
+                    )
+                  ) : answer.faint ? (
+                    <span className="text-ink-faint">{answer.value}</span>
+                  ) : (
+                    answer.value
                   )}
                 </dd>
               </div>
             ))}
           </dl>
+
+          {/* Held apart from the answers rather than footnoted inside them: she
+              never gave this one, and a heading is read where a note beside a
+              value is skimmed. It also earns the room — this is the role every
+              match is computed against, so a wrong reading here is why the rest
+              of the plan would look wrong. */}
+          <div className="mt-5 border-t border-line pt-4">
+            <h3 className="text-sm font-semibold text-ink">Read from your CV</h3>
+            <p className="mt-1 text-xs text-ink-soft">
+              Not an answer you gave. This is the role your matches are measured against.
+            </p>
+
+            <dl className="mt-3 flex flex-wrap items-baseline gap-x-4 gap-y-0.5">
+              <dt className="eyebrow w-full sm:w-44 sm:shrink-0">Previous occupation</dt>
+              <dd className="min-w-0 flex-1 text-sm text-ink">
+                {detectedRole ?? <span className="text-ink-faint">Not generated yet</span>}
+              </dd>
+            </dl>
+          </div>
 
           {/* One way back in, not three. Replacing the CV already clears the
               break, the snapshot, the target role and the gap, so an "edit this
@@ -194,7 +252,6 @@ export default function Profile() {
             </p>
           </div>
         </section>
-
       </main>
     </div>
   );
