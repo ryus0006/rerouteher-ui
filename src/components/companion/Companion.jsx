@@ -1,8 +1,48 @@
 import { useEffect, useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
+import ReactMarkdown from 'react-markdown';
 import { askCompanion } from '../../api/companion.js';
 import { useIntakeStore } from '../../store/intakeStore.js';
 import { useCompanionStore } from '../../store/companionStore.js';
+
+/**
+ * The model answers in Markdown; render it, but constrained to inline emphasis,
+ * links and lists. Headings, images, tables and raw HTML are dropped - they do
+ * not belong in a small chat bubble (raw HTML is off by default, which is safe).
+ */
+const MARKDOWN_ALLOWED = ['p', 'strong', 'em', 'ul', 'ol', 'li', 'a', 'code', 'br'];
+
+const MARKDOWN_COMPONENTS = {
+  p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
+  ul: ({ children }) => <ul className="mb-2 list-disc pl-4 last:mb-0">{children}</ul>,
+  ol: ({ children }) => <ol className="mb-2 list-decimal pl-4 last:mb-0">{children}</ol>,
+  li: ({ children }) => <li className="mb-0.5">{children}</li>,
+  a: ({ href, children }) => (
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="underline underline-offset-2"
+    >
+      {children}
+    </a>
+  ),
+  code: ({ children }) => (
+    <code className="rounded bg-surface px-1 py-0.5 text-[0.85em]">{children}</code>
+  ),
+};
+
+function AnswerText({ text }) {
+  return (
+    <ReactMarkdown
+      allowedElements={MARKDOWN_ALLOWED}
+      unwrapDisallowed
+      components={MARKDOWN_COMPONENTS}
+    >
+      {text}
+    </ReactMarkdown>
+  );
+}
 
 /**
  * Openers that are only worth offering because they are about her.
@@ -316,9 +356,9 @@ export default function Companion({ defaultMode = 'ask' }) {
                   ) : (
                     <div className="mr-auto w-fit max-w-[92%]">
                       <div
-                        className={`w-fit whitespace-pre-line rounded-2xl rounded-bl-sm bg-canvas-sunk px-3.5 py-2 text-sm leading-relaxed ${turn.failed ? 'text-pink-600' : 'text-ink'}`}
+                        className={`w-fit rounded-2xl rounded-bl-sm bg-canvas-sunk px-3.5 py-2 text-sm leading-relaxed ${turn.failed ? 'text-pink-600' : 'text-ink'}`}
                       >
-                        {turn.text}
+                        <AnswerText text={turn.text} />
                       </div>
                       {turn.sources?.length > 0 && (
                         <p className="mt-1.5 text-xs text-ink-faint">
