@@ -3,6 +3,7 @@ import { useLocation } from 'react-router-dom';
 import ReactMarkdown from 'react-markdown';
 import { askCompanion } from '../../api/companion.js';
 import useSmoothNavigate from '../../hooks/useSmoothNavigate.js';
+import { ACTIVITY_LABELS } from '../../config/activityTaxonomy.js';
 import { PRIORITY_NAMES } from '../../config/employerPriorities.js';
 import { useIntakeStore } from '../../store/intakeStore.js';
 import { useCompanionStore } from '../../store/companionStore.js';
@@ -43,6 +44,55 @@ function AnswerText({ text }) {
     >
       {text}
     </ReactMarkdown>
+  );
+}
+
+/**
+ * A checklist of skills common to her previous role (US8.1.17). She ticks the ones she
+ * has and taps "Add these skills"; the picks flow to the store and merge into her snapshot.
+ * Selection state is local to this turn's card.
+ */
+function SkillChecklist({ choices, onAdd }) {
+  const [checked, setChecked] = useState(() => new Set());
+
+  function toggle(id) {
+    setChecked((current) => {
+      const next = new Set(current);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  return (
+    <div className="mt-2 rounded-2xl border border-line bg-canvas-sunk p-4">
+      <p className="text-xs font-semibold uppercase tracking-wide text-ink-faint">
+        Skills from your role
+      </p>
+      <ul className="mt-2 space-y-1.5">
+        {choices.map((choice) => (
+          <li key={choice.skill_id}>
+            <label className="flex items-center gap-2 text-sm text-ink">
+              <input
+                type="checkbox"
+                checked={checked.has(choice.skill_id)}
+                onChange={() => toggle(choice.skill_id)}
+                className="size-4 rounded border-line-strong text-pink-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
+              />
+              {choice.skill_name}
+            </label>
+          </li>
+        ))}
+      </ul>
+      <button
+        type="button"
+        disabled={checked.size === 0}
+        onClick={() => onAdd(choices.filter((c) => checked.has(c.skill_id)))}
+        className="mt-3 rounded-xl bg-pink-600 px-3.5 py-1.5 text-xs font-semibold text-white transition hover:bg-pink-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-pink-600 disabled:pointer-events-none disabled:opacity-40"
+      >
+        Add these skills
+      </button>
+    </div>
   );
 }
 
@@ -105,9 +155,12 @@ export default function Companion({ defaultMode = 'ask' }) {
   const selectedRole = useIntakeStore((state) => state.selectedRole);
   const gapResult = useIntakeStore((state) => state.gapResult);
   const employerPriorities = useIntakeStore((state) => state.employerPriorities);
+  const confirmedSkills = useIntakeStore((state) => state.confirmedSkills);
   const setCv = useIntakeStore((state) => state.setCv);
   const setBreak = useIntakeStore((state) => state.setBreak);
   const setEmployerPriorities = useIntakeStore((state) => state.setEmployerPriorities);
+  const addConfirmedSkills = useIntakeStore((state) => state.addConfirmedSkills);
+  const setConfirmedSkills = useIntakeStore((state) => state.setConfirmedSkills);
 
   const open = useCompanionStore((state) => state.open);
   const mode = useCompanionStore((state) => state.mode);
@@ -121,6 +174,9 @@ export default function Companion({ defaultMode = 'ask' }) {
   const [thinking, setThinking] = useState(false);
   // A profile the agent drafted, held for her review before it touches the store.
   const [proposed, setProposed] = useState(null);
+  // The role a checklist was last offered for, echoed to the backend so the same role
+  // is not offered again (but a genuine role change still re-offers).
+  const [roleSkillsOfferedForRoleId, setRoleSkillsOfferedForRoleId] = useState(null);
 
   const panelRef = useRef(null);
   const inputRef = useRef(null);
@@ -198,9 +254,21 @@ export default function Companion({ defaultMode = 'ask' }) {
       const result = await askCompanion({
         question: asked,
         sessionId: getSessionId(),
-        journey: { cv, break: careerBreak, snapshot, selectedRole, gapResult, employerPriorities },
+        journey: {
+          cv,
+          break: careerBreak,
+          snapshot,
+          selectedRole,
+          gapResult,
+          employerPriorities,
+          confirmedSkills,
+          roleSkillsOfferedForRoleId,
+        },
         currentPage: location.pathname,
       });
+
+      // Remember which role a checklist was offered for, so the backend does not re-offer it.
+      if (result.skill_choices_role_id) setRoleSkillsOfferedForRoleId(result.skill_choices_role_id);
 
       // The drafted profile is held for her review, not applied yet (US8.1: she
       // confirms before it becomes her journey).
@@ -209,7 +277,13 @@ export default function Companion({ defaultMode = 'ask' }) {
 
       setThread((current) => [
         ...current,
-        { from: 'companion', text: result.answer, sources: result.sources, cta: result.cta },
+        {
+          from: 'companion',
+          text: result.answer,
+          sources: result.sources,
+          cta: result.cta,
+          skill_choices: result.skill_choices,
+        },
       ]);
     } catch (cause) {
       setThread((current) => [
@@ -225,10 +299,12 @@ export default function Companion({ defaultMode = 'ask' }) {
    * the same store mutators the pages use, so it is identical to an uploaded CV. */
   function confirmProfile() {
     if (!proposed) return;
-    // setCv resets everything downstream (incl. the break), which is right for a
-    // fresh upload but wrong for a refinement: keep her existing break unless this
-    // draft changes it, so a cv-only update does not wipe it.
+    // setCv resets everything downstream (incl. the break AND the skills she ticked
+    // from her role checklist), which is right for a fresh upload but wrong here: keep
+    // her existing break and confirmed skills unless this draft changes them, so a
+    // cv-only confirm does not wipe work she did earlier in the same chat.
     const keptBreak = careerBreak;
+    const keptConfirmed = confirmedSkills;
     if (proposed.cv) {
       setCv({
         ...proposed.cv,
@@ -238,6 +314,8 @@ export default function Companion({ defaultMode = 'ask' }) {
     }
     if (proposed.break) setBreak(proposed.break);
     else if (proposed.cv) setBreak(keptBreak);
+    // Restore the role-checklist skills that setCv's reset cleared.
+    if (proposed.cv && keptConfirmed.length) setConfirmedSkills(keptConfirmed);
     // Her work priorities, captured in the chat so E9 has them without the
     // Priorities page (which the confirm-to-snapshot handoff skips).
     if (proposed.employerPriorities?.length) setEmployerPriorities(proposed.employerPriorities);
@@ -260,6 +338,14 @@ export default function Companion({ defaultMode = 'ask' }) {
     setQuestion('');
     setProposed(null);
     openCompanion(next);
+  }
+
+  // Replace a checklist turn with a "consumed" marker once she has added skills, so the
+  // checkboxes are not offered again and a confirmation line shows how many she added.
+  function markChoicesAdded(index, count) {
+    setThread((current) =>
+      current.map((turn, i) => (i === index ? { ...turn, skill_choices_added: count } : turn))
+    );
   }
 
   return (
@@ -396,6 +482,21 @@ export default function Companion({ defaultMode = 'ask' }) {
                           {turn.cta.label}
                         </button>
                       )}
+                      {turn.skill_choices?.length > 0 && !turn.skill_choices_added && (
+                        <SkillChecklist
+                          choices={turn.skill_choices}
+                          onAdd={(picked) => {
+                            addConfirmedSkills(picked);
+                            markChoicesAdded(index, picked.length);
+                          }}
+                        />
+                      )}
+                      {turn.skill_choices_added != null && (
+                        <p className="mt-2 text-xs text-ink-faint">
+                          Added {turn.skill_choices_added}{' '}
+                          {turn.skill_choices_added === 1 ? 'skill' : 'skills'} to your profile.
+                        </p>
+                      )}
                     </div>
                   )}
                 </li>
@@ -444,7 +545,9 @@ export default function Companion({ defaultMode = 'ask' }) {
                     {proposed.break.duration_years}{' '}
                     {proposed.break.duration_years === 1 ? 'year' : 'years'}
                     {proposed.break.activities?.length
-                      ? ` — ${proposed.break.activities.join(', ')}`
+                      ? ` — ${proposed.break.activities
+                          .map((id) => ACTIVITY_LABELS[id] ?? id)
+                          .join(', ')}`
                       : ''}
                   </p>
                 )}

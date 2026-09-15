@@ -77,6 +77,19 @@ export const handlers = [
     const { snapshot, gapResult, selectedRole } = journey;
     const asked = question.toLowerCase();
 
+    // Pre-snapshot: if she names her occupation, offer a role-skill checklist (US8.1.17),
+    // standing in for the offer_role_skills tool.
+    if (!snapshot && /\bmanager\b|\bmy role\b|\boccupation\b/.test(asked)) {
+      return HttpResponse.json({
+        answer: 'Here are skills common for that role. Tick the ones you have.',
+        sources: [],
+        skill_choices: [
+          { skill_id: 's1', skill_name: 'Campaign Management' },
+          { skill_id: 's2', skill_name: 'SEO' },
+        ],
+      });
+    }
+
     // Pre-snapshot: behave as the profile builder and hand back a structured profile.
     if (!snapshot) {
       return HttpResponse.json({

@@ -26,6 +26,7 @@ export default function Priorities() {
   const priorities = useIntakeStore((state) => state.employerPriorities);
   const setPriorities = useIntakeStore((state) => state.setEmployerPriorities);
   const setSnapshot = useIntakeStore((state) => state.setSnapshot);
+  const confirmedSkills = useIntakeStore((state) => state.confirmedSkills);
   const canGenerate = useIntakeStore((state) => state.canGenerateSnapshot)();
 
   const [error, setError] = useState(null);
@@ -42,7 +43,7 @@ export default function Priorities() {
     setGenerating(true);
 
     try {
-      setSnapshot(await generateSnapshot(cv, careerBreak));
+      setSnapshot(await generateSnapshot(cv, careerBreak, confirmedSkills));
       navigate('/diagnostic/snapshot');
     } catch (cause) {
       setError(cause.message);

@@ -1,9 +1,12 @@
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { createMemoryRouter, RouterProvider } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { http, HttpResponse } from 'msw';
 import { routes } from '../../src/routes.jsx';
+import { server } from '../../src/mocks/server.js';
 import { useAccountStore } from '../../src/store/accountStore.js';
 import { useIntakeStore } from '../../src/store/intakeStore.js';
+import snapshotFixture from '../../src/mocks/fixtures/snapshot.high-confidence.json';
 
 let router;
 
@@ -274,6 +277,129 @@ describe('companion', () => {
     expect(await screen.findByRole('heading', { name: 'Your skill snapshot' })).toBeVisible();
     // and the chat rides along the navigation instead of closing
     expect(screen.getByRole('dialog', { name: 'Ask Hera' })).toBeVisible();
+  });
+
+  it('sends confirmed skill ids to snapshot generate', async () => {
+    let body = null;
+    server.use(
+      http.post('*/api/snapshot/generate', async ({ request }) => {
+        body = await request.json();
+        return HttpResponse.json(snapshotFixture);
+      })
+    );
+    useIntakeStore.setState({
+      cv: { fileName: 'c.pdf', fileSize: 1 },
+      break: { duration_years: 2, activities: ['care_household.ran_household'] },
+      employerPriorities: ['flexible_work'],
+      confirmedSkills: [{ skill_id: 's1', skill_name: 'SQL' }],
+      snapshot: null,
+    });
+    open(['/diagnostic/snapshot']);
+
+    await screen.findByRole('heading', { name: 'Your skill snapshot' });
+    expect(body.confirmed_skills).toEqual(['s1']);
+  });
+
+  it('renders both the profile card and a role checklist in one turn', async () => {
+    server.use(
+      http.post('*/api/companion/ask', async () =>
+        HttpResponse.json({
+          answer: 'Drafted your profile and here are role skills.',
+          sources: [],
+          journey_update: {
+            cv: { raw_text: 'x', experiences: [], skill_mentions: [] },
+            break: { duration_years: 2, activities: ['care_household.ran_household'] },
+          },
+          skill_choices: [{ skill_id: 's1', skill_name: 'Campaign Management' }],
+          skill_choices_role_id: 'R1',
+        })
+      )
+    );
+    useIntakeStore.setState({ cv: null, cvParsed: false, snapshot: null, gapResult: null });
+    open(['/diagnostic/background']);
+
+    fireEvent.click(await screen.findByRole('button', { name: /Ask Hera/ }));
+    fireEvent.change(screen.getByRole('textbox'), { target: { value: 'I was a manager.' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+
+    // both surfaces present in the same turn
+    expect(await screen.findByRole('checkbox', { name: 'Campaign Management' })).toBeVisible();
+    expect(screen.getByText(/Your profile so far/i)).toBeVisible();
+  });
+
+  it('echoes the offered role id on the next turn so the same role is not re-offered', async () => {
+    const bodies = [];
+    server.use(
+      http.post('*/api/companion/ask', async ({ request }) => {
+        bodies.push(await request.json());
+        return HttpResponse.json({
+          answer: 'ok',
+          sources: [],
+          skill_choices: bodies.length === 1 ? [{ skill_id: 's1', skill_name: 'SQL' }] : undefined,
+          skill_choices_role_id: bodies.length === 1 ? 'R1' : undefined,
+        });
+      })
+    );
+    useIntakeStore.setState({ cv: null, cvParsed: false, snapshot: null, gapResult: null });
+    open(['/diagnostic/background']);
+
+    fireEvent.click(await screen.findByRole('button', { name: /Ask Hera/ }));
+    fireEvent.change(screen.getByRole('textbox'), { target: { value: 'I was a manager.' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+    await screen.findByRole('checkbox', { name: 'SQL' });
+
+    fireEvent.change(screen.getByRole('textbox'), { target: { value: 'anything else?' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+
+    await vi.waitFor(() => expect(bodies.length).toBe(2));
+    expect(bodies[1].journey.roleSkillsOfferedForRoleId).toBe('R1');
+  });
+
+  it('offers a role-skill checklist and applies ticked skills (skill elicitation)', async () => {
+    useIntakeStore.setState({
+      cv: null,
+      cvParsed: false,
+      snapshot: null,
+      gapResult: null,
+      confirmedSkills: [],
+    });
+    open(['/diagnostic/background']);
+
+    fireEvent.click(await screen.findByRole('button', { name: /Ask Hera/ }));
+    fireEvent.change(screen.getByRole('textbox'), {
+      target: { value: 'I was a marketing manager.' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+
+    const campaign = await screen.findByRole('checkbox', { name: 'Campaign Management' });
+    fireEvent.click(campaign);
+    fireEvent.click(screen.getByRole('button', { name: 'Add these skills' }));
+
+    expect(useIntakeStore.getState().confirmedSkills.map((s) => s.skill_name)).toContain(
+      'Campaign Management'
+    );
+  });
+
+  it('keeps confirmed role skills when a chat profile is confirmed', async () => {
+    // She ticked role skills earlier; confirming the profile calls setCv, whose reset
+    // cascade would wipe them without the confirmProfile safeguard.
+    useIntakeStore.setState({
+      cv: null,
+      cvParsed: false,
+      snapshot: null,
+      gapResult: null,
+      confirmedSkills: [{ skill_id: 's1', skill_name: 'Campaign Management' }],
+    });
+    open(['/diagnostic/background']);
+
+    fireEvent.click(await screen.findByRole('button', { name: /Ask Hera/ }));
+    fireEvent.change(screen.getByRole('textbox'), {
+      target: { value: 'I was an HR officer for five years, then two years at home.' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Use this profile' }));
+
+    expect(useIntakeStore.getState().confirmedSkills.map((s) => s.skill_id)).toEqual(['s1']);
   });
 
   it('captures work priorities in the chat and applies them on confirm', async () => {

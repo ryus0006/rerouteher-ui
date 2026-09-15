@@ -19,6 +19,7 @@ export default function Snapshot() {
   const careerBreak = useIntakeStore((state) => state.break);
   const setSnapshot = useIntakeStore((state) => state.setSnapshot);
   const setGapResult = useIntakeStore((state) => state.setGapResult);
+  const confirmedSkills = useIntakeStore((state) => state.confirmedSkills);
   const canGenerate = useIntakeStore((state) => state.canGenerateSnapshot)();
 
   const [error, setError] = useState(null);
@@ -34,10 +35,10 @@ export default function Snapshot() {
     if (snapshot || !canGenerate || requested.current) return;
     requested.current = true;
     setError(null);
-    generateSnapshot(cv, careerBreak)
+    generateSnapshot(cv, careerBreak, confirmedSkills)
       .then(setSnapshot)
       .catch((cause) => setError(cause.message));
-  }, [snapshot, canGenerate, cv, careerBreak, setSnapshot]);
+  }, [snapshot, canGenerate, cv, careerBreak, confirmedSkills, setSnapshot]);
 
   // No snapshot and nothing to generate it from: back to the start of the intake.
   if (!snapshot && !canGenerate) return <Navigate to="/diagnostic/background" replace />;

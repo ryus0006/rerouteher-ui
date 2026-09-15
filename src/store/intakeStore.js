@@ -24,6 +24,9 @@ const initialState = {
   cvParsed: false,
   break: { duration_years: 0, activities: [] },
   employerPriorities: [],
+  // Skills she ticked from her previous role's checklist in the chat; merged into
+  // the snapshot's professional skills, so cleared whenever the snapshot is.
+  confirmedSkills: [],
   snapshot: null,
   selectedRole: null,
   gapResult: null,
@@ -54,6 +57,7 @@ export const PLAN_FIELDS = [
   'cvParsed',
   'break',
   'employerPriorities',
+  'confirmedSkills',
   'snapshot',
   'selectedRole',
   'gapResult',
@@ -62,7 +66,13 @@ export const PLAN_FIELDS = [
 
 // State owned by pages after the changed one, cleared in the mutators so a stale
 // result never survives an upstream edit (journey order lives in config/flowSteps.js).
-const resetAfterBreak = () => ({ snapshot: null, selectedRole: null, gapResult: null });
+// confirmedSkills feed the snapshot, so they clear whenever the snapshot does.
+const resetAfterBreak = () => ({
+  confirmedSkills: [],
+  snapshot: null,
+  selectedRole: null,
+  gapResult: null,
+});
 const resetAfterCv = () => ({ break: emptyBreak(), ...resetAfterBreak() });
 
 /**
@@ -134,6 +144,14 @@ export const useIntakeStore = create(
       /* Replaced wholesale rather than toggled here: the cap on how many she
          may pick belongs to the screen that shows the cap, not to the store. */
       setEmployerPriorities: (employerPriorities) => set({ employerPriorities }),
+
+      setConfirmedSkills: (confirmedSkills) => set({ confirmedSkills: confirmedSkills ?? [] }),
+      addConfirmedSkills: (skills) =>
+        set((state) => {
+          const byId = new Map(state.confirmedSkills.map((s) => [s.skill_id, s]));
+          for (const s of skills ?? []) if (s?.skill_id) byId.set(s.skill_id, s);
+          return { confirmedSkills: [...byId.values()] };
+        }),
 
       setSnapshot: (snapshot) =>
         set({
