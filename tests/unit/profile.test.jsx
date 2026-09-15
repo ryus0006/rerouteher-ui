@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { createMemoryRouter, RouterProvider } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { routes } from '../../src/routes.jsx';
@@ -62,7 +62,11 @@ describe('profile', () => {
     useAccountStore.setState({ user: { username: 'ccc', displayName: 'ccc' } });
     useIntakeStore.setState({
       cv: { fileName: 'hr-officer-cv.pdf', fileSize: 79134 },
-      break: { duration_years: 7, activities: ['a', 'b', 'c'] },
+      break: {
+        duration_years: 7,
+        activities: ['care_household.cared_for_children', 'finance.managed_budget_finances'],
+      },
+      employerPriorities: ['flexible_work', 'childcare_support'],
       // The matched occupation is an object, not a string.
       snapshot: {
         previous_occupation: { role: 'Senior UX/UI Designer', role_id: '1', confidence: 0.9 },
@@ -72,8 +76,40 @@ describe('profile', () => {
     open();
 
     expect(await screen.findByText('hr-officer-cv.pdf')).toBeVisible();
-    expect(screen.getByText('7 years · 3 activities')).toBeVisible();
-    expect(screen.getByText('Senior UX/UI Designer')).toBeVisible();
+    expect(screen.getByText('7 years')).toBeVisible();
+
+    // Stored ids are resolved to the words she picked, not counted.
+    expect(screen.getByText('Childcare')).toBeVisible();
+    expect(screen.getByText('Budgeting')).toBeVisible();
+    expect(screen.getByText('Flexible Work')).toBeVisible();
+    expect(screen.getByText('Childcare Support')).toBeVisible();
+    expect(screen.queryByText(/2 activities/)).toBeNull();
+  });
+
+  it('keeps what the CV was read for out of the answers she gave', async () => {
+    useAccountStore.setState({ user: { username: 'ccc', displayName: 'ccc' } });
+    useIntakeStore.setState({
+      snapshot: {
+        previous_occupation: { role: 'Senior UX/UI Designer', role_id: '1', confidence: 0.9 },
+      },
+    });
+
+    open();
+
+    const detected = (await screen.findByRole('heading', { name: 'Read from your CV' })).closest(
+      'div'
+    );
+    expect(within(detected).getByText('Senior UX/UI Designer')).toBeVisible();
+
+    // It sits in that group rather than in the answers list above it, which
+    // holds only the four things she gave.
+    expect(within(detected).getByText('Previous occupation')).toBeVisible();
+
+    const given = screen.getByText('CV').closest('dl');
+    expect(within(given).queryByText('Previous occupation')).toBeNull();
+    for (const label of ['CV', 'Career break', 'What filled it', 'Work priorities']) {
+      expect(within(given).getByText(label)).toBeVisible();
+    }
   });
 
   it('offers one way back into the diagnostic, not one per answer', async () => {

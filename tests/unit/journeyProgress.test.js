@@ -41,6 +41,30 @@ describe('journeyProgress', () => {
     expect(journeyProgress({ ...FULL, gapResult: null }).next.to).toBe('/diagnostic/gap');
   });
 
+  it('counts only the unbroken run, so a cleared answer is not skipped past', () => {
+    // What replacing the CV leaves behind: the break wiped, the priorities
+    // still standing. Counting the priorities here would offer her a screen
+    // built from a break she no longer has.
+    const afterRedo = journeyProgress({
+      ...FULL,
+      activities: [],
+      snapshot: null,
+      gapResult: null,
+    });
+
+    expect(afterRedo.completed).toBe(1);
+    expect(afterRedo.next.to).toBe('/diagnostic/break');
+  });
+
+  it('waits on the priorities screen until it has produced a snapshot', () => {
+    // She picked her priorities and left without generating, so the screen to
+    // open is the one holding her picks, not the readout it has yet to make.
+    const picked = journeyProgress({ ...FULL, snapshot: null, gapResult: null });
+
+    expect(picked.completed).toBe(3);
+    expect(picked.next.to).toBe('/diagnostic/priorities');
+  });
+
   it('reads a plan saved before a screen existed as whole, not as a hole', () => {
     // Her gap is computed, so every screen before it was walked, whatever the
     // plan itself happens to carry for any one of them.
