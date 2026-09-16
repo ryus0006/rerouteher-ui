@@ -39,6 +39,14 @@ describe('intake store', () => {
     expect(store().confirmedSkills).toEqual([]);
   });
 
+  it('stores employer matches and clears them when priorities change', () => {
+    store().setEmployerMatches([{ id: 'maybank', name: 'Maybank' }]);
+    expect(store().employerMatches).toHaveLength(1);
+
+    store().setEmployerPriorities(['flexible_work']);
+    expect(store().employerMatches).toEqual([]); // stale matches cleared on a priorities change
+  });
+
   it('requires at least one activity before generating a snapshot (duration 0 is valid)', () => {
     expect(store().canGenerateSnapshot()).toBe(false);
 

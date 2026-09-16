@@ -155,6 +155,7 @@ export default function Companion({ defaultMode = 'ask' }) {
   const selectedRole = useIntakeStore((state) => state.selectedRole);
   const gapResult = useIntakeStore((state) => state.gapResult);
   const employerPriorities = useIntakeStore((state) => state.employerPriorities);
+  const employerMatches = useIntakeStore((state) => state.employerMatches);
   const confirmedSkills = useIntakeStore((state) => state.confirmedSkills);
   const setCv = useIntakeStore((state) => state.setCv);
   const setBreak = useIntakeStore((state) => state.setBreak);
@@ -261,6 +262,7 @@ export default function Companion({ defaultMode = 'ask' }) {
           selectedRole,
           gapResult,
           employerPriorities,
+          employerMatches,
           confirmedSkills,
           roleSkillsOfferedForRoleId,
         },

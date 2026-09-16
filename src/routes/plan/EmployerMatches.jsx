@@ -3,6 +3,7 @@ import { Navigate } from 'react-router-dom';
 import useSmoothNavigate from '../../hooks/useSmoothNavigate.js';
 import Header from '../../components/layout/Header.jsx';
 import BackLink from '../../components/intake/BackLink.jsx';
+import AskHeraAboutResults from '../../components/companion/AskHeraAboutResults.jsx';
 import { PRIORITY_NAMES } from '../../config/employerPriorities.js';
 import { matchEmployers } from '../../api/employers.js';
 import { useAccountStore } from '../../store/accountStore.js';
@@ -161,6 +162,7 @@ export default function EmployerMatches() {
   const selectedRole = useIntakeStore((state) => state.selectedRole);
   const gapResult = useIntakeStore((state) => state.gapResult);
   const priorities = useIntakeStore((state) => state.employerPriorities);
+  const setEmployerMatches = useIntakeStore((state) => state.setEmployerMatches);
   const user = useAccountStore((state) => state.user);
 
   const [employers, setEmployers] = useState(null);
@@ -178,6 +180,8 @@ export default function EmployerMatches() {
       .then((result) => {
         if (!live) return;
         setEmployers(result.employers);
+        // Mirror into the store so the App-mounted companion can explain them (US8.3).
+        setEmployerMatches(result.employers);
         setError(null);
       })
       .catch((cause) => live && setError(cause.message));
@@ -185,7 +189,7 @@ export default function EmployerMatches() {
     return () => {
       live = false;
     };
-  }, [key, gapResult, selectedRole]);
+  }, [key, gapResult, selectedRole, setEmployerMatches]);
 
   if (!snapshot || !gapResult) return <Navigate to="/diagnostic/gap" replace />;
   // Nothing was asked, so there is nothing to answer.
@@ -233,6 +237,8 @@ export default function EmployerMatches() {
             >
               Adjust priorities
             </button>
+
+            <AskHeraAboutResults className="mt-1" />
           </div>
         </div>
 

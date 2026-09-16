@@ -152,7 +152,7 @@ describe('learning plan', () => {
 });
 
 describe('employer fit finder', () => {
-  it('asks for three priorities at most, and will not run on none', async () => {
+  it('lets her pick as many priorities as matter, and will not run on none', async () => {
     open(['/plan/employers']);
 
     expect(
@@ -166,8 +166,8 @@ describe('employer fit finder', () => {
     fireEvent.click(screen.getByLabelText(/Childcare Support/));
     fireEvent.click(screen.getByLabelText(/Inclusive Workplace/));
 
-    // The cap has to hold, or "what matters most" ranks against everything.
-    expect(screen.getByLabelText(/Parental Support/)).toBeDisabled();
+    // The cap was removed: a fourth priority stays selectable, not disabled.
+    expect(screen.getByLabelText(/Parental Support/)).toBeEnabled();
     expect(find).toBeEnabled();
 
     fireEvent.click(find);
@@ -202,6 +202,20 @@ describe('employer fit finder', () => {
       'href',
       'https://www.cimb.com/'
     );
+  });
+
+  it('stores matches and offers an Ask Hera entry on the matches page (US8.3.1)', async () => {
+    useIntakeStore.setState({
+      employerPriorities: ['flexible_work', 'childcare_support', 'inclusive_workplace'],
+    });
+    open(['/plan/employers/matches']);
+
+    await screen.findByRole('heading', { name: 'Your employer matches' });
+    await vi.waitFor(() =>
+      expect(useIntakeStore.getState().employerMatches.length).toBeGreaterThan(0)
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Ask Hera about your results' }));
+    expect(await screen.findByRole('dialog', { name: 'Ask Hera' })).toBeVisible();
   });
 
   it('sends her back to choose when she has picked nothing', async () => {

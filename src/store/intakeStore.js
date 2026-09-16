@@ -27,6 +27,9 @@ const initialState = {
   // Skills she ticked from her previous role's checklist in the chat; merged into
   // the snapshot's professional skills, so cleared whenever the snapshot is.
   confirmedSkills: [],
+  // Her computed employer matches, held so the companion can explain them (US8.3);
+  // a recomputable page result, cleared when priorities change or the snapshot resets.
+  employerMatches: [],
   snapshot: null,
   selectedRole: null,
   gapResult: null,
@@ -69,6 +72,7 @@ export const PLAN_FIELDS = [
 // confirmedSkills feed the snapshot, so they clear whenever the snapshot does.
 const resetAfterBreak = () => ({
   confirmedSkills: [],
+  employerMatches: [],
   snapshot: null,
   selectedRole: null,
   gapResult: null,
@@ -143,7 +147,10 @@ export const useIntakeStore = create(
 
       /* Replaced wholesale rather than toggled here: the cap on how many she
          may pick belongs to the screen that shows the cap, not to the store. */
-      setEmployerPriorities: (employerPriorities) => set({ employerPriorities }),
+      // A priorities change invalidates any matches computed from the old set.
+      setEmployerPriorities: (employerPriorities) =>
+        set({ employerPriorities, employerMatches: [] }),
+      setEmployerMatches: (employerMatches) => set({ employerMatches: employerMatches ?? [] }),
 
       setConfirmedSkills: (confirmedSkills) => set({ confirmedSkills: confirmedSkills ?? [] }),
       addConfirmedSkills: (skills) =>
