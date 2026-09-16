@@ -195,11 +195,11 @@ export default function AccountSheet() {
             <h2 id="account-sheet-title" className="font-display text-xl font-bold text-ink">
               {creating ? 'Create your account' : 'Sign in'}
             </h2>
-            <p className="mt-1 text-sm text-ink-soft">
-              {creating
-                ? "It's free, and it takes about thirty seconds."
-                : 'Pick up your plan where you left it.'}
-            </p>
+            {creating && (
+              <p className="mt-1 text-sm text-ink-soft">
+                It&rsquo;s free, and it takes about thirty seconds.
+              </p>
+            )}
           </div>
 
           <button

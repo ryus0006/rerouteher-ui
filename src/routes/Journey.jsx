@@ -205,11 +205,11 @@ export default function Journey() {
           Welcome back, {displayName}
         </h1>
 
-        <p className="mt-2 max-w-[52ch] text-sm leading-relaxed text-ink-soft sm:text-base">
-          {progress.completed === 0
-            ? 'Nothing here yet. Five steps, and about ten minutes in total.'
-            : 'Everything is where you left it.'}
-        </p>
+        {progress.completed === 0 && (
+          <p className="mt-2 max-w-[52ch] text-sm leading-relaxed text-ink-soft sm:text-base">
+            Nothing here yet. Five steps, and about ten minutes in total.
+          </p>
+        )}
 
         {/* The page's one banded surface, and the one bold element on it: her
             readiness once it exists, and until then the distance to it. */}

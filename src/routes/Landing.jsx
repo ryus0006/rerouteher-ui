@@ -138,11 +138,11 @@ export default function Landing() {
                 </a>
               </div>
 
-              <p className="mt-5 max-w-[44ch] text-sm text-white/90">
-                {resume.started
-                  ? 'Your plan is where you left it.'
-                  : 'Free. No signup until you want to keep it.'}
-              </p>
+              {!resume.started && (
+                <p className="mt-5 max-w-[44ch] text-sm text-white/90">
+                  Free. No signup until you want to keep it.
+                </p>
+              )}
             </div>
           </div>
 
