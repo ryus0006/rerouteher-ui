@@ -291,12 +291,12 @@ export default function Learning() {
           focusAreas.map((gap) => {
             const group = plan.groups?.find((entry) => entry.skill_id === gap.skill_id);
             const forGap = shown.filter((resource) => resource.skill_id === gap.skill_id);
-            const total = plan.resources.filter(
-              (resource) => resource.skill_id === gap.skill_id
-            ).length;
 
-            if (total === 0) return null;
+            // Hide a focus area whose resources are all filtered out, so a filter
+            // never leaves an empty card behind. The count reflects what is shown.
+            if (forGap.length === 0) return null;
 
+            const count = forGap.length;
             const open = !closed.includes(gap.skill_id);
 
             return (
@@ -335,7 +335,7 @@ export default function Learning() {
                     }
                     className="flex shrink-0 items-center gap-2 rounded-full px-2 py-1 text-sm text-ink-soft transition hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
                   >
-                    {total} {total === 1 ? 'resource' : 'resources'}
+                    {count} {count === 1 ? 'resource' : 'resources'}
                     <svg
                       viewBox="0 0 24 24"
                       fill="none"
@@ -352,18 +352,13 @@ export default function Learning() {
                   </button>
                 </div>
 
-                {open &&
-                  (forGap.length > 0 ? (
-                    <ul>
-                      {forGap.map((resource) => (
-                        <Resource key={resource.id} resource={resource} />
-                      ))}
-                    </ul>
-                  ) : (
-                    <p className="border-t border-line px-5 py-4 text-sm text-ink-soft sm:px-6">
-                      Nothing here matches that filter.
-                    </p>
-                  ))}
+                {open && (
+                  <ul>
+                    {forGap.map((resource) => (
+                      <Resource key={resource.id} resource={resource} />
+                    ))}
+                  </ul>
+                )}
               </section>
             );
           })}
@@ -372,6 +367,12 @@ export default function Learning() {
           <p className="mt-8 max-w-[56ch] text-sm leading-relaxed text-ink-soft">
             Nothing is listed for these focus areas yet. Your gap result still stands — the
             resources for it are being added.
+          </p>
+        )}
+
+        {plan && plan.resources.length > 0 && shown.length === 0 && (
+          <p className="mt-8 max-w-[56ch] text-sm leading-relaxed text-ink-soft">
+            No {filter}s here for your focus areas. Select “All” to see everything.
           </p>
         )}
       </main>

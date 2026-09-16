@@ -88,21 +88,29 @@ describe('learning plan', () => {
     expect(within(section).queryByText('AI features in Figma')).toBeNull();
   });
 
-  it('narrows to one format without hiding the focus areas', async () => {
+  it('narrows to one format, hides emptied focus areas, and counts what is shown', async () => {
     open(['/plan/learning']);
 
     expect(await screen.findByText('AI features in Figma')).toBeVisible();
     expect(screen.getByText('Midjourney for product design')).toBeVisible();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Articles' }));
+    // AI Design has 2 articles + 1 video, so the count starts at the full set.
+    const aiSection = () =>
+      screen
+        .getByRole('heading', { name: 'AI Design Tools (Figma AI, Midjourney)' })
+        .closest('section');
+    expect(within(aiSection()).getByRole('button', { name: /^3 resources/ })).toBeVisible();
 
-    // The article stays, the video goes, and the heading it sat under remains
-    // so she can see the filter emptied it rather than the plan losing a part.
-    expect(screen.getByText('AI features in Figma')).toBeVisible();
-    expect(screen.queryByText('Midjourney for product design')).toBeNull();
-    expect(
-      screen.getByRole('heading', { name: 'AI Design Tools (Figma AI, Midjourney)' })
-    ).toBeVisible();
+    fireEvent.click(screen.getByRole('button', { name: 'Videos' }));
+
+    // Design Ops has only articles, so filtering Videos removes its whole card
+    // rather than leaving an empty "nothing matches" shell.
+    expect(screen.queryByRole('heading', { name: 'Design Ops & Handoff Automation' })).toBeNull();
+
+    // AI Design keeps its one video, and the count now reflects what is shown.
+    expect(screen.getByText('Midjourney for product design')).toBeVisible();
+    expect(screen.queryByText('AI features in Figma')).toBeNull();
+    expect(within(aiSection()).getByRole('button', { name: /^1 resource/ })).toBeVisible();
   });
 
   it('costs her nothing, and does not offer a filter that selects everything', async () => {
