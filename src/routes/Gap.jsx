@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import Header from '../components/layout/Header.jsx';
-import SavedStrip from '../components/account/SavedStrip.jsx';
 import ChapterBreak from '../components/account/ChapterBreak.jsx';
 import IntakeStepper from '../components/intake/IntakeStepper.jsx';
 import BackLink from '../components/intake/BackLink.jsx';
@@ -51,7 +50,6 @@ export default function Gap() {
   return (
     <div className="flex min-h-screen flex-col">
       <Header />
-      <SavedStrip />
 
       <main className="mx-auto w-full max-w-[1000px] flex-1 px-5 py-8 sm:px-6 sm:py-10">
         <IntakeStepper currentIndex={4} />
