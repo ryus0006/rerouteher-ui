@@ -86,7 +86,7 @@ describe('profile', () => {
     expect(screen.queryByText(/2 activities/)).toBeNull();
   });
 
-  it('keeps what the CV was read for out of the answers she gave', async () => {
+  it('shows only the answers she gave, not what the CV was read for', async () => {
     useAccountStore.setState({ user: { username: 'ccc', displayName: 'ccc' } });
     useIntakeStore.setState({
       snapshot: {
@@ -96,20 +96,12 @@ describe('profile', () => {
 
     open();
 
-    const detected = (await screen.findByRole('heading', { name: 'Read from your CV' })).closest(
-      'div'
-    );
-    expect(within(detected).getByText('Senior UX/UI Designer')).toBeVisible();
-
-    // It sits in that group rather than in the answers list above it, which
-    // holds only the four things she gave.
-    expect(within(detected).getByText('Previous occupation')).toBeVisible();
-
-    const given = screen.getByText('CV').closest('dl');
-    expect(within(given).queryByText('Previous occupation')).toBeNull();
+    const given = (await screen.findByText('CV')).closest('dl');
     for (const label of ['CV', 'Career break', 'What filled it', 'Work priorities']) {
       expect(within(given).getByText(label)).toBeVisible();
     }
+    expect(screen.queryByText('Previous occupation')).toBeNull();
+    expect(screen.queryByText('Senior UX/UI Designer')).toBeNull();
   });
 
   it('offers one way back into the diagnostic, not one per answer', async () => {
@@ -118,11 +110,13 @@ describe('profile', () => {
 
     expect(await screen.findByRole('heading', { name: 'Your answers' })).toBeVisible();
 
-    // Previous occupation is read off the CV, so it was never hers to edit.
-    expect(screen.getByText('Read from your CV')).toBeVisible();
     expect(screen.queryByRole('button', { name: 'Edit' })).toBeNull();
 
+    // Clearing is confirmed first, so the click alone goes nowhere.
     fireEvent.click(screen.getByRole('button', { name: /Start again from your CV/ }));
+    expect(router.state.location.pathname).toBe('/profile');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Clear and start again' }));
     expect(router.state.location.pathname).toBe('/diagnostic/background');
   });
 

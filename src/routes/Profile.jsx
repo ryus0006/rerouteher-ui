@@ -84,8 +84,6 @@ export default function Profile() {
   const user = useAccountStore((state) => state.user);
   const setDisplayName = useAccountStore((state) => state.setDisplayName);
   const answers = useAnswers();
-  // `previous_occupation` is the matched role object, not a string.
-  const detectedRole = useIntakeStore((state) => state.snapshot?.previous_occupation?.role);
   const resetJourney = useIntakeStore((state) => state.reset);
 
   /* Seeded once from the store rather than synced in an effect: the field is
@@ -225,25 +223,6 @@ export default function Profile() {
               </div>
             ))}
           </dl>
-
-          {/* Held apart from the answers rather than footnoted inside them: she
-              never gave this one, and a heading is read where a note beside a
-              value is skimmed. It also earns the room — this is the role every
-              match is computed against, so a wrong reading here is why the rest
-              of the plan would look wrong. */}
-          <div className="mt-5 border-t border-line pt-4">
-            <h3 className="text-sm font-semibold text-ink">Read from your CV</h3>
-            <p className="mt-1 text-xs text-ink-soft">
-              Not an answer you gave. This is the role your matches are measured against.
-            </p>
-
-            <dl className="mt-3 flex flex-wrap items-baseline gap-x-4 gap-y-0.5">
-              <dt className="eyebrow w-full sm:w-44 sm:shrink-0">Previous occupation</dt>
-              <dd className="min-w-0 flex-1 text-sm text-ink">
-                {detectedRole ?? <span className="text-ink-faint">Not generated yet</span>}
-              </dd>
-            </dl>
-          </div>
 
           {/* One way back in, not three. Clearing starts the diagnostic from
               nothing, so an "edit this one answer" control would have been a
