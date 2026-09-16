@@ -134,17 +134,16 @@ describe('journey', () => {
     expect(screen.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '0');
   });
 
-  it('tells an open chapter apart from one that is still waiting', async () => {
+  it('shows fixed placeholders for chapters not yet finished', async () => {
     useAccountStore.setState({ user: { username: 'ccc', displayName: 'Chee Yeong' } });
     useIntakeStore.setState({ snapshot: null, gapResult: null });
     open();
 
-    // The panel names the payoff; the row names the state. Never the same words.
     expect(
       await screen.findByText('Pick what matters most to you in a workplace.')
     ).toBeVisible();
-    expect(screen.getByText('Ready to build from your story')).toBeVisible();
-    expect(screen.getByText('Ready once your skills are named')).toBeVisible();
+    expect(screen.getByText('Your skills will appear here.')).toBeVisible();
+    expect(screen.getByText('Your target role and focus areas will appear here.')).toBeVisible();
   });
 
   it('resumes the screen she stopped on, counting the ones behind it', async () => {
