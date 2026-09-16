@@ -180,10 +180,6 @@ export default function Profile() {
           <dl className="mt-6 border-t border-line pt-4">
             <dt className="eyebrow">Username</dt>
             <dd className="mt-1 text-sm text-ink">{user.username}</dd>
-            <dd className={HELP}>
-              This signs you in and cannot be changed. There is no email on your account, so keep
-              your password somewhere safe — it cannot be reset for you.
-            </dd>
           </dl>
         </section>
 
