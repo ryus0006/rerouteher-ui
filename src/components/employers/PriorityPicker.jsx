@@ -1,5 +1,5 @@
 import PriorityIcon from './PriorityIcon.jsx';
-import { EMPLOYER_PRIORITIES, MAX_PRIORITIES } from '../../config/employerPriorities.js';
+import { EMPLOYER_PRIORITIES } from '../../config/employerPriorities.js';
 
 /**
  * One priority, as a card she can weigh rather than a checkbox in a list.
@@ -7,11 +7,8 @@ import { EMPLOYER_PRIORITIES, MAX_PRIORITIES } from '../../config/employerPriori
  * The blurb is the whole point of the card: "Parental Support" alone would have
  * her guessing, while naming maternity leave, paternity leave and nursing rooms
  * tells her what an employer would have to have published to match.
- *
- * A card she cannot pick because the cap is reached is dimmed but stays
- * readable — she needs to see what she is choosing between.
  */
-function PriorityCard({ priority, checked, blocked, onToggle }) {
+function PriorityCard({ priority, checked, onToggle }) {
   return (
     <label
       className={[
@@ -19,15 +16,12 @@ function PriorityCard({ priority, checked, blocked, onToggle }) {
         'has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-blue-600',
         checked
           ? 'border-pink-600 bg-pink-100'
-          : blocked
-            ? 'cursor-not-allowed border-line bg-surface opacity-45'
-            : 'border-line bg-surface hover:border-pink-600/40 hover:shadow-card',
+          : 'border-line bg-surface hover:border-pink-600/40 hover:shadow-card',
       ].join(' ')}
     >
       <input
         type="checkbox"
         checked={checked}
-        disabled={blocked}
         onChange={onToggle}
         className="sr-only"
       />
@@ -70,7 +64,7 @@ function PriorityCard({ priority, checked, blocked, onToggle }) {
 }
 
 /**
- * The five priorities, capped at three.
+ * The five priorities, any number of which she can choose.
  *
  * Shared by the intake step that asks the question and the screen that lets her
  * change her answer, so the same choice looks the same in both places. The
@@ -79,8 +73,6 @@ function PriorityCard({ priority, checked, blocked, onToggle }) {
  * silently wrap every second title in the narrower intake one.
  */
 export default function PriorityPicker({ chosen, columns = 3, onToggle }) {
-  const full = chosen.length >= MAX_PRIORITIES;
-
   return (
     <ul className={`grid gap-3 sm:grid-cols-2 ${columns === 3 ? 'lg:grid-cols-3' : ''}`}>
       {EMPLOYER_PRIORITIES.map((priority) => {
@@ -91,7 +83,6 @@ export default function PriorityPicker({ chosen, columns = 3, onToggle }) {
             <PriorityCard
               priority={priority}
               checked={checked}
-              blocked={full && !checked}
               onToggle={() => onToggle(priority.id)}
             />
           </li>

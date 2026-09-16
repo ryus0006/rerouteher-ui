@@ -56,13 +56,13 @@ describe('journeyProgress', () => {
     expect(afterRedo.next.to).toBe('/diagnostic/break');
   });
 
-  it('waits on the priorities screen until it has produced a snapshot', () => {
-    // She picked her priorities and left without generating, so the screen to
-    // open is the one holding her picks, not the readout it has yet to make.
+  it('resumes to the snapshot screen once priorities are picked', () => {
+    // She picked her priorities and left without generating; the snapshot
+    // screen builds it on arrival, so that is where "See your skills" goes.
     const picked = journeyProgress({ ...FULL, snapshot: null, gapResult: null });
 
     expect(picked.completed).toBe(3);
-    expect(picked.next.to).toBe('/diagnostic/priorities');
+    expect(picked.next.to).toBe('/diagnostic/snapshot');
   });
 
   it('reads a plan saved before a screen existed as whole, not as a hole', () => {

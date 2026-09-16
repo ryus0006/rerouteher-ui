@@ -36,13 +36,6 @@ export const EMPLOYER_PRIORITIES = [
   },
 ];
 
-/**
- * Three, because the question is what matters *most*. An unlimited list would
- * be answered by ticking everything, and a ranking against everything is the
- * same as no ranking at all.
- */
-export const MAX_PRIORITIES = 3;
-
 export const PRIORITY_NAMES = Object.fromEntries(
   EMPLOYER_PRIORITIES.map((priority) => [priority.id, priority.name])
 );

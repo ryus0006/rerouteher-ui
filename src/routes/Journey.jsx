@@ -148,7 +148,7 @@ export default function Journey() {
   const upNext = {
     'upload-cv': 'Your CV first, then what filled your break.',
     'career-break': 'What filled your break — the part a CV leaves out.',
-    'work-priorities': 'What matters most for your return, in your own order.',
+    'work-priorities': 'Pick what matters most to you in a workplace.',
     'skill-snapshot': 'Your CV and your break, read together and named as skills.',
     'target-role-gap': 'Pick a role, and see how much of it you can already do.',
   };
@@ -158,7 +158,7 @@ export default function Journey() {
   const resumeCta = {
     'upload-cv': 'Start your story',
     'career-break': 'Continue your story',
-    'work-priorities': 'Continue to your skills',
+    'work-priorities': 'Choose your work priorities',
     'skill-snapshot': 'See your skills',
     'target-role-gap': 'Choose your target role',
   };

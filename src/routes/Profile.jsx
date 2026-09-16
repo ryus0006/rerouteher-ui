@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import useSmoothNavigate from '../hooks/useSmoothNavigate.js';
 import Header from '../components/layout/Header.jsx';
 import BackLink from '../components/intake/BackLink.jsx';
+import ConfirmDialog from '../components/ui/ConfirmDialog.jsx';
 import { ACTIVITY_LABELS } from '../config/activityTaxonomy.js';
 import { PRIORITY_NAMES } from '../config/employerPriorities.js';
 import { useAccountStore } from '../store/accountStore.js';
@@ -85,6 +86,7 @@ export default function Profile() {
   const answers = useAnswers();
   // `previous_occupation` is the matched role object, not a string.
   const detectedRole = useIntakeStore((state) => state.snapshot?.previous_occupation?.role);
+  const resetJourney = useIntakeStore((state) => state.reset);
 
   /* Seeded once from the store rather than synced in an effect: the field is
      hers to edit from here on, and nothing else writes the name. */
@@ -94,6 +96,9 @@ export default function Profile() {
   });
   const [error, setError] = useState(null);
   const [saved, setSaved] = useState(false);
+  const [confirmingRestart, setConfirmingRestart] = useState(false);
+  // Stable, so the dialog's key handling is not torn down on every render.
+  const cancelRestart = useCallback(() => setConfirmingRestart(false), []);
 
   // Signed out, there is no profile to show; the header offers the way back in.
   if (!user) return <Navigate to="/" replace />;
@@ -107,6 +112,15 @@ export default function Profile() {
 
     setDisplayName(draft.trim() || user.username);
     setSaved(true);
+  }
+
+  /* A full clear, not the CV-only reset: the snapshot, priorities and any
+     stashed earlier plan all go. Signed in, plan sync then writes the empty
+     plan to the account. */
+  function handleRestart() {
+    resetJourney();
+    setConfirmingRestart(false);
+    navigate('/diagnostic/background');
   }
 
   const dirty = draft.trim() !== resolveDisplayName(user);
@@ -231,14 +245,13 @@ export default function Profile() {
             </dl>
           </div>
 
-          {/* One way back in, not three. Replacing the CV already clears the
-              break, the snapshot, the target role and the gap, so an "edit this
-              one answer" control would have been a promise the store cannot
-              keep. Nothing is lost until she actually uploads. */}
+          {/* One way back in, not three. Clearing starts the diagnostic from
+              nothing, so an "edit this one answer" control would have been a
+              promise the store cannot keep. */}
           <div className="mt-5 border-t border-line pt-4">
             <button
               type="button"
-              onClick={() => navigate('/diagnostic/background')}
+              onClick={() => setConfirmingRestart(true)}
               className="rounded-full border border-line-strong bg-surface px-5 py-2.5 text-sm font-semibold text-ink transition duration-200 ease-spring hover:border-ink/35 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
             >
               Start again from your CV
@@ -246,13 +259,21 @@ export default function Profile() {
                 →
               </span>
             </button>
-            <p className={HELP}>
-              Walks the diagnostic again from the beginning. A new CV rebuilds your snapshot,
-              readiness and focus areas; your account and display name are untouched.
-            </p>
+            <p className={HELP}>Clears your answers and plan. Your account stays.</p>
           </div>
         </section>
       </main>
+
+      <ConfirmDialog
+        open={confirmingRestart}
+        title="Start again?"
+        confirmLabel="Clear and start again"
+        cancelLabel="Keep my plan"
+        onConfirm={handleRestart}
+        onCancel={cancelRestart}
+      >
+        Your CV, answers and plan will be deleted. This can&rsquo;t be undone.
+      </ConfirmDialog>
     </div>
   );
 }

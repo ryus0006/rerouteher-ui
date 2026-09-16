@@ -40,7 +40,7 @@ function LogoTile({ logo, name }) {
 }
 
 /**
- * One employer, answered against her three priorities.
+ * One employer, answered against the priorities she chose.
  *
  * One source, not one per priority. Every disclosure comes from the same
  * document, so citing it beside each chip would repeat a single link three

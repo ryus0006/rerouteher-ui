@@ -141,7 +141,7 @@ describe('journey', () => {
 
     // The panel names the payoff; the row names the state. Never the same words.
     expect(
-      await screen.findByText('What matters most for your return, in your own order.')
+      await screen.findByText('Pick what matters most to you in a workplace.')
     ).toBeVisible();
     expect(screen.getByText('Ready to build from your story')).toBeVisible();
     expect(screen.getByText('Ready once your skills are named')).toBeVisible();

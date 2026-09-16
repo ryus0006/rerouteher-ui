@@ -4,7 +4,6 @@ import Header from '../../components/layout/Header.jsx';
 import GradientButton from '../../components/ui/GradientButton.jsx';
 import PriorityPicker from '../../components/employers/PriorityPicker.jsx';
 import HowItWorks from '../../components/employers/HowItWorks.jsx';
-import { MAX_PRIORITIES } from '../../config/employerPriorities.js';
 import { useIntakeStore } from '../../store/intakeStore.js';
 
 /**
@@ -53,7 +52,7 @@ export default function EmployerFinder() {
           <h2 className="font-display text-lg font-bold tracking-[-0.015em] text-ink">
             What matters most for your return?
           </h2>
-          <p className="mt-1 text-sm text-ink-soft">Select up to {MAX_PRIORITIES} priorities.</p>
+          <p className="mt-1 text-sm text-ink-soft">Select all the priorities that matter to you.</p>
         </div>
 
         <div className="mt-3">

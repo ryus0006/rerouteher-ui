@@ -59,10 +59,9 @@ export const DIAGNOSTIC_STEPS = [
   { id: 'upload-cv', chapter: 'story', to: '/diagnostic/background' },
   { id: 'career-break', chapter: 'story', to: '/diagnostic/break' },
   { id: 'work-priorities', chapter: 'skills', to: '/diagnostic/priorities' },
-  /* Resumes to the priorities screen, not its own: the snapshot is a readout
-     of what that screen generates, so arriving here without one would land
-     her on a page with nothing to show. */
-  { id: 'skill-snapshot', chapter: 'skills', to: '/diagnostic/priorities' },
+  /* The snapshot screen builds the snapshot on arrival when the story is in,
+     so resuming here lands on her skills rather than the question before. */
+  { id: 'skill-snapshot', chapter: 'skills', to: '/diagnostic/snapshot' },
   { id: 'target-role-gap', chapter: 'next-move', to: '/diagnostic/gap' },
 ];
 

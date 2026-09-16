@@ -5,7 +5,6 @@ import IntakeLayout from '../../components/intake/IntakeLayout.jsx';
 import BackLink from '../../components/intake/BackLink.jsx';
 import PriorityPicker from '../../components/employers/PriorityPicker.jsx';
 import HowItWorks from '../../components/employers/HowItWorks.jsx';
-import { MAX_PRIORITIES } from '../../config/employerPriorities.js';
 import { generateSnapshot } from '../../api/snapshot.js';
 import { useIntakeStore } from '../../store/intakeStore.js';
 
@@ -57,7 +56,7 @@ export default function Priorities() {
       stageIndex={2}
       back={<BackLink to="/diagnostic/break">Back to career break</BackLink>}
       title="What matters most for your return?"
-      intro={`Pick up to ${MAX_PRIORITIES}. We come back to these at the end, to find employers whose published reports match.`}
+      intro={`Pick as many as matter to you. We come back to these at the end, to find employers whose published reports match.`}
     >
       <PriorityPicker chosen={chosen} columns={2} onToggle={toggle} />
 

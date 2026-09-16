@@ -149,11 +149,14 @@ export default function Header({ onGround = false }) {
             </Link>
             <button
               type="button"
-              onClick={() => {
+              onClick={async () => {
+                /* Nothing signed-out belongs on her journey, and the landing page
+                   is the only screen that explains the service from scratch.
+                   Leave first, clear second: clearing while a results page is
+                   still mounted trips its no-snapshot guard, which redirects to
+                   the CV upload and overrides the navigation to the landing. */
+                await navigate('/');
                 signOut();
-                // Nothing signed-out belongs on her journey, and the landing page
-                // is the only screen that explains the service from scratch.
-                navigate('/');
               }}
               className="rounded-full px-3 py-1.5 text-sm text-ink-soft transition hover:bg-canvas-sunk hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
             >
