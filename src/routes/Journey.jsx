@@ -163,21 +163,13 @@ export default function Journey() {
     'target-role-gap': 'Choose your target role',
   };
 
-  /* An open chapter says what to do; a blocked one says what it is waiting for.
-     One string for both would claim the story is missing beside its own tick. */
-  const ready = {
-    story: 'Not started yet',
-    skills: 'Ready to build from your story',
-    'next-move': 'Pick a role and see how ready you already are',
+  /* One placeholder per unfinished chapter, the same at every step, so the
+     panels stay still while the band above says what to do next. */
+  const placeholder = {
+    skills: 'Your skills will appear here.',
+    'next-move': 'Your target role and focus areas will appear here.',
   };
 
-  const blocked = {
-    story: null,
-    skills: 'Ready once your story is in',
-    'next-move': 'Ready once your skills are named',
-  };
-
-  const pending = (chapter) => (chapter.available ? ready[chapter.id] : blocked[chapter.id]);
   const byId = Object.fromEntries(progress.chapters.map((chapter) => [chapter.id, chapter]));
   const roles = snapshot?.recommended_roles ?? [];
 
@@ -305,7 +297,7 @@ export default function Journey() {
                   </ul>
                 </>
               ) : (
-                <p className="pt-1.5 text-sm italic text-ink-faint">{pending(byId.skills)}</p>
+                <p className="pt-1.5 text-sm italic text-ink-faint">{placeholder.skills}</p>
               )}
             </div>
           </div>
@@ -366,7 +358,7 @@ export default function Journey() {
             </ol>
           </>
         ) : (
-          <p className={`${CARD} text-sm italic text-ink-faint`}>{pending(byId['next-move'])}</p>
+          <p className={`${CARD} text-sm italic text-ink-faint`}>{placeholder['next-move']}</p>
         )}
 
         {gapResult && (
