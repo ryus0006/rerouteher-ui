@@ -1,14 +1,16 @@
 import { useEffect, useRef, useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import Header from '../components/layout/Header.jsx';
-import GlassCard from '../components/ui/GlassCard.jsx';
+import ChapterBreak from '../components/account/ChapterBreak.jsx';
 import IntakeStepper from '../components/intake/IntakeStepper.jsx';
 import BackLink from '../components/intake/BackLink.jsx';
 import ReadinessGauge from '../components/gap/ReadinessGauge.jsx';
 import RoleSelector from '../components/gap/RoleSelector.jsx';
 import MetRequirements from '../components/gap/MetRequirements.jsx';
 import FocusAreaList, { MAX_FOCUS_AREAS } from '../components/gap/FocusAreaList.jsx';
+import AskHeraAboutResults from '../components/companion/AskHeraAboutResults.jsx';
 import { pickFocusAreas } from '../lib/focusAreas.js';
+import { markersFor } from '../lib/readiness.js';
 import { computeGap } from '../api/gap.js';
 import { useIntakeStore } from '../store/intakeStore.js';
 
@@ -41,28 +43,27 @@ export default function Gap() {
 
   if (!snapshot) return <Navigate to="/diagnostic/background" replace />;
 
-  const projected =
-    gapResult &&
-    Math.round(
-      (gapResult.readiness +
-        pickFocusAreas(gapResult.gaps, MAX_FOCUS_AREAS).reduce((sum, gap) => sum + gap.uplift, 0)) *
-        100
-    ) / 100;
+  const focusAreas = gapResult ? pickFocusAreas(gapResult.gaps, MAX_FOCUS_AREAS) : [];
+  const markers = gapResult ? markersFor(gapResult.readiness, focusAreas) : [];
+  const projected = markers.length > 0 ? markers[markers.length - 1].at : null;
 
   return (
-    <div className="flex min-h-screen flex-col bg-grad-page">
+    <div className="flex min-h-screen flex-col">
       <Header />
 
-      <main className="mx-auto w-full max-w-[1000px] flex-1 px-4 py-8 sm:px-6">
-        <IntakeStepper currentIndex={3} />
+      <main className="mx-auto w-full max-w-[1000px] flex-1 px-5 py-8 sm:px-6 sm:py-10">
+        <IntakeStepper currentIndex={4} />
 
         <div className="mt-8">
           <BackLink to="/diagnostic/snapshot">Back to Skill Snapshot</BackLink>
         </div>
 
-        <h1 className="mt-3 font-display text-2xl font-bold text-ink sm:text-3xl">
-          Where do you want to go next?
-        </h1>
+        <div className="mt-3 flex flex-wrap items-start justify-between gap-3">
+          <h1 className="font-display text-2xl font-bold tracking-[-0.015em] text-ink sm:text-3xl">
+            Where do you want to go next?
+          </h1>
+          <AskHeraAboutResults className="mt-1 shrink-0" />
+        </div>
 
         <div className="mt-5">
           <RoleSelector
@@ -81,39 +82,46 @@ export default function Gap() {
 
         {gapResult && (
           /* The score is a narrow summary rail; the focus areas are the work, so
-             they take the dominant column. */
-          <div className="mt-5 grid items-start gap-5 md:grid-cols-[19rem_1fr]">
-            <GlassCard className="p-6">
-              <h2 className="font-display text-lg font-bold text-ink">{selectedRole.role}</h2>
+             they take the dominant column. The rail is the page's only dark
+             plane, including the closing band below it: the arc is what she came
+             for, and it reads brightest when nothing else on the page is dark. */
+          <div className="mt-6 grid items-start gap-5 md:grid-cols-[19.5rem_1fr]">
+            <section className="overflow-hidden rounded-2xl bg-plane text-on-plane shadow-plane">
+              <div className="p-6">
+                <h2 className="font-display text-lg font-bold text-white">{selectedRole.role}</h2>
 
-              <div className="mt-3">
-                <ReadinessGauge value={gapResult.readiness} />
+                <div className="mt-5">
+                  <ReadinessGauge value={gapResult.readiness} markers={markers} />
+                </div>
+
+                {projected > gapResult.readiness && (
+                  <p className="mt-5 rounded-xl bg-white/10 px-3 py-2 text-center text-sm font-semibold tabular text-white">
+                    {gapResult.readiness}% today → {projected}% after your focus areas
+                  </p>
+                )}
               </div>
 
-              {projected > gapResult.readiness && (
-                <p className="mt-3 inline-flex rounded-full bg-pink-100 px-3 py-1.5 text-sm font-semibold text-pink-600">
-                  {gapResult.readiness}% today → {projected}% after your focus areas
-                </p>
-              )}
-
-              <div className="mt-5 border-t border-ink-faint/15 pt-4">
+              <div className="border-t border-white/12 bg-plane-2 p-6">
                 <MetRequirements
                   skills={gapResult.skills_have}
                   total={gapResult.skills_have.length + gapResult.gaps.length}
+                  onPlane
                 />
-              </div>
 
-              <p className="mt-4 text-xs text-ink-soft">
-                Readiness weighs each required skill by how much the role depends on it, so it is
-                not a plain count of skills covered.
-              </p>
-            </GlassCard>
+                <p className="mt-4 text-xs leading-relaxed text-on-plane-soft">
+                  Readiness weighs each required skill by how much the role depends on it, so it is
+                  not a plain count of skills covered.
+                </p>
+              </div>
+            </section>
 
             <FocusAreaList gaps={gapResult.gaps} />
           </div>
         )}
 
         {computing && !gapResult && <p className="mt-6 text-sm text-ink-soft">Working it out…</p>}
+
+        {gapResult && <ChapterBreak />}
       </main>
     </div>
   );

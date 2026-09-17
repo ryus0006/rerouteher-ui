@@ -1,0 +1,156 @@
+{
+  "groups": [
+    {
+      "skill_id": "mock-ai-design",
+      "skill": "AI Design Tools (Figma AI, Midjourney)",
+      "icon": "spark",
+      "blurb": "Explore how AI can support and speed up your design process."
+    },
+    {
+      "skill_id": "mock-design-systems",
+      "skill": "Scalable Design Systems (Tokens & Multi-brand)",
+      "icon": "layers",
+      "blurb": "Learn how to build and maintain design systems that scale."
+    },
+    {
+      "skill_id": "mock-design-ops",
+      "skill": "Design Ops & Handoff Automation",
+      "icon": "flow",
+      "blurb": "Get your work from design to build without the manual hand-carrying."
+    },
+    {
+      "skill_id": "mock-prompt-ux",
+      "skill": "Prompt Engineering for UX Workflows",
+      "icon": "case",
+      "blurb": "Put prompting to work on the research and synthesis you already do."
+    }
+  ],
+  "resources": [
+    {
+      "skill_id": "mock-ai-design",
+      "id": "ai-figma-features",
+      "skill": "AI Design Tools (Figma AI, Midjourney)",
+      "title": "AI features in Figma",
+      "provider": "Figma Learn",
+      "logo": "figma",
+      "format": "Article",
+      "minutes": 30,
+      "cost": "Free",
+      "free": true,
+      "url": "https://help.figma.com/hc/en-us",
+      "why": "The AI built into the tool you already use daily, so nothing new has to be installed or learned around it."
+    },
+    {
+      "skill_id": "mock-ai-design",
+      "id": "ai-midjourney-product",
+      "skill": "AI Design Tools (Figma AI, Midjourney)",
+      "title": "Midjourney for product design",
+      "provider": "YouTube",
+      "logo": "youtube",
+      "format": "Video",
+      "minutes": 90,
+      "cost": "Free",
+      "free": true,
+      "url": "https://www.youtube.com/results?search_query=midjourney+for+product+design",
+      "why": "Ninety minutes is enough to know whether image generation belongs in your process at all."
+    },
+    {
+      "skill_id": "mock-ai-design",
+      "id": "ai-ux-practice",
+      "skill": "AI Design Tools (Figma AI, Midjourney)",
+      "title": "AI in UX practice",
+      "provider": "Nielsen Norman Group",
+      "logo": "nngroup",
+      "format": "Article",
+      "minutes": 20,
+      "cost": "Free",
+      "free": true,
+      "url": "https://www.nngroup.com/topic/ai/",
+      "why": "Research-led rather than tool-led, so you can talk about AI in an interview without sounding like a demo."
+    },
+    {
+      "skill_id": "mock-design-systems",
+      "id": "ds-variables-figma",
+      "skill": "Scalable Design Systems (Tokens & Multi-brand)",
+      "title": "Variables and modes in Figma",
+      "provider": "Figma Learn",
+      "logo": "figma",
+      "format": "Article",
+      "minutes": 60,
+      "cost": "Free",
+      "free": true,
+      "url": "https://help.figma.com/hc/en-us/articles/15339657135383",
+      "why": "The fastest way to see tokens working in a file you already know. Start here if you have an hour rather than a weekend."
+    },
+    {
+      "skill_id": "mock-design-systems",
+      "id": "ds-multibrand-video",
+      "skill": "Scalable Design Systems (Tokens & Multi-brand)",
+      "title": "Design tokens and multi-brand theming",
+      "provider": "YouTube",
+      "logo": "youtube",
+      "format": "Video",
+      "minutes": 120,
+      "cost": "Free",
+      "free": true,
+      "url": "https://www.youtube.com/results?search_query=design+tokens+multi+brand+theming",
+      "why": "Covers the multi-brand half this role asks for, which is where your current design-system work stops short."
+    },
+    {
+      "skill_id": "mock-design-ops",
+      "id": "ops-dev-mode",
+      "skill": "Design Ops & Handoff Automation",
+      "title": "Dev Mode and handoff in Figma",
+      "provider": "Figma Learn",
+      "logo": "figma",
+      "format": "Article",
+      "minutes": 40,
+      "cost": "Free",
+      "free": true,
+      "url": "https://help.figma.com/hc/en-us/sections/24314544927383",
+      "why": "Handoff is the part of the gap you can close inside a file you already own, without waiting for a course."
+    },
+    {
+      "skill_id": "mock-design-ops",
+      "id": "ops-designops-nng",
+      "skill": "Design Ops & Handoff Automation",
+      "title": "DesignOps in practice",
+      "provider": "Nielsen Norman Group",
+      "logo": "nngroup",
+      "format": "Article",
+      "minutes": 15,
+      "cost": "Free",
+      "free": true,
+      "url": "https://www.nngroup.com/topic/design-operations/",
+      "why": "Names the versioning and release practices the gap flagged, in the vocabulary a hiring manager will use."
+    },
+    {
+      "skill_id": "mock-prompt-ux",
+      "id": "prompt-openai-guide",
+      "skill": "Prompt Engineering for UX Workflows",
+      "title": "Prompt engineering guide",
+      "provider": "OpenAI",
+      "logo": "openai",
+      "format": "Article",
+      "minutes": 60,
+      "cost": "Free",
+      "free": true,
+      "url": "https://platform.openai.com/docs/guides/prompt-engineering",
+      "why": "The primary source rather than someone's summary of it, and short enough to read in one sitting."
+    },
+    {
+      "skill_id": "mock-prompt-ux",
+      "id": "prompt-research-synthesis",
+      "skill": "Prompt Engineering for UX Workflows",
+      "title": "Prompting for research synthesis",
+      "provider": "YouTube",
+      "logo": "youtube",
+      "format": "Video",
+      "minutes": 45,
+      "cost": "Free",
+      "free": true,
+      "url": "https://www.youtube.com/results?search_query=ai+prompting+ux+research+synthesis",
+      "why": "Applies prompting to research synthesis, the strongest skill on your snapshot, so it compounds rather than starts from scratch."
+    }
+  ]
+}

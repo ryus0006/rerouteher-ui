@@ -82,27 +82,27 @@ test.describe('E2 — Career Break (US2.2)', () => {
       .not.toBe('rgb(255, 255, 255)'); // reverted from the selected (white) text
   });
 
-  test('AC 2.2.7 — Continue to Skill Snapshot is disabled while no activity is selected', async ({
+  test('AC 2.2.7 — Continue to Work Priorities is disabled while no activity is selected', async ({
     page,
   }) => {
-    const cta = page.getByRole('button', { name: 'Continue to Skill Snapshot' });
+    const cta = page.getByRole('button', { name: 'Continue to Work Priorities' });
     await expect(cta).toBeDisabled();
 
     await slider(page).fill('5');
     await expect(cta).toBeDisabled(); // a duration alone is not enough
   });
 
-  test('AC 2.2.8 — with an activity selected, Continue generates the snapshot @smoke', async ({
+  test('AC 2.2.8 — with an activity selected, Continue opens the Work Priorities step @smoke', async ({
     page,
   }) => {
-    const cta = page.getByRole('button', { name: 'Continue to Skill Snapshot' });
+    const cta = page.getByRole('button', { name: 'Continue to Work Priorities' });
 
     await slider(page).fill('5');
     await activity(page, 'Childcare').click();
     await expect(cta).toBeEnabled();
 
     await cta.click();
-    await expect(page).toHaveURL(/\/diagnostic\/snapshot$/);
+    await expect(page).toHaveURL(/\/diagnostic\/priorities$/);
   });
 
   test('AC 2.2.9 — a reload restores the duration and the selected activities', async ({

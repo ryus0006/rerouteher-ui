@@ -21,8 +21,8 @@ export default function SkillChip({ skill }) {
       className={[
         'inline-flex items-center rounded-full border px-3 py-1 text-sm font-medium',
         fromBreak
-          ? 'border-mint-600/25 bg-mint-100/70 text-mint-700'
-          : 'border-ink-faint/15 bg-white/60 text-ink',
+          ? 'border-verify/25 bg-verify-soft text-verify'
+          : 'border-line bg-canvas text-ink',
       ].join(' ')}
     >
       {skill.skill}

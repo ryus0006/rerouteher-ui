@@ -57,6 +57,7 @@
 
 /**
  * @typedef {Object} Gap
+ * @property {string} skill_id
  * @property {string} skill
  * @property {'role' | 'ai_usage'} band
  * @property {number} importance
@@ -68,6 +69,44 @@
  * @property {number} readiness
  * @property {string[]} skills_have
  * @property {Gap[]} gaps
+ */
+
+/**
+ * @typedef {Object} LearningResource
+ * @property {string} id
+ * @property {string} skill_id
+ * @property {string} title
+ * @property {string} provider
+ * @property {string | null} [logo]
+ * @property {string} format
+ * @property {number | null} [minutes]
+ * @property {string} cost
+ * @property {boolean} free
+ * @property {string} url
+ * @property {string} why
+ */
+
+/**
+ * @typedef {Object} LearningGroup
+ * @property {string} skill_id
+ * @property {string} skill
+ * @property {string | null} [icon]
+ * @property {string | null} [blurb]
+ */
+
+/**
+ * @typedef {Object} EmployerMatch
+ * @property {string} id
+ * @property {string} name
+ * @property {string} [industry]
+ * @property {string} [location]
+ * @property {{ text: string, bg: string, fg: string } | null} [logo]
+ * @property {string} [website]
+ * @property {string} [summary]
+ * @property {string[]} discloses
+ * @property {{ label: string, url: string } | null} [report]
+ * @property {string[]} met
+ * @property {string[]} unmet
  */
 
 export {};

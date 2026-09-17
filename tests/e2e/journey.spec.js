@@ -18,6 +18,9 @@ test('@journey — a guest goes from landing to readiness without signing up @sm
   await page.getByRole('slider').fill('6');
   await page.getByText('Childcare', { exact: true }).click();
   await page.getByText('Budgeting', { exact: true }).click();
+  await page.getByRole('button', { name: 'Continue to Work Priorities' }).click();
+
+  await page.getByText('Flexible Work').click();
   await page.getByRole('button', { name: 'Continue to Skill Snapshot' }).click();
 
   await expect(page.getByText(/based on your CV as a/i)).toBeVisible();

@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import useSmoothNavigate from '../../hooks/useSmoothNavigate.js';
 import GlassCard from '../../components/ui/GlassCard.jsx';
 import GradientButton from '../../components/ui/GradientButton.jsx';
 import IntakeLayout from '../../components/intake/IntakeLayout.jsx';
+import { useCompanionStore } from '../../store/companionStore.js';
 import CvDropzone from '../../components/intake/CvDropzone.jsx';
 import UploadedFileChip from '../../components/intake/UploadedFileChip.jsx';
 import { parseCv, validateCvFile } from '../../api/cv.js';
@@ -11,7 +12,8 @@ import { useIntakeStore } from '../../store/intakeStore.js';
 const REQUIRED_MESSAGE = 'CV is required before you can continue.';
 
 export default function Background() {
-  const navigate = useNavigate();
+  const navigate = useSmoothNavigate();
+  const openCompanion = useCompanionStore((state) => state.openCompanion);
   const cv = useIntakeStore((state) => state.cv);
   const cvParsed = useIntakeStore((state) => state.cvParsed);
   const setCv = useIntakeStore((state) => state.setCv);
@@ -20,13 +22,7 @@ export default function Background() {
   const [error, setError] = useState(null);
   const [uploading, setUploading] = useState(false);
 
-  async function handleSelect(file) {
-    const invalid = validateCvFile(file);
-    if (invalid) {
-      setError(invalid);
-      return;
-    }
-
+  async function upload(file) {
     setError(null);
     setUploading(true);
 
@@ -38,6 +34,21 @@ export default function Background() {
     } finally {
       setUploading(false);
     }
+  }
+
+  async function handleSelect(file) {
+    const invalid = validateCvFile(file);
+    if (invalid) {
+      setError(invalid);
+      return;
+    }
+
+    await upload(file);
+  }
+
+  function handleRemove() {
+    setError(null);
+    clearCv();
   }
 
   function handleContinue() {
@@ -60,22 +71,23 @@ export default function Background() {
           Select your CV file <span className="text-pink-600">*</span>
         </h2>
 
-        <div className="mt-3">
-          {cvParsed && cv ? (
-            // Keeps the dropzone frame around the accepted file.
-            <div className="rounded-2xl border border-dashed border-ink-faint/35 bg-white/40 p-4">
-              <UploadedFileChip
-                fileName={cv.fileName}
-                fileSize={cv.fileSize}
-                onRemove={() => {
-                  clearCv();
-                  setError(null);
-                }}
-              />
-            </div>
-          ) : (
-            <CvDropzone onSelect={handleSelect} disabled={uploading} />
-          )}
+        {/* Fixed height across both states: without it the primary action jumps
+            ~56px up the moment a file is accepted, under the pointer. */}
+        <div className="mt-3 flex min-h-[11.5rem] items-center">
+          <div className="w-full">
+            {cvParsed && cv ? (
+              // Keeps the dropzone frame around the accepted file.
+              <div className="rounded-2xl border border-dashed border-line-strong bg-canvas p-4">
+                <UploadedFileChip
+                  fileName={cv.fileName}
+                  fileSize={cv.fileSize}
+                  onRemove={handleRemove}
+                />
+              </div>
+            ) : (
+              <CvDropzone onSelect={handleSelect} disabled={uploading} />
+            )}
+          </div>
         </div>
 
         {uploading && <p className="mt-3 text-sm text-ink-soft">Reading your CV…</p>}
@@ -83,6 +95,23 @@ export default function Background() {
         {error && (
           <p role="alert" className="mt-3 text-sm font-medium text-pink-600">
             {error}
+          </p>
+        )}
+
+        {/* Plenty of women returning after years away have no CV to hand, and
+            being stopped at the first screen is where they leave. Chatting builds
+            the same profile the upload does (US8.1). */}
+        {!cvParsed && (
+          <p className="mt-4 border-t border-line pt-4 text-sm text-ink-soft">
+            No CV?{' '}
+            <button
+              type="button"
+              onClick={() => openCompanion('build')}
+              className="font-semibold text-pink-600 underline underline-offset-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
+            >
+              Talk to our AI
+            </button>{' '}
+            and build your profile by chatting about what you have done.
           </p>
         )}
       </GlassCard>

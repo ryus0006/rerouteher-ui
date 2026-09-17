@@ -11,6 +11,9 @@ async function reachGap(page) {
 
   await page.getByRole('slider').fill('5');
   await page.getByText('Childcare', { exact: true }).click();
+  await page.getByRole('button', { name: 'Continue to Work Priorities' }).click();
+
+  await page.getByText('Flexible Work').click();
   await page.getByRole('button', { name: 'Continue to Skill Snapshot' }).click();
 
   await page.getByRole('button', { name: 'See my readiness & gaps' }).click();
@@ -19,6 +22,9 @@ async function reachGap(page) {
 
 const focusAreas = (page) =>
   page.getByRole('listitem').filter({ has: page.getByText(/% if learned/) });
+
+/* The "what's next" panel names her focus areas too, so assertions about a
+   named gap go through the ranked list rather than the whole page. */
 
 /** The radio itself is visually hidden, so selection goes through its label. */
 const selectRole = (page, role) => page.getByText(role, { exact: true }).click();
@@ -161,7 +167,7 @@ test.describe('E4 — Role Readiness & Skill Gap', () => {
     await mockApi(page);
     await reachGap(page);
 
-    await expect(page.getByText('AI Design Tools (Figma AI, Midjourney)')).toBeVisible();
+    await expect(focusAreas(page).first()).toContainText('AI Design Tools (Figma AI, Midjourney)');
     await expect(page.getByText(/^Improve AI skills$/i)).toHaveCount(0);
   });
 
@@ -176,11 +182,11 @@ test.describe('E4 — Role Readiness & Skill Gap', () => {
   test('AC 4.2.5 — switching role updates the priority gaps', async ({ page }) => {
     await mockApi(page);
     await reachGap(page);
-    await expect(page.getByText('AI Design Tools (Figma AI, Midjourney)')).toBeVisible();
+    await expect(focusAreas(page).first()).toContainText('AI Design Tools (Figma AI, Midjourney)');
 
     await selectRole(page, 'Digital Marketing');
 
-    await expect(page.getByText('Campaign Analytics & Attribution')).toBeVisible();
+    await expect(focusAreas(page).first()).toContainText('Campaign Analytics & Attribution');
     await expect(page.getByText('AI Design Tools (Figma AI, Midjourney)')).toHaveCount(0);
   });
 

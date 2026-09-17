@@ -24,6 +24,29 @@ describe('intake store', () => {
     expect(store().break.activities).toEqual(['care_household.ran_household']);
   });
 
+  it('addConfirmedSkills dedupes by skill_id', () => {
+    store().addConfirmedSkills([{ skill_id: 's1', skill_name: 'SQL' }]);
+    store().addConfirmedSkills([
+      { skill_id: 's1', skill_name: 'SQL' },
+      { skill_id: 's2', skill_name: 'Figma' },
+    ]);
+    expect(store().confirmedSkills.map((s) => s.skill_id)).toEqual(['s1', 's2']);
+  });
+
+  it('clears confirmedSkills when the CV changes (they feed the snapshot)', () => {
+    store().addConfirmedSkills([{ skill_id: 's1', skill_name: 'SQL' }]);
+    store().setCv({ fileName: 'cv.pdf', raw_text: '', experiences: [], skill_mentions: [] });
+    expect(store().confirmedSkills).toEqual([]);
+  });
+
+  it('stores employer matches and clears them when priorities change', () => {
+    store().setEmployerMatches([{ id: 'maybank', name: 'Maybank' }]);
+    expect(store().employerMatches).toHaveLength(1);
+
+    store().setEmployerPriorities(['flexible_work']);
+    expect(store().employerMatches).toEqual([]); // stale matches cleared on a priorities change
+  });
+
   it('requires at least one activity before generating a snapshot (duration 0 is valid)', () => {
     expect(store().canGenerateSnapshot()).toBe(false);
 
@@ -60,9 +83,13 @@ describe('intake store', () => {
     expect(store().gapResult).toBeNull();
   });
 
-  it('persists the session under the shared storage key', () => {
+  it('persists the session for the tab, not for the browser', () => {
     store().setBreakDuration(5);
-    expect(localStorage.getItem('rerouteher.guestSession')).toContain('"duration_years":5');
+
+    // sessionStorage, so a reload keeps her answers and closing the tab does
+    // not leave them on a shared machine.
+    expect(sessionStorage.getItem('rerouteher.guestSession')).toContain('"duration_years":5');
+    expect(localStorage.getItem('rerouteher.guestSession')).toBeNull();
   });
 });
 

@@ -3,17 +3,25 @@
   "skills_have": ["Active Listening", "Coordination", "Time Management"],
   "gaps": [
     {
+      "skill_id": "mock-campaign-analytics",
       "skill": "Campaign Analytics & Attribution",
       "band": "role",
       "importance": 0.88,
       "uplift": 14
     },
     {
+      "skill_id": "mock-marketing-automation",
       "skill": "Marketing Automation Platforms",
       "band": "role",
       "importance": 0.79,
       "uplift": 11
     },
-    { "skill": "SEO & Content Strategy", "band": "role", "importance": 0.7, "uplift": 8 }
+    {
+      "skill_id": "mock-seo-content",
+      "skill": "SEO & Content Strategy",
+      "band": "role",
+      "importance": 0.7,
+      "uplift": 8
+    }
   ]
 }

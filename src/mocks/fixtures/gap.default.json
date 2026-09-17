@@ -11,24 +11,28 @@
   ],
   "gaps": [
     {
+      "skill_id": "mock-ai-design",
       "skill": "AI Design Tools (Figma AI, Midjourney)",
       "band": "ai_usage",
       "importance": 0.81,
       "uplift": 9
     },
     {
+      "skill_id": "mock-design-systems",
       "skill": "Scalable Design Systems (Tokens & Multi-brand)",
       "band": "role",
       "importance": 0.74,
       "uplift": 7
     },
     {
+      "skill_id": "mock-prompt-ux",
       "skill": "Prompt Engineering for UX Workflows",
       "band": "ai_usage",
       "importance": 0.66,
       "uplift": 5
     },
     {
+      "skill_id": "mock-design-ops",
       "skill": "Design Ops & Handoff Automation",
       "band": "role",
       "importance": 0.52,

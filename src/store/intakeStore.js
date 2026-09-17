@@ -1,38 +1,133 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { createJSONStorage, persist } from 'zustand/middleware';
 
 export const STORAGE_KEY = 'rerouteher.guestSession';
+
+/**
+ * The journey lives for the tab, not for the browser.
+ *
+ * A reload must not cost her the answers she has given, so it is stored rather
+ * than held in memory. Closing the tab is the end of the visit, though, and
+ * leaving a CV, a snapshot and a readiness score behind on what is often a
+ * shared or borrowed laptop is not something she asked for. `sessionStorage`
+ * is exactly that line: it survives a refresh and dies with the tab.
+ *
+ * Nothing is lost by it for an account holder — her plan is saved to the
+ * account on every change, and signing in brings all of it back.
+ */
+export const sessionBacked = () =>
+  createJSONStorage(() => (typeof sessionStorage === 'undefined' ? undefined : sessionStorage));
 
 /** @type {import('../types/intake.js').IntakeState} */
 const initialState = {
   cv: null,
   cvParsed: false,
   break: { duration_years: 0, activities: [] },
-  preferences: {},
+  employerPriorities: [],
+  // Skills she ticked from her previous role's checklist in the chat; merged into
+  // the snapshot's professional skills, so cleared whenever the snapshot is.
+  confirmedSkills: [],
+  // Her computed employer matches, held so the companion can explain them (US8.3);
+  // a recomputable page result, cleared when priorities change or the snapshot resets.
+  employerMatches: [],
   snapshot: null,
   selectedRole: null,
   gapResult: null,
   currentStepIndex: 0,
+  previousPlan: null,
 };
 
 const emptyBreak = () => ({ duration_years: 0, activities: [] });
 
+/**
+ * Whether a plan holds anything a woman would be sorry to lose.
+ *
+ * A CV read, or a snapshot built. Not the empty shape an account is created
+ * with when someone signs up before starting, which must never be allowed to
+ * stand in for real work.
+ *
+ * @param {object | null | undefined} plan
+ */
+export const hasJourney = (plan) => Boolean(plan?.cvParsed || plan?.snapshot);
+
+/**
+ * The journey itself, as opposed to the store that holds it. Named explicitly
+ * so what travels to an account is a decision rather than whatever `getState`
+ * happens to return.
+ */
+export const PLAN_FIELDS = [
+  'cv',
+  'cvParsed',
+  'break',
+  'employerPriorities',
+  'confirmedSkills',
+  'snapshot',
+  'selectedRole',
+  'gapResult',
+  'currentStepIndex',
+];
+
 // State owned by pages after the changed one, cleared in the mutators so a stale
 // result never survives an upstream edit (journey order lives in config/flowSteps.js).
-const resetAfterBreak = () => ({ snapshot: null, selectedRole: null, gapResult: null });
+// confirmedSkills feed the snapshot, so they clear whenever the snapshot does.
+const resetAfterBreak = () => ({
+  confirmedSkills: [],
+  employerMatches: [],
+  snapshot: null,
+  selectedRole: null,
+  gapResult: null,
+});
 const resetAfterCv = () => ({ break: emptyBreak(), ...resetAfterBreak() });
+
+/**
+ * The finished journey, held aside before a new CV overwrites it.
+ *
+ * Replacing the CV clears everything downstream of it, which leaves her with
+ * nothing at all if she abandons the redo halfway: no old snapshot, no new one.
+ * The stash makes that recoverable until the redo produces its own gap.
+ *
+ * Only a plan that reached a snapshot is worth keeping. Returns null once a
+ * redo is already under way, so a second upload cannot overwrite the stash
+ * with the half-built plan the first one left behind.
+ */
+const stash = (state) =>
+  state.snapshot ? Object.fromEntries(PLAN_FIELDS.map((field) => [field, state[field]])) : null;
 
 export const useIntakeStore = create(
   persist(
     (set, get) => ({
       ...initialState,
 
-      setCv: (cv) => set({ cv, cvParsed: true, ...resetAfterCv() }),
-      clearCv: () => set({ cv: null, cvParsed: false, ...resetAfterCv() }),
+      setCv: (cv) =>
+        set((state) => ({
+          cv,
+          cvParsed: true,
+          previousPlan: stash(state) ?? state.previousPlan,
+          ...resetAfterCv(),
+        })),
+
+      clearCv: () =>
+        set((state) => ({
+          cv: null,
+          cvParsed: false,
+          previousPlan: stash(state) ?? state.previousPlan,
+          ...resetAfterCv(),
+        })),
 
       setBreakDuration: (years) =>
         set((state) => ({
           break: { ...state.break, duration_years: years },
+          ...resetAfterBreak(),
+        })),
+
+      // Whole-break set used when the companion returns a break in journey_update;
+      // mirrors the page path's downstream reset so chat and page stay interchangeable.
+      setBreak: (careerBreak) =>
+        set(() => ({
+          break: {
+            duration_years: careerBreak?.duration_years ?? 0,
+            activities: careerBreak?.activities ?? [],
+          },
           ...resetAfterBreak(),
         })),
 
@@ -50,8 +145,20 @@ export const useIntakeStore = create(
           };
         }),
 
-      setPreference: (categoryId, optionIds) =>
-        set((state) => ({ preferences: { ...state.preferences, [categoryId]: optionIds } })),
+      /* Replaced wholesale rather than toggled here: the cap on how many she
+         may pick belongs to the screen that shows the cap, not to the store. */
+      // A priorities change invalidates any matches computed from the old set.
+      setEmployerPriorities: (employerPriorities) =>
+        set({ employerPriorities, employerMatches: [] }),
+      setEmployerMatches: (employerMatches) => set({ employerMatches: employerMatches ?? [] }),
+
+      setConfirmedSkills: (confirmedSkills) => set({ confirmedSkills: confirmedSkills ?? [] }),
+      addConfirmedSkills: (skills) =>
+        set((state) => {
+          const byId = new Map(state.confirmedSkills.map((s) => [s.skill_id, s]));
+          for (const s of skills ?? []) if (s?.skill_id) byId.set(s.skill_id, s);
+          return { confirmedSkills: [...byId.values()] };
+        }),
 
       setSnapshot: (snapshot) =>
         set({
@@ -64,7 +171,9 @@ export const useIntakeStore = create(
         }),
 
       setSelectedRole: (role) => set({ selectedRole: role, gapResult: null }),
-      setGapResult: (gapResult) => set({ gapResult }),
+      // A gap means the redo is finished and has replaced what it set out to
+      // replace, so there is no longer an earlier plan to go back to.
+      setGapResult: (gapResult) => set({ gapResult, previousPlan: null }),
       setCurrentStepIndex: (currentStepIndex) => set({ currentStepIndex }),
 
       /** True once at least one activity is recorded. Duration 0 ("less than a year") is valid. */
@@ -73,9 +182,33 @@ export const useIntakeStore = create(
         return careerBreak.activities.length > 0;
       },
 
+      /** What gets saved to an account (US5.3). */
+      exportPlan: () => {
+        const state = get();
+        return Object.fromEntries(PLAN_FIELDS.map((field) => [field, state[field]]));
+      },
+
+      /**
+       * What comes back when she signs in on any device (US5.4). Unknown keys
+       * are dropped, so a plan saved by an older version cannot inject state.
+       */
+      importPlan: (plan) => {
+        if (!plan) return;
+        set(Object.fromEntries(PLAN_FIELDS.filter((f) => f in plan).map((f) => [f, plan[f]])));
+      },
+
+      /** Abandon the redo and put back the journey it was overwriting. */
+      restorePreviousPlan: () =>
+        set((state) =>
+          state.previousPlan ? { ...state.previousPlan, previousPlan: null } : state
+        ),
+
+      /** Commit to the redo: the earlier journey stops being offered back. */
+      discardPreviousPlan: () => set({ previousPlan: null }),
+
       reset: () => set(initialState),
     }),
-    // v2: selectedRole changed from a role-title string to the full role object.
-    { name: STORAGE_KEY, version: 2 }
+    // v2: selectedRole is the full role object, not a role-title string.
+    { name: STORAGE_KEY, version: 2, storage: sessionBacked() }
   )
 );

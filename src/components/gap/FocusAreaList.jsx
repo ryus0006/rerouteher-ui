@@ -9,7 +9,7 @@ const BAND_LABELS = {
   ai_usage: 'AI literacy',
 };
 
-const GROUP_LABEL = 'text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-ink-soft';
+const GROUP_LABEL = 'eyebrow';
 
 /**
  * Every requirement this role asks for that she does not yet cover. The highest
@@ -43,9 +43,9 @@ export default function FocusAreaList({ gaps }) {
             {focusAreas.map((gap, index) => (
               <li
                 key={gap.skill}
-                className="flex items-start gap-3 rounded-2xl border border-ink-faint/15 bg-white/60 px-4 py-3"
+                className="flex items-start gap-3 rounded-2xl border border-line bg-canvas px-4 py-3"
               >
-                <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-grad-btn text-xs font-semibold text-white">
+                <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-ink text-xs font-semibold tabular text-white">
                   {index + 1}
                 </span>
 
@@ -54,7 +54,7 @@ export default function FocusAreaList({ gaps }) {
                   <p className="mt-0.5 text-xs text-ink-faint">{BAND_LABELS[gap.band]}</p>
                 </div>
 
-                <span className="shrink-0 rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-700">
+                <span className="shrink-0 rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold tabular text-amber-700">
                   {formatUplift(gap.uplift)}
                 </span>
               </li>
@@ -71,7 +71,7 @@ export default function FocusAreaList({ gaps }) {
                 {alsoMissing.map((gap) => (
                   <li
                     key={gap.skill}
-                    className="rounded-full border border-ink-faint/20 bg-white/60 px-2.5 py-1 text-xs text-ink-soft"
+                    className="rounded-full border border-line bg-canvas px-2.5 py-1 text-xs text-ink-soft"
                   >
                     {gap.skill}
                   </li>

@@ -5,8 +5,8 @@ const CHIP =
   'cursor-pointer rounded-full border px-3.5 py-1.5 text-sm transition duration-200 ease-spring has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-blue-600';
 
 const CHIP_STATE = {
-  on: 'border-mint-600 bg-mint-600 font-medium text-white shadow-card',
-  off: 'border-ink-faint/25 bg-white/60 text-ink-soft hover:border-pink-500/45 hover:text-ink',
+  on: 'border-blue-600 bg-blue-600 font-medium text-white shadow-card',
+  off: 'border-line-strong bg-surface text-ink-soft hover:border-blue-600/45 hover:text-ink',
 };
 
 export default function ActivityPicker({ selected, onToggle }) {
@@ -36,10 +36,7 @@ export default function ActivityPicker({ selected, onToggle }) {
               aria-labelledby={headingId}
               className="sm:grid sm:grid-cols-[7.5rem_1fr] sm:items-start sm:gap-x-5"
             >
-              <p
-                id={headingId}
-                className="text-[0.6875rem] font-semibold uppercase leading-4 tracking-[0.08em] text-ink-soft sm:pt-2 sm:text-right"
-              >
+              <p id={headingId} className="eyebrow leading-4 sm:pt-2 sm:text-right">
                 {category.label}
               </p>
 

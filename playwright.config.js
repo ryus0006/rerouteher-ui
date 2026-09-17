@@ -11,7 +11,9 @@ export default defineConfig({
     ['list'],
   ],
   use: {
-    baseURL: process.env.E2E_BASE_URL ?? 'http://localhost:4173',
+    baseURL:
+      process.env.E2E_BASE_URL ??
+      (process.env.E2E_FULLSTACK ? 'http://localhost:5174' : 'http://localhost:4174'),
     trace: 'retain-on-failure',
     video: 'retain-on-failure',
   },
@@ -28,12 +30,23 @@ export default defineConfig({
         ]
       : []),
   ],
-  // Skipped when E2E_BASE_URL points at a deployed environment.
+  // Skipped when E2E_BASE_URL points at a deployed environment. With E2E_FULLSTACK
+  // the real UI runs against the real API; the API + DB are brought up separately
+  // (see tests/e2e/helpers/fullstack-README.md).
   webServer: process.env.E2E_BASE_URL
     ? undefined
-    : {
-        command: 'npm run preview',
-        port: 4173,
-        reuseExistingServer: true,
-      },
+    : process.env.E2E_FULLSTACK
+      ? {
+          // `npm run dev` talks to the real API (VITE_API_BASE_URL from
+          // .env.development / .env.local); the API + DB are brought up separately
+          // (see tests/e2e/helpers/fullstack-README.md).
+          command: 'npm run dev',
+          url: 'http://localhost:5174',
+          reuseExistingServer: false,
+        }
+      : {
+          command: 'npm run preview',
+          port: 4174,
+          reuseExistingServer: true,
+        },
 });

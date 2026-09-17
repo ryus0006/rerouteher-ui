@@ -20,7 +20,11 @@ export default function OccupationLine({ occupation }) {
   return (
     <>
       <p className="mt-2 text-sm text-ink-soft sm:text-base">
-        Here is what you already bring, based on your CV as a{' '}
+        {/* She may never have uploaded one: the conversational route reaches
+            this same screen, and crediting a CV she does not have is wrong. */}
+        {occupation.method === 'conversation'
+          ? 'Here is what you already bring, based on what you told us about your work as a '
+          : 'Here is what you already bring, based on your CV as a '}
         <strong className="font-semibold text-ink">{occupation.role}</strong>.
       </p>
 

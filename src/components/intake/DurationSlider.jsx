@@ -38,7 +38,7 @@ export default function DurationSlider({ value, onChange }) {
         /* The gradient stops at the current value, so the track reads as filled
            to the thumb rather than full at every value. */
         style={{
-          background: `linear-gradient(to right, var(--color-pink-500), var(--color-violet-600) ${filled}%, rgb(35 42 82 / 0.12) ${filled}%)`,
+          background: `linear-gradient(to right, var(--color-pink-500), var(--color-violet-600) ${filled}%, rgb(44 33 66 / 0.12) ${filled}%)`,
         }}
         className={`mt-3 h-1.5 w-full cursor-pointer appearance-none rounded-full ${THUMB}`}
       />

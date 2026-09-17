@@ -11,10 +11,10 @@ export default function UploadedFileChip({ fileName, fileSize, onRemove }) {
   const size = formatSize(fileSize);
 
   return (
-    <div className="flex items-center gap-3 rounded-2xl border-[1.5px] border-mint-600/30 bg-white/90 px-4 py-3">
+    <div className="flex items-center gap-3 rounded-2xl border border-verify/30 bg-verify-soft px-4 py-3">
       <span
         aria-hidden="true"
-        className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-mint-100 text-mint-700"
+        className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-surface text-verify"
       >
         <svg
           viewBox="0 0 24 24"
@@ -32,7 +32,7 @@ export default function UploadedFileChip({ fileName, fileSize, onRemove }) {
 
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-semibold text-ink">{fileName}</p>
-        <p className="text-xs font-semibold text-mint-700">
+        <p className="text-xs font-semibold text-verify">
           {size ? `${size} · Verified` : 'Verified'}
         </p>
       </div>
@@ -40,7 +40,7 @@ export default function UploadedFileChip({ fileName, fileSize, onRemove }) {
       <button
         type="button"
         onClick={onRemove}
-        className="shrink-0 rounded-full bg-pink-100 px-3.5 py-1.5 text-xs font-semibold text-pink-600 transition hover:bg-pink-100/70 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
+        className="shrink-0 rounded-full border border-line-strong bg-surface px-3.5 py-1.5 text-xs font-semibold text-ink-soft transition hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
       >
         Remove
       </button>
