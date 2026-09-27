@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import GlassCard from '../ui/GlassCard.jsx';
+import CardIllustration from '../ui/CardIllustration.jsx';
 import SkillChip from './SkillChip.jsx';
 
 // how many skill chips to show before collapsing the rest behind a toggle
@@ -10,7 +11,7 @@ const INITIAL_VISIBLE = 12;
  * `emptyMessage`. Long lists are collapsed to the top chips (the list arrives
  * strongest-first) with a "Show all" toggle to reveal the rest.
  */
-export default function SkillSection({ title, note, skills, emptyMessage }) {
+export default function SkillSection({ title, note, skills, emptyMessage, illustration }) {
   const [expanded, setExpanded] = useState(false);
 
   const isEmpty = skills.length === 0;
@@ -18,7 +19,8 @@ export default function SkillSection({ title, note, skills, emptyMessage }) {
   const visible = expanded || !canCollapse ? skills : skills.slice(0, INITIAL_VISIBLE);
 
   return (
-    <GlassCard className="p-6">
+    <GlassCard className="card-with-illustration p-6">
+      {illustration && <CardIllustration src={illustration} />}
       <div className="flex items-baseline justify-between gap-2">
         <h2 className="text-sm font-semibold text-ink">{title}</h2>
         {!isEmpty && <span className="text-xs text-ink-faint">{skills.length}</span>}

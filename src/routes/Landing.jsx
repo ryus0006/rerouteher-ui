@@ -3,6 +3,7 @@ import Header from '../components/layout/Header.jsx';
 import GlassCard from '../components/ui/GlassCard.jsx';
 import GradientButton from '../components/ui/GradientButton.jsx';
 import Photo from '../components/ui/Photo.jsx';
+import CardIllustration from '../components/ui/CardIllustration.jsx';
 import JourneyRail from '../components/landing/JourneyRail.jsx';
 import ValueIcon from '../components/landing/ValueIcon.jsx';
 import useResumePoint from '../hooks/useResumePoint.js';
@@ -11,23 +12,29 @@ import { useAccountStore } from '../store/accountStore.js';
 // User-supplied landing photograph, encoded for fast loading.
 import heroWebp from '../assets/hero-collaboration.webp';
 import heroJpg from '../assets/hero-collaboration.jpg';
+import journeyPath from '../assets/page-illustrations/journey-path.png';
+import snapshotKeepsake from '../assets/page-illustrations/snapshot-keepsake.png';
+import gapBridge from '../assets/page-illustrations/gap-bridge.png';
 
 const VALUE_CARDS = [
   {
     id: 'break-counts',
     icon: 'intake',
+    illustration: snapshotKeepsake,
     title: 'Your break counts as experience',
     body: 'Budgeting, scheduling, coordination — named, then mapped to standard taxonomies.',
   },
   {
     id: 'weighted-readiness',
     icon: 'clock',
+    illustration: gapBridge,
     title: 'Transparent, weighted readiness',
     body: 'A score for any target role, with the reasoning behind every point.',
   },
   {
     id: 'three-focus-areas',
     icon: 'climb',
+    illustration: journeyPath,
     title: 'Three focus areas, never a wall',
     body: 'Three, ranked by impact — not a list of everything you have not done.',
   },
@@ -168,7 +175,12 @@ export default function Landing() {
 
             <div className="mt-14 grid gap-4 md:grid-cols-3">
               {VALUE_CARDS.map((card) => (
-                <GlassCard key={card.id} interactive className="landing-value-card p-6">
+                <GlassCard
+                  key={card.id}
+                  interactive
+                  className="card-with-illustration landing-value-card p-6"
+                >
+                  <CardIllustration src={card.illustration} />
                   <ValueIcon name={card.icon} />
                   <h3 className="mt-4 font-semibold text-ink">{card.title}</h3>
                   <p className="mt-2 text-sm leading-relaxed text-ink-soft">{card.body}</p>

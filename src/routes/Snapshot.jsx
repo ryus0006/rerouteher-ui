@@ -10,6 +10,8 @@ import SkillSection from '../components/snapshot/SkillSection.jsx';
 import AskHeraAboutResults from '../components/companion/AskHeraAboutResults.jsx';
 import { generateSnapshot } from '../api/snapshot.js';
 import { useIntakeStore } from '../store/intakeStore.js';
+import snapshotKeepsake from '../assets/page-illustrations/snapshot-keepsake.png';
+import gapBridge from '../assets/page-illustrations/gap-bridge.png';
 
 export default function Snapshot() {
   const navigate = useSmoothNavigate();
@@ -85,6 +87,7 @@ export default function Snapshot() {
           <SkillSection
             title={cv ? 'From your CV' : 'From your work'}
             skills={snapshot.professional_skills}
+            illustration={gapBridge}
             emptyMessage="No professional skills matched confidently enough to list. Go back to Step 1 and upload a CV to fill this in."
           />
 
@@ -92,6 +95,7 @@ export default function Snapshot() {
             title="From your career break"
             note="These come from the activities you did during your career break."
             skills={snapshot.reframed_skills}
+            illustration={snapshotKeepsake}
             emptyMessage="None of your selected activities mapped to a recognised skill yet."
           />
         </div>

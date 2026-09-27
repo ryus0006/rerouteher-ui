@@ -22,6 +22,7 @@
  * @property {string | null} [skill_id]
  * @property {'experience'} source
  * @property {string} evidence
+ * @property {string | null} [definition] Short ESCO definition when available.
  */
 
 /**
@@ -30,6 +31,7 @@
  * @property {string | null} [skill_id]
  * @property {'break'} source
  * @property {string} from_activity
+ * @property {string | null} [definition] Short ESCO definition when available.
  */
 
 /**

@@ -5,12 +5,14 @@ import BackLink from '../../components/intake/BackLink.jsx';
 import TargetRoleSelect from '../../components/plan/TargetRoleSelect.jsx';
 import Photo from '../../components/ui/Photo.jsx';
 import LearningIcon from '../../components/plan/LearningIcon.jsx';
+import CardIllustration from '../../components/ui/CardIllustration.jsx';
 import { MAX_FOCUS_AREAS } from '../../components/gap/FocusAreaList.jsx';
 import { pickFocusAreas } from '../../lib/focusAreas.js';
 import { formatUplift } from '../../lib/formatters.js';
 import { recommendLearning } from '../../api/learning.js';
 import { useAccountStore } from '../../store/accountStore.js';
 import { useIntakeStore } from '../../store/intakeStore.js';
+import useSmoothNavigate from '../../hooks/useSmoothNavigate.js';
 
 import bannerWebp from '../../assets/learning-desk.webp';
 import bannerJpg from '../../assets/learning-desk.jpg';
@@ -18,6 +20,7 @@ import figmaLogo from '../../assets/logos/figma.png';
 import youtubeLogo from '../../assets/logos/youtube.png';
 import nngroupLogo from '../../assets/logos/nngroup.png';
 import openaiLogo from '../../assets/logos/openai.png';
+import learningDeskIllustration from '../../assets/page-illustrations/learning-desk.png';
 
 /* The providers' own marks, self-hosted rather than hot-linked, so the page
    makes no request to anyone she has not chosen to visit. */
@@ -96,13 +99,24 @@ function Chip({ tone = 'neutral', children }) {
  * provider, format, length, price — is what she needs to judge whether it fits
  * a week that already has a family in it.
  */
-function Resource({ resource }) {
+function Resource({ resource, completed, onToggle }) {
   return (
     <li className="flex flex-wrap items-start gap-x-4 gap-y-3 border-t border-line px-5 py-4 sm:flex-nowrap sm:px-6">
+      <label className="flex cursor-pointer items-center pt-1">
+        <input
+          type="checkbox"
+          checked={completed}
+          onChange={onToggle}
+          className="size-5 rounded border-line-strong text-pink-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
+        />
+        <span className="sr-only">Mark {resource.title} as completed</span>
+      </label>
       <ProviderMark logo={resource.logo} provider={resource.provider} />
 
       <div className="min-w-0 flex-1">
-        <h3 className="font-semibold text-ink">{resource.title}</h3>
+        <h3 className={`font-semibold text-ink ${completed ? 'line-through opacity-60' : ''}`}>
+          {resource.title}
+        </h3>
         <p className="mt-0.5 text-xs text-ink-faint">{resource.provider}</p>
         <p className="mt-1.5 max-w-[62ch] text-sm leading-relaxed text-ink-soft">{resource.why}</p>
       </div>
@@ -140,6 +154,7 @@ function Resource({ resource }) {
  * thing that moves her readiness most.
  */
 export default function Learning() {
+  const navigate = useSmoothNavigate();
   const snapshot = useIntakeStore((state) => state.snapshot);
   const selectedRole = useIntakeStore((state) => state.selectedRole);
   const user = useAccountStore((state) => state.user);
@@ -149,6 +164,8 @@ export default function Learning() {
   const [error, setError] = useState(null);
   const [filter, setFilter] = useState(ALL);
   const [closed, setClosed] = useState([]);
+  const completed = useIntakeStore((state) => state.learningCompleted);
+  const toggleCompleted = useIntakeStore((state) => state.toggleLearningCompleted);
 
   const focusAreas = gapResult ? pickFocusAreas(gapResult.gaps, MAX_FOCUS_AREAS) : [];
   const skillIds = focusAreas.map((gap) => gap.skill_id);
@@ -222,7 +239,8 @@ export default function Learning() {
           <TargetRoleSelect />
         </div>
 
-        <section className="learning-banner mt-6 grid overflow-hidden rounded-3xl md:grid-cols-[1fr_1fr]">
+        <section className="learning-banner card-with-illustration mt-6 grid rounded-3xl md:grid-cols-[1fr_1fr]">
+          <CardIllustration src={learningDeskIllustration} />
           <div className="order-2 p-6 sm:p-8 md:order-1 md:self-center">
             <p className="eyebrow text-ink-faint">Learn at your own pace</p>
             <h2 className="mt-2 max-w-[16ch] font-display text-2xl font-bold leading-[1.12] tracking-[-0.02em] text-ink sm:text-3xl">
@@ -298,6 +316,7 @@ export default function Learning() {
 
             const count = forGap.length;
             const open = !closed.includes(gap.skill_id);
+            const done = forGap.filter((resource) => completed.includes(resource.id)).length;
 
             return (
               <section
@@ -321,6 +340,9 @@ export default function Learning() {
 
                   <p className="shrink-0 text-sm font-semibold tabular text-verify">
                     {formatUplift(gap.uplift)}
+                  </p>
+                  <p className="shrink-0 text-xs font-semibold text-ink-soft">
+                    {done}/{count} complete
                   </p>
 
                   <button
@@ -355,7 +377,12 @@ export default function Learning() {
                 {open && (
                   <ul>
                     {forGap.map((resource) => (
-                      <Resource key={resource.id} resource={resource} />
+                      <Resource
+                        key={resource.id}
+                        resource={resource}
+                        completed={completed.includes(resource.id)}
+                        onToggle={() => toggleCompleted(resource.id)}
+                      />
                     ))}
                   </ul>
                 )}
@@ -374,6 +401,34 @@ export default function Learning() {
           <p className="mt-8 max-w-[56ch] text-sm leading-relaxed text-ink-soft">
             No {filter}s here for your focus areas. Select “All” to see everything.
           </p>
+        )}
+
+        {plan && plan.resources.length > 0 && (
+          <section className="mt-8 flex flex-wrap items-center gap-5 rounded-2xl border border-pink-600/20 bg-pink-100/65 p-5 sm:p-6">
+            <span
+              aria-hidden="true"
+              className="flex size-12 items-center justify-center rounded-xl bg-white text-pink-600"
+            >
+              <LearningIcon name="confidence" className="size-6" />
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="eyebrow text-pink-600">Put your progress into words</p>
+              <h2 className="mt-1 font-display text-xl font-bold text-ink">
+                Practise for your target role
+              </h2>
+              <p className="mt-1 max-w-[60ch] text-sm leading-relaxed text-ink-soft">
+                Use the skills you are building to answer five interview questions with personalised
+                feedback.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => navigate('/interview-practice')}
+              className="rounded-full bg-pink-600 px-5 py-3 text-sm font-semibold text-white shadow-card transition hover:bg-pink-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
+            >
+              Start interview practice <span aria-hidden="true">→</span>
+            </button>
+          </section>
         )}
       </main>
     </div>

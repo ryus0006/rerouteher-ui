@@ -1,4 +1,5 @@
 import GlassCard from '../ui/GlassCard.jsx';
+import CardIllustration from '../ui/CardIllustration.jsx';
 import { formatUplift } from '../../lib/formatters.js';
 import { pickFocusAreas } from '../../lib/focusAreas.js';
 
@@ -16,12 +17,13 @@ const GROUP_LABEL = 'eyebrow';
  * impact ones are ranked; the rest are named but not prioritised. Uplift is
  * displayed as returned by the backend, never recomputed here.
  */
-export default function FocusAreaList({ gaps }) {
+export default function FocusAreaList({ gaps, illustration }) {
   const focusAreas = pickFocusAreas(gaps, MAX_FOCUS_AREAS);
   const alsoMissing = gaps.filter((gap) => !focusAreas.includes(gap));
 
   return (
-    <GlassCard className="p-6">
+    <GlassCard className="card-with-illustration p-6">
+      {illustration && <CardIllustration src={illustration} />}
       <div className="flex items-baseline justify-between gap-3">
         <h2 className="text-sm font-semibold text-ink">Missing for this role</h2>
         {gaps.length > 0 && (

@@ -10,6 +10,8 @@ import Journey from './routes/Journey.jsx';
 import Learning from './routes/plan/Learning.jsx';
 import EmployerFinder from './routes/plan/EmployerFinder.jsx';
 import EmployerMatches from './routes/plan/EmployerMatches.jsx';
+import InterviewPractice from './routes/InterviewPractice.jsx';
+import Cv from './routes/plan/Cv.jsx';
 import Profile from './routes/Profile.jsx';
 
 export const routes = [
@@ -26,6 +28,8 @@ export const routes = [
       { path: 'plan/learning', element: <Learning /> },
       { path: 'plan/employers', element: <EmployerFinder /> },
       { path: 'plan/employers/matches', element: <EmployerMatches /> },
+      { path: 'interview-practice', element: <InterviewPractice /> },
+      { path: 'plan/cv', element: <Cv /> },
       { path: 'profile', element: <Profile /> },
       { path: '*', element: <Navigate to="/" replace /> },
     ],

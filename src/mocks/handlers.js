@@ -26,6 +26,9 @@ export const handlers = [
     return HttpResponse.json(cvParsed);
   }),
 
+  /* Mock definitions model the real skill_taxonomy.definition field. The final
+     reframed skill intentionally has no definition, so the no-invention state
+     in US3.5 can be checked in the running UI. */
   http.post('*/api/snapshot/generate', () => HttpResponse.json(snapshotHighConfidence)),
 
   http.post('*/api/gap/compute', async ({ request }) => {

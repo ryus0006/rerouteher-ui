@@ -5,6 +5,7 @@ import Header from '../components/layout/Header.jsx';
 import ReadinessGauge from '../components/gap/ReadinessGauge.jsx';
 import { MAX_FOCUS_AREAS } from '../components/gap/FocusAreaList.jsx';
 import GradientButton from '../components/ui/GradientButton.jsx';
+import CardIllustration from '../components/ui/CardIllustration.jsx';
 import JourneyIcon from '../components/journey/JourneyIcon.jsx';
 import SkillChip from '../components/snapshot/SkillChip.jsx';
 import { pickFocusAreas } from '../lib/focusAreas.js';
@@ -15,6 +16,7 @@ import { computeGap } from '../api/gap.js';
 import { resolveDisplayName } from '../api/account.js';
 import { useAccountStore } from '../store/accountStore.js';
 import { useIntakeStore } from '../store/intakeStore.js';
+import journeyPath from '../assets/page-illustrations/journey-path.png';
 
 const CARD = 'mt-4 rounded-2xl border border-line bg-surface p-5 sm:p-6';
 
@@ -205,7 +207,8 @@ export default function Journey() {
 
         {/* The page's one banded surface, and the one bold element on it: her
             readiness once it exists, and until then the distance to it. */}
-        <section className="journey-hero mt-7 overflow-hidden rounded-3xl">
+        <section className="journey-hero card-with-illustration mt-7 rounded-3xl">
+          <CardIllustration src={journeyPath} />
           <div className="grid gap-6 p-7 sm:p-8 md:grid-cols-[minmax(0,1fr)_15rem] md:items-center">
             {gapResult && (
               <div className="md:order-2">
@@ -405,6 +408,28 @@ export default function Journey() {
                 </GradientButton>
               </section>
             </div>
+
+            <section className="mt-4 flex flex-wrap items-center gap-5 overflow-hidden rounded-2xl border border-pink-600/20 bg-pink-100/70 p-5 sm:p-6">
+              <span
+                aria-hidden="true"
+                className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-white text-pink-600"
+              >
+                <JourneyIcon name="skills" className="size-6" />
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className="eyebrow text-pink-600">Build interview confidence</p>
+                <h3 className="mt-1 font-display text-xl font-bold tracking-[-0.015em] text-ink">
+                  Practise for your target role
+                </h3>
+                <p className="mt-1 text-sm leading-relaxed text-ink-soft">
+                  Answer five tailored questions, get feedback, then see the patterns worth
+                  improving.
+                </p>
+              </div>
+              <GradientButton size="md" onClick={() => navigate('/interview-practice')}>
+                Start interview practice <span aria-hidden="true">→</span>
+              </GradientButton>
+            </section>
           </>
         )}
       </main>

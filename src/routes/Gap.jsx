@@ -13,6 +13,7 @@ import { pickFocusAreas } from '../lib/focusAreas.js';
 import { markersFor } from '../lib/readiness.js';
 import { computeGap } from '../api/gap.js';
 import { useIntakeStore } from '../store/intakeStore.js';
+import journeyPath from '../assets/page-illustrations/journey-path.png';
 
 export default function Gap() {
   const snapshot = useIntakeStore((state) => state.snapshot);
@@ -112,10 +113,20 @@ export default function Gap() {
                   Readiness weighs each required skill by how much the role depends on it, so it is
                   not a plain count of skills covered.
                 </p>
+                <details className="mt-4 border-t border-white/12 pt-4 text-xs leading-relaxed text-on-plane-soft">
+                  <summary className="cursor-pointer font-semibold text-white">
+                    How this result is worked out
+                  </summary>
+                  <p className="mt-2">
+                    Your closest role is based on the overall match with your experience, not only
+                    the highest readiness percentage. Missing required skills lower readiness in
+                    proportion to how important that requirement is for the role.
+                  </p>
+                </details>
               </div>
             </section>
 
-            <FocusAreaList gaps={gapResult.gaps} />
+            <FocusAreaList gaps={gapResult.gaps} illustration={journeyPath} />
           </div>
         )}
 

@@ -87,6 +87,9 @@ export default function Header({ onGround = false }) {
      disappears once you arrive makes the bar look like it lost something. */
   const showJourney = Boolean(user);
   const onJourney = pathname === '/journey';
+  const showInterviewPractice = Boolean(gapResult);
+  const onInterviewPractice = pathname === '/interview-practice';
+  const onCv = pathname === '/plan/cv';
 
   /* The ring is a nudge to finish, so it retires the moment finishing is done.
      A meter pinned at 100% forever is decoration, and the slot is wanted for
@@ -131,6 +134,35 @@ export default function Header({ onGround = false }) {
           >
             {showProgress && <ProgressRing percent={progress.percent} />}
             My journey
+          </Link>
+        )}
+
+        {showInterviewPractice && (
+          <Link
+            to="/interview-practice"
+            aria-current={onInterviewPractice ? 'page' : undefined}
+            className={[
+              'hidden rounded-full px-3 py-1.5 text-sm font-semibold transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 md:inline-flex',
+              onInterviewPractice
+                ? 'bg-pink-100 text-pink-600 shadow-card'
+                : 'text-ink-soft hover:bg-pink-100 hover:text-pink-600',
+            ].join(' ')}
+          >
+            Interview practice
+          </Link>
+        )}
+        {showInterviewPractice && (
+          <Link
+            to="/plan/cv"
+            aria-current={onCv ? 'page' : undefined}
+            className={[
+              'hidden rounded-full px-3 py-1.5 text-sm font-medium transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 lg:inline-flex',
+              onCv
+                ? 'bg-canvas-sunk text-ink'
+                : 'text-ink-soft hover:bg-canvas-sunk hover:text-ink',
+            ].join(' ')}
+          >
+            Refresh CV
           </Link>
         )}
 

@@ -30,6 +30,7 @@ const initialState = {
   // Her computed employer matches, held so the companion can explain them (US8.3);
   // a recomputable page result, cleared when priorities change or the snapshot resets.
   employerMatches: [],
+  learningCompleted: [],
   snapshot: null,
   selectedRole: null,
   gapResult: null,
@@ -60,6 +61,7 @@ export const PLAN_FIELDS = [
   'cvParsed',
   'break',
   'employerPriorities',
+  'learningCompleted',
   'confirmedSkills',
   'snapshot',
   'selectedRole',
@@ -151,6 +153,12 @@ export const useIntakeStore = create(
       setEmployerPriorities: (employerPriorities) =>
         set({ employerPriorities, employerMatches: [] }),
       setEmployerMatches: (employerMatches) => set({ employerMatches: employerMatches ?? [] }),
+      toggleLearningCompleted: (resourceId) =>
+        set((state) => ({
+          learningCompleted: state.learningCompleted.includes(resourceId)
+            ? state.learningCompleted.filter((id) => id !== resourceId)
+            : [...state.learningCompleted, resourceId],
+        })),
 
       setConfirmedSkills: (confirmedSkills) => set({ confirmedSkills: confirmedSkills ?? [] }),
       addConfirmedSkills: (skills) =>

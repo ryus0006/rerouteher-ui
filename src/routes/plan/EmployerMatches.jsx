@@ -4,10 +4,13 @@ import useSmoothNavigate from '../../hooks/useSmoothNavigate.js';
 import Header from '../../components/layout/Header.jsx';
 import BackLink from '../../components/intake/BackLink.jsx';
 import AskHeraAboutResults from '../../components/companion/AskHeraAboutResults.jsx';
+import TargetRoleSelect from '../../components/plan/TargetRoleSelect.jsx';
+import CardIllustration from '../../components/ui/CardIllustration.jsx';
 import { PRIORITY_NAMES } from '../../config/employerPriorities.js';
 import { matchEmployers } from '../../api/employers.js';
 import { useAccountStore } from '../../store/accountStore.js';
 import { useIntakeStore } from '../../store/intakeStore.js';
+import employerPath from '../../assets/page-illustrations/employer-path.png';
 
 /**
  * How well an employer answered, said in words.
@@ -53,7 +56,8 @@ function EmployerCard({ employer }) {
   const label = matchLabel(employer.met.length, total);
 
   return (
-    <article className="mt-4 overflow-hidden rounded-2xl border border-line bg-surface">
+    <article className="card-with-illustration mt-4 rounded-2xl border border-line bg-surface">
+      <CardIllustration src={employerPath} />
       <div className="flex flex-wrap items-start gap-4 p-5 sm:flex-nowrap sm:p-6">
         <LogoTile logo={employer.logo} name={employer.name} />
 
@@ -113,6 +117,30 @@ function EmployerCard({ employer }) {
           </span>
         ))}
       </div>
+
+      {employer.job && (
+        <div className="mx-5 mb-5 flex flex-wrap items-center gap-x-4 gap-y-3 rounded-xl border border-pink-600/20 bg-pink-100/55 px-4 py-3 sm:mx-6">
+          <span className="rounded-full bg-white px-2.5 py-1 text-xs font-bold text-pink-600">
+            Hiring for your role
+          </span>
+          <div className="min-w-0 flex-1">
+            <p className="font-semibold text-ink">{employer.job.title}</p>
+            <p className="mt-0.5 text-xs text-ink-soft">
+              Found {employer.job.found_on} · A listing may have closed since.
+            </p>
+          </div>
+
+          <TargetRoleSelect />
+          <a
+            href={employer.job.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="rounded-full bg-pink-600 px-3.5 py-2 text-sm font-semibold text-white transition hover:bg-pink-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
+          >
+            Open job <span aria-hidden="true">↗</span>
+          </a>
+        </div>
+      )}
 
       <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2 border-t border-line px-5 py-3.5 sm:px-6">
         <a
@@ -179,7 +207,9 @@ export default function EmployerMatches() {
     matchEmployers({ priorities: key.split('|'), targetRoleId: selectedRole?.role_id })
       .then((result) => {
         if (!live) return;
-        setEmployers(result.employers);
+        setEmployers(
+          [...result.employers].sort((a, b) => Number(Boolean(b.job)) - Number(Boolean(a.job)))
+        );
         // Mirror into the store so the App-mounted companion can explain them (US8.3).
         setEmployerMatches(result.employers);
         setError(null);
@@ -256,6 +286,13 @@ export default function EmployerMatches() {
           <p className="mt-8 max-w-[56ch] text-sm leading-relaxed text-ink-soft">
             No company in our set has published anything about what you chose. That is a finding
             about the disclosures, not about you — try a different priority.
+          </p>
+        )}
+
+        {employers?.length > 0 && !employers.some((employer) => employer.job) && (
+          <p className="mt-5 rounded-xl border border-line bg-canvas-sunk px-4 py-3 text-sm text-ink-soft">
+            No current openings were found for this target role among these employer matches. Your
+            employer-fit results are still shown below.
           </p>
         )}
 

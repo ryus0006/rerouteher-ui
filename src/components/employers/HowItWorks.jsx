@@ -14,7 +14,8 @@ const STEPS = [
  */
 export default function HowItWorks() {
   return (
-    <section className="rounded-2xl border border-line bg-canvas-sunk px-5 py-4">
+    <section className="card-with-illustration rounded-2xl border border-line bg-canvas-sunk px-5 py-4">
+      <CardIllustration src={journeyPath} />
       <h2 className="text-sm font-semibold text-ink">How it works</h2>
 
       {/* Numbered because it genuinely is a sequence, and laid across rather
@@ -32,3 +33,5 @@ export default function HowItWorks() {
     </section>
   );
 }
+import CardIllustration from '../ui/CardIllustration.jsx';
+import journeyPath from '../../assets/page-illustrations/journey-path.png';

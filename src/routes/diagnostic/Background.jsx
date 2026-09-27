@@ -2,12 +2,14 @@ import { useState } from 'react';
 import useSmoothNavigate from '../../hooks/useSmoothNavigate.js';
 import GlassCard from '../../components/ui/GlassCard.jsx';
 import GradientButton from '../../components/ui/GradientButton.jsx';
+import CardIllustration from '../../components/ui/CardIllustration.jsx';
 import IntakeLayout from '../../components/intake/IntakeLayout.jsx';
 import { useCompanionStore } from '../../store/companionStore.js';
 import CvDropzone from '../../components/intake/CvDropzone.jsx';
 import UploadedFileChip from '../../components/intake/UploadedFileChip.jsx';
 import { parseCv, validateCvFile } from '../../api/cv.js';
 import { useIntakeStore } from '../../store/intakeStore.js';
+import cvStationery from '../../assets/page-illustrations/cv-stationery.png';
 
 const REQUIRED_MESSAGE = 'CV is required before you can continue.';
 
@@ -66,7 +68,8 @@ export default function Background() {
       title="Upload your CV"
       intro="We analyze your previous experience to extract your core professional skills automatically."
     >
-      <GlassCard className="p-6">
+      <GlassCard className="card-with-illustration p-6">
+        <CardIllustration src={cvStationery} />
         <h2 className="text-sm text-ink-soft">
           Select your CV file <span className="text-pink-600">*</span>
         </h2>

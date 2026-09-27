@@ -3,49 +3,58 @@
     {
       "skill": "User Research & Persona Synthesis",
       "source": "experience",
-      "evidence": "Ran usability testing at Wira Digital"
+      "evidence": "Ran usability testing at Wira Digital",
+      "definition": "Learning about users’ needs and turning what you discover into clear audience profiles that guide design decisions."
     },
     {
       "skill": "Wireframing & Interactive Prototyping",
       "source": "experience",
-      "evidence": "Wireframing and interactive prototyping at Studio Lima"
+      "evidence": "Wireframing and interactive prototyping at Studio Lima",
+      "definition": "Sketching screen layouts and creating clickable models so people can understand and test an idea before it is built."
     },
     {
       "skill": "Design Systems & Component Tokens",
       "source": "experience",
-      "evidence": "Owned the design system at Wira Digital"
+      "evidence": "Owned the design system at Wira Digital",
+      "definition": "Creating reusable visual rules and interface parts so digital products stay consistent and are faster to design and build."
     },
     {
       "skill": "Information Architecture & User Flows",
       "source": "experience",
-      "evidence": "Led information architecture for the mobile app"
+      "evidence": "Led information architecture for the mobile app",
+      "definition": "Organising information and planning the steps people take so they can find what they need and complete tasks with less effort."
     },
     {
       "skill": "Usability Testing & Feedback Loops",
       "source": "experience",
-      "evidence": "Ran usability testing at Wira Digital"
+      "evidence": "Ran usability testing at Wira Digital",
+      "definition": "Watching people use a product, learning where they struggle, and using their feedback to make the next version easier to use."
     }
   ],
   "reframed_skills": [
     {
       "skill": "Active Listening",
       "source": "break",
-      "from_activity": "care_household.cared_for_children"
+      "from_activity": "care_household.cared_for_children",
+      "definition": "Giving someone your full attention, checking that you understand them, and responding thoughtfully to what they need."
     },
     {
       "skill": "Social Perceptiveness",
       "source": "break",
-      "from_activity": "care_household.cared_for_children"
+      "from_activity": "care_household.cared_for_children",
+      "definition": "Noticing how other people may be feeling and adapting the way you communicate or offer support."
     },
     {
       "skill": "Time Management",
       "source": "break",
-      "from_activity": "planning.managed_multiple_schedules"
+      "from_activity": "planning.managed_multiple_schedules",
+      "definition": "Planning your time, deciding what matters most, and adjusting schedules so commitments are completed reliably."
     },
     {
       "skill": "Coordination",
       "source": "break",
-      "from_activity": "planning.organised_family_logistics"
+      "from_activity": "planning.organised_family_logistics",
+      "definition": "Bringing people, information and practical tasks together so everyone can move towards the same plan."
     },
     {
       "skill": "Management of Financial Resources",

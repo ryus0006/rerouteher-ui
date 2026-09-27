@@ -10,13 +10,16 @@ async function start() {
   // src/mocks (no backend needed). Default `npm run dev` leaves it unset and hits
   // the real API.
   if (import.meta.env.VITE_USE_MOCKS === '1') {
-    const { worker } = await import('./mocks/browser.js');
-    await worker.start({ onUnhandledRequest: 'bypass' });
+    const { startMockWorker } = await import('./mocks/browser.js');
+    await startMockWorker();
   }
 
   startPlanSync();
 
-  const router = createBrowserRouter(routes);
+  // Vite uses `/` locally and on Netlify, while a GitHub Pages preview is
+  // served below the repository name. Keeping the router in Vite's base path
+  // lets the same build navigate correctly in either hosting environment.
+  const router = createBrowserRouter(routes, { basename: import.meta.env.BASE_URL });
 
   createRoot(document.getElementById('root')).render(
     <StrictMode>
