@@ -182,12 +182,6 @@
   overflow: hidden;
 }
 
-/* Skill descriptions float above their card rather than pushing important
-   ranking content down. The artwork keeps its rounded edge independently. */
-.card-with-illustration.card-allows-popover {
-  overflow: visible;
-}
-
 .card-with-illustration > :not(.card-illustration) {
   position: relative;
   z-index: 1;
@@ -203,7 +197,6 @@
   object-fit: cover;
   object-position: right center;
   opacity: 0.24;
-  border-radius: inherit;
   mask-image: linear-gradient(90deg, transparent 12%, rgb(0 0 0 / 0.15) 43%, black 76%);
   -webkit-mask-image: linear-gradient(90deg, transparent 12%, rgb(0 0 0 / 0.15) 43%, black 76%);
 }

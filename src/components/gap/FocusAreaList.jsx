@@ -86,7 +86,7 @@ export default function FocusAreaList({ gaps, illustration }) {
   const alsoMissing = gaps.filter((gap) => !focusAreas.includes(gap));
 
   return (
-    <GlassCard className="card-allows-popover card-with-illustration p-6">
+    <GlassCard className="card-with-illustration p-6">
       {illustration && <CardIllustration src={illustration} />}
       <div className="flex items-baseline justify-between gap-3">
         <h2 className="text-sm font-semibold text-ink">Missing for this role</h2>
@@ -96,9 +96,6 @@ export default function FocusAreaList({ gaps, illustration }) {
           </p>
         )}
       </div>
-      {gaps.length > 0 && (
-        <p className="mt-1 text-xs text-ink-faint">Hover or tap a skill to see what it means.</p>
-      )}
 
       {gaps.length === 0 ? (
         <p className="mt-4 text-sm italic text-ink-faint">

@@ -19,16 +19,13 @@ export default function SkillSection({ title, note, skills, emptyMessage, illust
   const visible = expanded || !canCollapse ? skills : skills.slice(0, INITIAL_VISIBLE);
 
   return (
-    <GlassCard className="card-allows-popover card-with-illustration p-6">
+    <GlassCard className="card-with-illustration p-6">
       {illustration && <CardIllustration src={illustration} />}
       <div className="flex items-baseline justify-between gap-2">
         <h2 className="text-sm font-semibold text-ink">{title}</h2>
         {!isEmpty && <span className="text-xs text-ink-faint">{skills.length}</span>}
       </div>
       {note && <p className="mt-1 text-xs text-ink-soft">{note}</p>}
-      {!isEmpty && (
-        <p className="mt-1 text-xs text-ink-faint">Hover or tap a skill to see what it means.</p>
-      )}
 
       {isEmpty ? (
         <p className="mt-4 text-sm italic text-ink-faint">{emptyMessage}</p>
