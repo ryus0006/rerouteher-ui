@@ -7,21 +7,24 @@
       "skill": "Campaign Analytics & Attribution",
       "band": "role",
       "importance": 0.88,
-      "uplift": 14
+      "uplift": 14,
+      "definition": "Measuring how campaigns perform and connecting results to the channels and messages that contributed to them."
     },
     {
       "skill_id": "mock-marketing-automation",
       "skill": "Marketing Automation Platforms",
       "band": "role",
       "importance": 0.79,
-      "uplift": 11
+      "uplift": 11,
+      "definition": "Using tools that organise marketing messages and audience journeys so communication can be timely and relevant."
     },
     {
       "skill_id": "mock-seo-content",
       "skill": "SEO & Content Strategy",
       "band": "role",
       "importance": 0.7,
-      "uplift": 8
+      "uplift": 8,
+      "definition": "Planning useful content and improving how people find it through search engines."
     }
   ]
 }

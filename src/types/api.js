@@ -64,6 +64,7 @@
  * @property {'role' | 'ai_usage'} band
  * @property {number} importance
  * @property {number} uplift
+ * @property {string | undefined} [definition] Optional ESCO-backed plain-language description
  */
 
 /**

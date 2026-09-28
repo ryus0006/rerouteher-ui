@@ -15,14 +15,16 @@
       "skill": "AI Design Tools (Figma AI, Midjourney)",
       "band": "ai_usage",
       "importance": 0.81,
-      "uplift": 9
+      "uplift": 9,
+      "definition": "Using AI-assisted design tools to explore ideas, create early visual concepts and speed up routine design tasks with professional judgement."
     },
     {
       "skill_id": "mock-design-systems",
       "skill": "Scalable Design Systems (Tokens & Multi-brand)",
       "band": "role",
       "importance": 0.74,
-      "uplift": 7
+      "uplift": 7,
+      "definition": "Creating reusable design rules and components that help several products or brands stay consistent while teams work more efficiently."
     },
     {
       "skill_id": "mock-prompt-ux",
@@ -36,7 +38,8 @@
       "skill": "Design Ops & Handoff Automation",
       "band": "role",
       "importance": 0.52,
-      "uplift": 3
+      "uplift": 3,
+      "definition": "Improving how design work is handed over, documented and coordinated so design and development teams can work together smoothly."
     }
   ]
 }

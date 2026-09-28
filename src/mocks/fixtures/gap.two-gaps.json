@@ -16,14 +16,16 @@
       "skill": "AI Design Tools (Figma AI, Midjourney)",
       "band": "ai_usage",
       "importance": 0.81,
-      "uplift": 6
+      "uplift": 6,
+      "definition": "Using AI-assisted design tools to explore ideas, create early visual concepts and speed up routine design tasks with professional judgement."
     },
     {
       "skill_id": "mock-design-ops",
       "skill": "Design Ops & Handoff Automation",
       "band": "role",
       "importance": 0.52,
-      "uplift": 4
+      "uplift": 4,
+      "definition": "Improving how design work is handed over, documented and coordinated so design and development teams can work together smoothly."
     }
   ]
 }

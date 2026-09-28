@@ -1,7 +1,9 @@
 import GlassCard from '../ui/GlassCard.jsx';
 import CardIllustration from '../ui/CardIllustration.jsx';
+import SkillDefinitionPopover from '../skills/SkillDefinitionPopover.jsx';
 import { formatUplift } from '../../lib/formatters.js';
 import { pickFocusAreas } from '../../lib/focusAreas.js';
+import { getSkillDefinition } from '../../lib/skillDefinition.js';
 
 export const MAX_FOCUS_AREAS = 3;
 
@@ -11,6 +13,68 @@ const BAND_LABELS = {
 };
 
 const GROUP_LABEL = 'eyebrow';
+
+function FocusAreaRow({ gap, index }) {
+  const definition = getSkillDefinition(gap);
+  const content = (
+    <>
+      <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-ink text-xs font-semibold tabular text-white">
+        {index + 1}
+      </span>
+      <span className="min-w-0 flex-1 text-left">
+        <span className="block text-sm font-medium text-ink">{gap.skill}</span>
+        <span className="mt-0.5 block text-xs text-ink-faint">{BAND_LABELS[gap.band]}</span>
+      </span>
+      <span className="shrink-0 rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold tabular text-amber-700">
+        {formatUplift(gap.uplift)}
+      </span>
+    </>
+  );
+
+  if (!definition) {
+    return (
+      <li className="flex items-start gap-3 rounded-2xl border border-line bg-canvas px-4 py-3">
+        {content}
+      </li>
+    );
+  }
+
+  return (
+    <li>
+      <SkillDefinitionPopover definition={definition} label={gap.skill}>
+        {(triggerProps) => (
+          <button
+            type="button"
+            {...triggerProps}
+            className="flex w-full items-start gap-3 rounded-2xl border border-line bg-canvas px-4 py-3 text-left transition hover:border-pink-200 focus-visible:border-pink-300"
+          >
+            {content}
+          </button>
+        )}
+      </SkillDefinitionPopover>
+    </li>
+  );
+}
+
+function AlsoMissingSkill({ gap }) {
+  const definition = getSkillDefinition(gap);
+  const chipClass =
+    'rounded-full border border-line bg-canvas px-2.5 py-1 text-xs text-ink-soft transition hover:border-pink-200 focus-visible:border-pink-300';
+
+  if (!definition) return <li className={chipClass}>{gap.skill}</li>;
+
+  return (
+    <li>
+      <SkillDefinitionPopover definition={definition} label={gap.skill}>
+        {(triggerProps) => (
+          <button type="button" {...triggerProps} className={`${chipClass} cursor-help`}>
+            {gap.skill}
+          </button>
+        )}
+      </SkillDefinitionPopover>
+    </li>
+  );
+}
 
 /**
  * Every requirement this role asks for that she does not yet cover. The highest
@@ -22,7 +86,7 @@ export default function FocusAreaList({ gaps, illustration }) {
   const alsoMissing = gaps.filter((gap) => !focusAreas.includes(gap));
 
   return (
-    <GlassCard className="card-with-illustration p-6">
+    <GlassCard className="card-allows-popover card-with-illustration p-6">
       {illustration && <CardIllustration src={illustration} />}
       <div className="flex items-baseline justify-between gap-3">
         <h2 className="text-sm font-semibold text-ink">Missing for this role</h2>
@@ -32,6 +96,9 @@ export default function FocusAreaList({ gaps, illustration }) {
           </p>
         )}
       </div>
+      {gaps.length > 0 && (
+        <p className="mt-1 text-xs text-ink-faint">Hover or tap a skill to see what it means.</p>
+      )}
 
       {gaps.length === 0 ? (
         <p className="mt-4 text-sm italic text-ink-faint">
@@ -43,23 +110,7 @@ export default function FocusAreaList({ gaps, illustration }) {
 
           <ol className="mt-2 space-y-3">
             {focusAreas.map((gap, index) => (
-              <li
-                key={gap.skill}
-                className="flex items-start gap-3 rounded-2xl border border-line bg-canvas px-4 py-3"
-              >
-                <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-ink text-xs font-semibold tabular text-white">
-                  {index + 1}
-                </span>
-
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm font-medium text-ink">{gap.skill}</p>
-                  <p className="mt-0.5 text-xs text-ink-faint">{BAND_LABELS[gap.band]}</p>
-                </div>
-
-                <span className="shrink-0 rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold tabular text-amber-700">
-                  {formatUplift(gap.uplift)}
-                </span>
-              </li>
+              <FocusAreaRow key={gap.skill} gap={gap} index={index} />
             ))}
           </ol>
 
@@ -71,12 +122,7 @@ export default function FocusAreaList({ gaps, illustration }) {
 
               <ul className="mt-2 flex flex-wrap gap-1.5">
                 {alsoMissing.map((gap) => (
-                  <li
-                    key={gap.skill}
-                    className="rounded-full border border-line bg-canvas px-2.5 py-1 text-xs text-ink-soft"
-                  >
-                    {gap.skill}
-                  </li>
+                  <AlsoMissingSkill key={gap.skill} gap={gap} />
                 ))}
               </ul>
             </>
