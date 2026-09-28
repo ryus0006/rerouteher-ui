@@ -21,7 +21,19 @@
  * @property {Snapshot | null} snapshot
  * @property {RecommendedRole | null} selectedRole
  * @property {GapResult | null} gapResult
+ * @property {CvDraft | null} cvDraft
  * @property {number} currentStepIndex
+ */
+
+/**
+ * A CV draft is composed only from Journey details plus contact fields entered
+ * directly by the user.
+ * @typedef {Object} CvDraft
+ * @property {{ name: string, email: string, phone: string, location: string, linkedin: string }} personal
+ * @property {string} summary
+ * @property {string[]} skills
+ * @property {{ title: string, organisation: string, start: string, end: string, description: string }[]} experiences
+ * @property {boolean} includeCareerBreak
  */
 
 export {};

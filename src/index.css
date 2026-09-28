@@ -223,11 +223,120 @@
   letter-spacing: 0.07em;
   font-size: 0.75rem;
 }
+.cv-field-label {
+  display: block;
+  color: var(--color-ink-soft);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+.cv-field-input {
+  width: 100%;
+  border: 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--color-ink) 28%, transparent);
+  background: transparent;
+  padding: 0.4rem 0 0.3rem;
+  color: var(--color-ink);
+  font-size: 0.9375rem;
+  outline: none;
+}
+.cv-field-input:focus {
+  border-bottom-color: var(--color-pink-600);
+}
+.cv-textarea {
+  display: block;
+  width: 100%;
+  resize: vertical;
+  border: 1px solid color-mix(in srgb, var(--color-ink) 18%, transparent);
+  border-radius: 0.75rem;
+  background: color-mix(in srgb, white 80%, transparent);
+  padding: 0.75rem;
+  color: var(--color-ink);
+  font-size: 0.9375rem;
+  line-height: 1.6;
+  outline: none;
+}
+.cv-textarea:focus {
+  border-color: var(--color-pink-600);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-pink-600) 14%, transparent);
+}
+.cv-ai-button,
+.cv-small-button,
+.cv-suggested-skill,
+.cv-toggle {
+  border: 1px solid var(--color-line-strong);
+  border-radius: 999px;
+  background: var(--color-surface);
+  color: var(--color-ink);
+  font-size: 0.75rem;
+  font-weight: 700;
+  line-height: 1;
+  transition: border-color 160ms ease, background-color 160ms ease, transform 160ms ease;
+}
+.cv-ai-button {
+  border-color: color-mix(in srgb, var(--color-pink-600) 35%, transparent);
+  padding: 0.55rem 0.75rem;
+  color: var(--color-pink-600);
+}
+.cv-ai-button:hover,
+.cv-ai-button:focus-visible {
+  border-color: var(--color-pink-600);
+  background: color-mix(in srgb, var(--color-pink-600) 9%, white);
+}
+.cv-ai-suggestion {
+  margin-top: 0.75rem;
+  border: 1px solid color-mix(in srgb, var(--color-pink-600) 28%, transparent);
+  border-radius: 0.75rem;
+  background: color-mix(in srgb, var(--color-pink-600) 7%, white);
+  padding: 0.875rem;
+}
+.cv-small-button {
+  padding: 0.5rem 0.7rem;
+}
+.cv-small-button:hover,
+.cv-small-button:focus-visible,
+.cv-suggested-skill:hover,
+.cv-suggested-skill:focus-visible {
+  border-color: var(--color-ink);
+  transform: translateY(-1px);
+}
+.cv-small-button-primary {
+  border-color: var(--color-pink-600);
+  background: var(--color-pink-600);
+  color: white;
+}
+.cv-skill-chip,
+.cv-suggested-skill {
+  border: 1px solid var(--color-line);
+  border-radius: 999px;
+  padding: 0.5rem 0.7rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+.cv-skill-chip {
+  background: var(--color-canvas-sunk);
+  color: var(--color-ink);
+}
+.cv-suggested-skill {
+  border-color: color-mix(in srgb, var(--color-verify) 35%, transparent);
+  background: var(--color-surface);
+  color: var(--color-verify);
+}
+.cv-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.65rem 0.8rem;
+}
+.cv-toggle input {
+  accent-color: var(--color-pink-600);
+}
 @media print {
   header,
   .chapter-break,
   .companion-trigger,
   button,
+  .cv-builder-controls,
+  .cv-builder-meta,
   .account-sheet-backdrop {
     display: none !important;
   }
@@ -241,6 +350,19 @@
   }
   main {
     padding: 0 !important;
+  }
+  .cv-sheet {
+    max-width: none;
+    border: 0;
+    padding: 0;
+  }
+  .cv-field-input,
+  .cv-textarea {
+    border-color: transparent;
+    box-shadow: none;
+    background: transparent;
+    padding: 0;
+    resize: none;
   }
 }
 

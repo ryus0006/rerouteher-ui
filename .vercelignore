@@ -1,0 +1,22 @@
+# Local-only material and generated outputs must not be uploaded with the web app.
+.git/
+.vercel/
+.vercel-session/
+.claude/
+.playwright-cli/
+node_modules/
+dist/
+coverage/
+output/
+tmp/
+UT 2/
+tests/
+_prototype/
+docs/
+
+# Local account data and research files
+.env*
+*.pdf
+*.docx
+~$*
+brand-spec.md

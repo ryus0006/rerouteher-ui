@@ -29,3 +29,5 @@ Thumbs.db
 
 # Working notes, not part of the app.
 PLAN.md
+.vercel
+.env*

@@ -174,6 +174,7 @@ export default function Journey() {
 
   const byId = Object.fromEntries(progress.chapters.map((chapter) => [chapter.id, chapter]));
   const roles = snapshot?.recommended_roles ?? [];
+  const cvReady = Boolean(snapshot && selectedRole);
 
   function switchRole(role) {
     if (switching || role.role_id === selectedRole?.role_id) return;
@@ -183,7 +184,7 @@ export default function Journey() {
       .then((result) => {
         /* Committed in one write: setting the role on its own clears the gap,
            which would empty the readout for as long as the request takes. */
-        useIntakeStore.setState({ selectedRole: role, gapResult: result });
+        useIntakeStore.setState({ selectedRole: role, cvDraft: null, gapResult: result });
         setSwitchError(null);
       })
       .catch((cause) => setSwitchError(cause.message))
@@ -262,6 +263,29 @@ export default function Journey() {
               )}
             </div>
           </div>
+        </section>
+
+        <section className="mt-4 flex flex-wrap items-center gap-5 overflow-hidden rounded-2xl border border-pink-600/25 bg-pink-100/70 p-5 sm:p-6">
+          <span
+            aria-hidden="true"
+            className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-white text-pink-600 shadow-card"
+          >
+            <JourneyIcon name="story" className="size-6" />
+          </span>
+          <div className="min-w-0 flex-1">
+            <p className="eyebrow text-pink-600">Application ready</p>
+            <h2 className="mt-1 font-display text-xl font-bold tracking-[-0.015em] text-ink">
+              Build your refreshed CV
+            </h2>
+            <p className="mt-1 max-w-[62ch] text-sm leading-relaxed text-ink-soft">
+              {cvReady
+                ? `Create a professional first draft for your ${selectedRole.role} goal using only the experience and skills already in your journey.`
+                : 'Complete your Skill Snapshot and choose a target role first. We’ll then create your draft from the information already in your journey.'}
+            </p>
+          </div>
+          <GradientButton size="md" onClick={() => navigate('/plan/cv')}>
+            {cvReady ? 'Open CV Builder' : 'See what you need'} <span aria-hidden="true">→</span>
+          </GradientButton>
         </section>
 
         <SectionHead

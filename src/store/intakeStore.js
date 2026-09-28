@@ -31,6 +31,9 @@ const initialState = {
   // a recomputable page result, cleared when priorities change or the snapshot resets.
   employerMatches: [],
   learningCompleted: [],
+  // A manually editable CV draft. It travels with the saved journey but is
+  // cleared whenever information the draft relies on changes upstream.
+  cvDraft: null,
   snapshot: null,
   selectedRole: null,
   gapResult: null,
@@ -62,6 +65,7 @@ export const PLAN_FIELDS = [
   'break',
   'employerPriorities',
   'learningCompleted',
+  'cvDraft',
   'confirmedSkills',
   'snapshot',
   'selectedRole',
@@ -75,6 +79,7 @@ export const PLAN_FIELDS = [
 const resetAfterBreak = () => ({
   confirmedSkills: [],
   employerMatches: [],
+  cvDraft: null,
   snapshot: null,
   selectedRole: null,
   gapResult: null,
@@ -178,10 +183,11 @@ export const useIntakeStore = create(
           gapResult: null,
         }),
 
-      setSelectedRole: (role) => set({ selectedRole: role, gapResult: null }),
+      setSelectedRole: (role) => set({ selectedRole: role, cvDraft: null, gapResult: null }),
       // A gap means the redo is finished and has replaced what it set out to
       // replace, so there is no longer an earlier plan to go back to.
       setGapResult: (gapResult) => set({ gapResult, previousPlan: null }),
+      setCvDraft: (cvDraft) => set({ cvDraft }),
       setCurrentStepIndex: (currentStepIndex) => set({ currentStepIndex }),
 
       /** True once at least one activity is recorded. Duration 0 ("less than a year") is valid. */
