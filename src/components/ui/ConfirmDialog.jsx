@@ -1,11 +1,11 @@
 import { useEffect, useRef } from 'react';
 
 /**
- * A short, destructive yes-or-no question asked over the current screen.
+ * Modal confirmation for destructive actions.
  *
- * Focus lands on the cancel button, so a stray Enter keeps her work rather
- * than clearing it. Escape and the backdrop cancel too; Tab stays inside the
- * panel, and focus goes back to whatever opened it on close.
+ * Initial focus is on Cancel so an accidental Enter does not confirm. Escape
+ * and backdrop clicks cancel; focus is trapped within the dialog and restored
+ * to the opener on close.
  */
 export default function ConfirmDialog({
   open,
@@ -74,8 +74,7 @@ export default function ConfirmDialog({
         aria-describedby="confirm-dialog-body"
         className="account-sheet-panel relative w-full max-w-[24rem] overflow-hidden rounded-3xl border border-line bg-surface shadow-sheet"
       >
-        {/* The warning band carries the colour so the buttons below can stay
-            plain: the danger is named once, at the top, before she reads on. */}
+        {/* Warning header; the action buttons below stay neutral. */}
         <div className="flex items-center gap-3 border-b border-pink-600/15 bg-pink-100 px-6 py-4">
           <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-pink-600 text-white">
             <svg

@@ -3,8 +3,7 @@ import { JOURNEY_STAGES } from '../../config/journeyStages.js';
 const SEGMENT_BASE = 'absolute left-3.5 top-3.5 -translate-x-1/2 bg-violet-400/45';
 
 /**
- * The three phases of the journey. Numbered because the order is real — each
- * stage needs the one before it — not as decoration.
+ * The three journey stages, numbered because each depends on the previous one.
  */
 export default function JourneyRail() {
   return (
@@ -14,7 +13,7 @@ export default function JourneyRail() {
 
         return (
           <li key={stage.id} className="relative flex gap-4 sm:block">
-            {/* Marker centre to marker centre, passing behind the next marker. */}
+            {/* Connector from this marker's centre to the next, drawn behind the markers. */}
             {!last && (
               <span
                 aria-hidden="true"

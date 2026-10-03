@@ -1,8 +1,8 @@
 import { expect, test } from '@playwright/test';
 
-// Full-stack only: the learning recommendations come from the real API + DB
-// (see helpers/fullstack-README.md). Reaching /plan/learning needs guest journey
-// state, so we seed the client store; the recommendations themselves are wired.
+// Full-stack only: recommendations come from the real API + DB (see
+// helpers/fullstack-README.md). Guest journey state is seeded in the client
+// store to reach /plan/learning; the recommendations request is not mocked.
 test.skip(!process.env.E2E_FULLSTACK, 'full-stack learning e2e (set E2E_FULLSTACK=1)');
 
 // A seeded guest journey: a snapshot, a selected role, and three gaps carrying
@@ -64,14 +64,14 @@ test('learning plan shows curated resources and a search fallback from the real 
 
   await expect(page.getByRole('heading', { name: 'Your learning plan' })).toBeVisible();
 
-  // Curated rows from our db seed (04_e6_learning_seed.sql).
+  // Curated rows from the db seed (04_e6_learning_seed.sql).
   await expect(page.getByRole('heading', { name: 'Introduction to JavaScript' })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Learn SQL Fundamentals' })).toBeVisible();
 
   // Project Management has no curated row, so the backend supplies a YouTube search.
   await expect(page.getByRole('heading', { name: 'Project Management tutorials' })).toBeVisible();
 
-  // Every resource opens on its provider in a new tab (AC 6.3.1 / 6.3.2).
+  // Every resource links to its provider and opens in a new tab.
   const links = page.getByRole('link', { name: /opens in a new tab/ });
   expect(await links.count()).toBeGreaterThan(0);
   for (const link of await links.all()) {

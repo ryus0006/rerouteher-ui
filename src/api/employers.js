@@ -1,10 +1,10 @@
 import { postJson } from './client.js';
 
 /**
- * Employers ranked against the priorities she chose (US9.3).
+ * Fetches employers ranked against the selected workplace priorities.
  *
- * Priorities travel as ids, so a match can name exactly which one an employer
- * discloses — and, as importantly, which one it is silent on.
+ * Priorities are sent as ids so each match can report exactly which priorities
+ * an employer discloses (`met`) and which it does not (`unmet`).
  *
  * @param {{ priorities: string[], targetRoleId: string }} request
  * @returns {Promise<{ employers: import('../types/api.js').EmployerMatch[] }>}

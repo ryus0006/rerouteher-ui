@@ -5,8 +5,8 @@ export const MIN_PASSWORD_LENGTH = 8;
 const USERNAME_PATTERN = /^[a-z0-9](?:[a-z0-9_]{1,28}[a-z0-9])?$/;
 
 /**
- * Client-side checks only. The server owns uniqueness, so "that username is
- * taken" can only ever come back from a request.
+ * Client-side format checks only. Uniqueness is enforced by the server and is
+ * reported through the request error.
  *
  * @returns {string | null} the message to show, or null when the value is fine
  */
@@ -32,9 +32,8 @@ export function validatePassword(password) {
 export const MAX_DISPLAY_NAME_LENGTH = 40;
 
 /**
- * What she is called on screen, as opposed to what signs her in. Free-form on
- * purpose: it carries no uniqueness and no login meaning, so the only thing
- * worth rejecting is a length that would break the layout.
+ * The name shown in the UI, distinct from the login username. Free-form and
+ * non-unique, so only the length is validated to protect the layout.
  */
 export function validateDisplayName(displayName) {
   if (displayName.trim().length > MAX_DISPLAY_NAME_LENGTH)
@@ -42,7 +41,7 @@ export function validateDisplayName(displayName) {
   return null;
 }
 
-/** Falls back to the username, so the header always has something to show. */
+/** Returns the display name, falling back to the username when it is unset. */
 export function resolveDisplayName({ displayName, username }) {
   return displayName?.trim() || username.trim();
 }
@@ -69,14 +68,11 @@ export function signIn({ username, password }) {
 }
 
 /**
- * Keeps the account's copy of the journey level with this device's.
+ * Persists the current journey to the signed-in account so later changes are
+ * available on other devices.
  *
- * Without it the plan reaches the account once, on the day it is created, and
- * every later change lives only on the device that made it — so signing in
- * anywhere hands back the original and silently discards the rest.
- *
- * The server reads the session cookie to know whose plan this is, so no
- * username travels in the body.
+ * The account is identified by the session cookie; the body carries only the
+ * plan.
  *
  * @param {{ plan: object }} payload
  */

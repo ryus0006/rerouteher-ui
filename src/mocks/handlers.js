@@ -6,16 +6,19 @@ import gapAltRole from './fixtures/gap.alt-role.json';
 import learningDefault from './fixtures/learning.default.json';
 import employersDefault from './fixtures/employers.default.json';
 import { validateCvFile } from '../api/cv.js';
+import { interviewHandlers } from './interview.js';
 
 const DEFAULT_ROLE_ID = 'role_ux';
 
-/** Accounts created this session, so a sign-in can hand the journey back. */
+/** In-memory accounts created during the session, keyed by username. */
 const accounts = new Map();
 
-/** Stands in for the session cookie: who the mock currently treats as signed in. */
+/** Simulated session: the currently signed-in username. */
 let sessionUser = null;
 
 export const handlers = [
+  ...interviewHandlers,
+
   http.post('*/api/cv/parse', async ({ request }) => {
     const form = await request.formData();
     const file = form.get('file');
@@ -26,9 +29,9 @@ export const handlers = [
     return HttpResponse.json(cvParsed);
   }),
 
-  /* Mock definitions model the real skill_taxonomy.definition field. The final
-     reframed skill intentionally has no definition, so the no-invention state
-     in US3.5 can be checked in the running UI. */
+  /* Fixture definitions mirror skill_taxonomy.definition. The last reframed
+     skill intentionally has no definition, to exercise the missing-definition
+     state. */
   http.post('*/api/snapshot/generate', () => HttpResponse.json(snapshotHighConfidence)),
 
   http.post('*/api/gap/compute', async ({ request }) => {
@@ -36,9 +39,8 @@ export const handlers = [
     return HttpResponse.json(targetRoleId === DEFAULT_ROLE_ID ? gapDefault : gapAltRole);
   }),
 
-  /* Learning resources for the gaps she was actually shown (E6). Keyed by
-     skill_id to match the real endpoint's deterministic contract. Used only by
-     unit tests now (the running app always calls the real backend). */
+  /* Learning resources for the requested gaps, keyed by skill_id to match the
+     real endpoint contract. */
   http.post('*/api/learning/recommend', async ({ request }) => {
     const { skill_ids: skillIds = [] } = await request.json();
 
@@ -50,38 +52,37 @@ export const handlers = [
     return HttpResponse.json({ groups, resources });
   }),
 
-  /* Employers ranked against the priorities she chose (E9). Every employer
-     lists the priorities its published report actually covers, so "not found
-     in report" is a real answer rather than a gap in the fixture. */
+  /* Employers ranked against the requested priorities. Each fixture employer
+     lists the priorities its report covers, so unmet priorities are explicit. */
   http.post('*/api/employers/match', async ({ request }) => {
-    const { priorities = [] } = await request.json();
+    const { priorities = [], target_role_id: targetRoleId } = await request.json();
 
     const employers = employersDefault.employers
-      .map((employer) => ({
+      /* Return only the job opening for the target role. */
+      .map(({ jobs, ...employer }) => ({
         ...employer,
+        job: jobs?.[targetRoleId] ?? null,
         met: priorities.filter((id) => employer.discloses.includes(id)),
         unmet: priorities.filter((id) => !employer.discloses.includes(id)),
       }))
-      /* Silent on everything she asked for is not a match, it is a different
-         company. Listing it would pad the count with rows that say nothing. */
+      /* Exclude employers that meet none of the requested priorities. */
       .filter((employer) => employer.met.length > 0)
       .sort((a, b) => b.met.length - a.met.length);
 
     return HttpResponse.json({ employers });
   }),
 
-  /* The re-entry companion (E8). One conversational endpoint, guest-usable. When
-     she has no snapshot yet the stand-in plays the profile-build role and returns
-     a journey_update (cv + break) the frontend applies to its store, exactly as
-     the real agent's update_profile tool does; once she has results it answers
-     from the journey sent with the question. */
+  /* Companion endpoint. Without a snapshot it acts as the profile builder and
+     returns a `journey_update` (cv + break), mirroring the real agent's
+     update_profile tool; with a snapshot it answers from the journey sent in
+     the request. */
   http.post('*/api/companion/ask', async ({ request }) => {
     const { question = '', journey = {} } = await request.json();
     const { snapshot, gapResult, selectedRole } = journey;
     const asked = question.toLowerCase();
 
-    // Pre-snapshot: if she names her occupation, offer a role-skill checklist (US8.1.17),
-    // standing in for the offer_role_skills tool.
+    // Pre-snapshot: when an occupation is mentioned, return a role-skill checklist,
+    // mirroring the offer_role_skills tool.
     if (!snapshot && /\bmanager\b|\bmy role\b|\boccupation\b/.test(asked)) {
       return HttpResponse.json({
         answer: 'Here are skills common for that role. Tick the ones you have.',
@@ -119,7 +120,7 @@ export const handlers = [
       return HttpResponse.json({
         answer: `Your focus areas are ${focusAreas.join(', ')}. They are ranked by how much readiness each one adds for ${role}, so the first one is the one worth your next free evening.`,
         sources: ['Your gap result'],
-        // As the real point_to_step tool does: offer an optional link to her plan.
+        // Mirrors the point_to_step tool: include an optional link to the learning plan.
         cta: { label: 'Open your learning plan', to: '/plan/learning' },
       });
     }
@@ -130,10 +131,9 @@ export const handlers = [
     });
   }),
 
-  /* Stands in for the account service. Accounts live for the life of the page,
-     which is enough to walk US5.3 and US5.4: create, sign out, sign back in and
-     the saved journey comes back. `taken` exists so the duplicate-username path
-     can be walked without a backend. */
+  /* Account service mock. Accounts persist for the lifetime of the page,
+     supporting create, sign-out and sign-in with the saved journey. The username
+     `taken` always fails, to exercise the duplicate-username error. */
   http.post('*/api/account/create', async ({ request }) => {
     const { username, display_name: displayName, plan } = await request.json();
 

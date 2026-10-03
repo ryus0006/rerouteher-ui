@@ -1,7 +1,6 @@
 /**
- * The three chapters the journey page is written in. They title the sections
- * and say what each one is for; the measure of how far she has come is
- * `DIAGNOSTIC_STEPS`, which is finer.
+ * Journey page sections. Progress is measured separately, per screen, by
+ * `DIAGNOSTIC_STEPS`.
  */
 export const JOURNEY_CHAPTERS = [
   {
@@ -28,9 +27,8 @@ export const JOURNEY_CHAPTERS = [
 ];
 
 /**
- * What the gap unlocks: not chapters of the diagnostic, but the two things it
- * was for. Kept separate so the percentage stays a measure of the diagnostic
- * and does not drop when a new plan section is added.
+ * Sections unlocked by a gap result. Kept separate from the diagnostic steps
+ * so they do not affect the completion percentage.
  */
 export const PLAN_SECTIONS = [
   {
@@ -48,29 +46,25 @@ export const PLAN_SECTIONS = [
 ];
 
 /**
- * The five screens of the diagnostic, in the order she walks them.
+ * The five diagnostic screens, in order.
  *
- * Ids are the ones `FLOW_STEPS` uses, so the stepper she sees on her way
- * through and the count she sees on her dashboard name the same things. Each
- * step carries the chapter it belongs to: the screen is what gets measured,
- * the chapter is what gets titled.
+ * Ids match `FLOW_STEPS` so the intake stepper and the dashboard progress
+ * refer to the same steps. Each step references the chapter it belongs to.
  */
 export const DIAGNOSTIC_STEPS = [
   { id: 'upload-cv', chapter: 'story', to: '/diagnostic/background' },
   { id: 'career-break', chapter: 'story', to: '/diagnostic/break' },
   { id: 'work-priorities', chapter: 'skills', to: '/diagnostic/priorities' },
-  /* The snapshot screen builds the snapshot on arrival when the story is in,
-     so resuming here lands on her skills rather than the question before. */
+  /* The snapshot screen generates the snapshot on load when its inputs exist. */
   { id: 'skill-snapshot', chapter: 'skills', to: '/diagnostic/snapshot' },
   { id: 'target-role-gap', chapter: 'next-move', to: '/diagnostic/gap' },
 ];
 
 /**
- * How far along the journey is, counted in screens and grouped into chapters.
+ * Computes diagnostic progress per screen, grouped into chapters.
  *
- * Counted in screens because that is what she experiences: a CV on its own is
- * real progress, and a measure that only moves on whole chapters would show her
- * an empty bar for work she has done.
+ * Progress is counted per screen rather than per chapter so partial progress
+ * within a chapter is reflected.
  *
  * @param {{ cvParsed: boolean, activities: string[], employerPriorities: string[], snapshot: object | null, gapResult: object | null }} state
  */
@@ -89,14 +83,13 @@ export function journeyProgress({
     Boolean(gapResult),
   ];
 
-  /* Only the unbroken run from the start counts, and a computed gap settles the
-     whole thing.
+  /* A step counts as done only if every step before it is done; a computed
+     gap result marks all steps done.
 
-     The run, because an answer further along is not proof of the ones before
-     it: replacing the CV clears the break and leaves the priorities standing,
-     and a screen counted on its own there would send her to one that has
-     nothing to show. The gap, because reaching it means every screen was
-     walked, whatever a plan saved before one of them existed happens to carry. */
+     Later answers can outlive earlier ones (replacing the CV clears the break
+     but keeps priorities), so counting steps independently could resume on a
+     screen whose inputs are missing. A gap result implies every step was
+     completed, regardless of fields missing from older saved plans. */
   const firstUnanswered = answered.indexOf(false);
   const completed = gapResult || firstUnanswered === -1 ? DIAGNOSTIC_STEPS.length : firstUnanswered;
   const steps = DIAGNOSTIC_STEPS.map((step, index) => ({ ...step, done: index < completed }));
@@ -108,9 +101,8 @@ export function journeyProgress({
     ])
   );
 
-  /* Chapters run in order, so one is open when everything before it is done.
-     The distinction matters for copy: an open chapter is an invitation, a
-     blocked one has to say what it is waiting for. */
+  /* A chapter is reachable when all previous chapters are complete; reachable
+     and blocked chapters use different copy. */
   let reachable = true;
   const chapters = JOURNEY_CHAPTERS.map((chapter) => {
     const row = { ...chapter, done: done[chapter.id], available: reachable };
@@ -124,7 +116,7 @@ export function journeyProgress({
     completed,
     total: steps.length,
     percent: Math.round((completed / steps.length) * 100),
-    /** The first unfinished screen, or null once the diagnostic is done. */
+    /** First incomplete step, or null when the diagnostic is complete. */
     next: steps.find((step) => !step.done) ?? null,
   };
 }

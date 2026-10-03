@@ -9,7 +9,7 @@ import ValueIcon from '../components/landing/ValueIcon.jsx';
 import useResumePoint from '../hooks/useResumePoint.js';
 import { useAccountStore } from '../store/accountStore.js';
 
-// User-supplied landing photograph, encoded for fast loading.
+// Hero photograph (WebP with JPEG fallback).
 import heroWebp from '../assets/hero-collaboration.webp';
 import heroJpg from '../assets/hero-collaboration.jpg';
 import journeyPath from '../assets/page-illustrations/journey-path.png';
@@ -89,7 +89,7 @@ export default function Landing() {
 
   return (
     <div className="flex min-h-svh flex-col">
-      <Header onGround />
+      <Header />
 
       <main className="flex-1">
         <section className="relative overflow-hidden bg-plane">
@@ -107,14 +107,11 @@ export default function Landing() {
           </div>
           <div aria-hidden="true" className="landing-hero-shade absolute inset-0" />
 
-          {/* Height follows the viewport rather than sitting at a fixed rem,
-              so the slice of the next section left showing stays the same on
-              every screen. The 9rem is the header plus that section's own top
-              padding, so the cut lands on empty ground: a band of the surface
-              below to scroll towards, with none of its words half shown. The
-              floor keeps the copy off the edges on a short window, where the
-              viewport is the smaller constraint. */}
-          <div className="relative mx-auto flex min-h-[42rem] w-full max-w-[1280px] items-end px-5 py-12 sm:px-8 md:min-h-[max(34rem,calc(100svh-9rem))] md:items-center md:py-20">
+          {/* Viewport-relative height. The 9rem offset accounts for the header and
+              the next section's top padding, so the fold falls on that padding
+              rather than through its text. The min-height applies on short
+              viewports. */}
+          <div className="relative mx-auto flex min-h-[42rem] w-full max-w-[1200px] items-end px-5 py-12 sm:px-8 md:min-h-[max(34rem,calc(100svh-9rem))] md:items-center md:py-20">
             <div className="max-w-[34rem]">
               <h1 className="font-display text-4xl font-bold leading-[1.04] tracking-[-0.025em] text-white sm:text-5xl md:text-[3.5rem]">
                 See what you still
@@ -128,9 +125,8 @@ export default function Landing() {
               </p>
 
               <div className="mt-8 flex flex-wrap items-center gap-5">
-                {/* What the button offers depends on what she already has.
-                    Redoing the diagnostic is not offered here at all — that
-                    lives on her profile, beside the record it would replace. */}
+                {/* Label and target depend on progress (see useResumePoint). Restarting
+                    the diagnostic is available from the profile page only. */}
                 <GradientButton variant="onPlane" onClick={() => navigate(resume.to)}>
                   {resume.label}
                   <span aria-hidden="true">→</span>
@@ -157,7 +153,7 @@ export default function Landing() {
         </section>
 
         <section id="how-it-works" className="scroll-mt-6 border-t border-line bg-surface">
-          <div className="mx-auto w-full max-w-[1080px] px-5 py-16 sm:px-8 md:py-20">
+          <div className="mx-auto w-full max-w-[1200px] px-5 py-16 sm:px-8 md:py-20">
             <h2
               tabIndex="-1"
               className="font-display text-3xl font-bold tracking-[-0.02em] text-ink sm:text-4xl"
@@ -190,9 +186,9 @@ export default function Landing() {
           </div>
         </section>
 
-        {/* One dark plane. It is what gives the page a floor and a structure. */}
+        {/* Dark section; the page's only use of the dark surface. */}
         <section className="bg-plane text-on-plane">
-          <div className="mx-auto grid w-full max-w-[1080px] gap-8 px-5 py-14 sm:px-8 md:grid-cols-[1.2fr_0.8fr] md:items-center md:py-16">
+          <div className="mx-auto grid w-full max-w-[1200px] gap-8 px-5 py-14 sm:px-8 md:grid-cols-[1.2fr_0.8fr] md:items-center md:py-16">
             <div>
               <h2 className="font-display text-2xl font-bold tracking-[-0.015em] sm:text-3xl">
                 Free to start
@@ -205,8 +201,7 @@ export default function Landing() {
             </div>
 
             <div className="flex flex-wrap items-center gap-x-5 gap-y-3 md:justify-end">
-              {/* The same offer as the hero. Left as "Start now" it would be
-                  an unguarded second door into the upload screen. */}
+              {/* Same progress-aware action as the hero button. */}
               <button
                 type="button"
                 onClick={() => navigate(resume.to)}
@@ -216,10 +211,7 @@ export default function Landing() {
                 <span aria-hidden="true">→</span>
               </button>
 
-              {/* Sign up, not sign in: nobody reading this band has an account,
-                  and the paragraph beside it has just described what one is
-                  for. Signing in belongs in the header, where a returning
-                  woman looks for it. */}
+              {/* Guest-only sign-up prompt. Sign-in is available from the header. */}
               {!user && (
                 <button
                   type="button"

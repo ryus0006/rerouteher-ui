@@ -21,12 +21,9 @@ import journeyPath from '../assets/page-illustrations/journey-path.png';
 const CARD = 'mt-4 rounded-2xl border border-line bg-surface p-5 sm:p-6';
 
 /**
- * The roles her snapshot matched, with the one she is aiming at marked.
- *
- * The exception to the rule that nothing on this page is a control. Choosing a
- * different target is not correcting an answer — it is the question the whole
- * readout answers, so it belongs beside the answer rather than one screen away.
- * Index 0 is her previous occupation, which is why it carries the marker.
+ * Role chips for the snapshot's recommended roles, with the target role
+ * selected. The only interactive control in the readiness section. Index 0 is
+ * the previous occupation and carries the "Closest match" marker.
  */
 function RoleSwitch({ roles, selected, busy, onSelect }) {
   return (
@@ -76,7 +73,7 @@ function RoleSwitch({ roles, selected, busy, onSelect }) {
   );
 }
 
-/** A section title, what the section is for, and an optional figure beside it. */
+/** Section header: title, intro text and an optional aside. */
 function SectionHead({ title, intro, aside }) {
   return (
     <div className="mt-11 flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1">
@@ -91,7 +88,7 @@ function SectionHead({ title, intro, aside }) {
   );
 }
 
-/** The square glyph that tells one panel from the next at a glance. */
+/** Square icon tile identifying a dashboard panel. */
 function IconTile({ name, tone = 'bg-canvas-sunk text-ink-soft' }) {
   return (
     <span className={`flex size-11 shrink-0 items-center justify-center rounded-xl ${tone}`}>
@@ -101,13 +98,11 @@ function IconTile({ name, tone = 'bg-canvas-sunk text-ink-soft' }) {
 }
 
 /**
- * Where a returning visitor lands: how far she has come, and everything she has
- * told us, read back to her.
+ * Journey dashboard for signed-in users: diagnostic progress and a read-only
+ * summary of results.
  *
- * A dashboard, not a table of contents. The intake screens ask the questions
- * once; this one only reports the answers, so corrections go to the profile and
- * the only forward controls are the two the gap opened. Anything else would put
- * her back in the form she has already finished.
+ * Answers are edited from the profile, not here. The only forward actions are
+ * the learning plan and employer matches unlocked by the gap result.
  */
 export default function Journey() {
   const navigate = useSmoothNavigate();
@@ -120,8 +115,8 @@ export default function Journey() {
   const selectedRole = useIntakeStore((state) => state.selectedRole);
   const gapResult = useIntakeStore((state) => state.gapResult);
 
-  /* The role being worked out, if any. The old numbers stay on screen until
-     the new ones arrive, so switching never blanks the page she is reading. */
+  /* Role whose gap is being computed, if any. Current results stay displayed
+     until the new result arrives. */
   const [switching, setSwitching] = useState(null);
   const [switchError, setSwitchError] = useState(null);
 
@@ -135,18 +130,16 @@ export default function Journey() {
     gapResult,
   });
 
-  // The journey belongs to an account. A guest has no saved journey to open.
+  // Account-only route.
   if (!user) return <Navigate to="/" replace />;
 
   const focusAreas = gapResult ? pickFocusAreas(gapResult.gaps, MAX_FOCUS_AREAS) : [];
   const markers = gapResult ? markersFor(gapResult.readiness, focusAreas) : [];
   const projected = markers.length > 0 ? markers[markers.length - 1].at : null;
 
-  /* The band says what the screen she is returning to asks of her; the panels
-     below say only where each chapter stands. Two sets of strings rather than
-     one, because a shared one would sit on screen twice, a few centimetres
-     apart. Keyed by screen, so coming back mid-chapter names the half she has
-     left rather than the half she has already answered. */
+  /* Hero copy for the next incomplete screen, keyed by step id so a
+     partially complete chapter describes the remaining step. Panel status copy
+     is defined separately to avoid repeating the same text. */
   const upNext = {
     'upload-cv': 'Your CV first, then what filled your break.',
     'career-break': 'What filled your break — the part a CV leaves out.',
@@ -155,8 +148,7 @@ export default function Journey() {
     'target-role-gap': 'Pick a role, and see how much of it you can already do.',
   };
 
-  /* Named for what the screen does, not for the chapter it sits in: she is
-     being sent to one screen, and two of the chapters take more than one. */
+  /* Resume button labels, keyed by step id (chapters can span several screens). */
   const resumeCta = {
     'upload-cv': 'Start your story',
     'career-break': 'Continue your story',
@@ -165,8 +157,7 @@ export default function Journey() {
     'target-role-gap': 'Choose your target role',
   };
 
-  /* One placeholder per unfinished chapter, the same at every step, so the
-     panels stay still while the band above says what to do next. */
+  /* Placeholder copy for incomplete chapters, constant across steps. */
   const placeholder = {
     skills: 'Your skills will appear here.',
     'next-move': 'Your target role and focus areas will appear here.',
@@ -174,7 +165,6 @@ export default function Journey() {
 
   const byId = Object.fromEntries(progress.chapters.map((chapter) => [chapter.id, chapter]));
   const roles = snapshot?.recommended_roles ?? [];
-  const cvReady = Boolean(snapshot && selectedRole);
 
   function switchRole(role) {
     if (switching || role.role_id === selectedRole?.role_id) return;
@@ -182,9 +172,9 @@ export default function Journey() {
     setSwitching(role.role_id);
     computeGap(snapshot, role)
       .then((result) => {
-        /* Committed in one write: setting the role on its own clears the gap,
-           which would empty the readout for as long as the request takes. */
-        useIntakeStore.setState({ selectedRole: role, cvDraft: null, gapResult: result });
+        /* Single write: `setSelectedRole` alone clears the gap result, which would
+           empty the readout while the request is in flight. */
+        useIntakeStore.setState({ selectedRole: role, gapResult: result });
         setSwitchError(null);
       })
       .catch((cause) => setSwitchError(cause.message))
@@ -195,7 +185,7 @@ export default function Journey() {
     <div className="flex min-h-screen flex-col">
       <Header />
 
-      <main className="mx-auto w-full max-w-[900px] flex-1 px-5 py-10 sm:px-6 sm:py-12">
+      <main className="page-shell max-w-[1200px] flex-1 pt-14 pb-20">
         <h1 className="font-display text-3xl font-bold leading-[1.1] tracking-[-0.02em] text-ink sm:text-4xl">
           Welcome back, {displayName}
         </h1>
@@ -206,8 +196,7 @@ export default function Journey() {
           </p>
         )}
 
-        {/* The page's one banded surface, and the one bold element on it: her
-            readiness once it exists, and until then the distance to it. */}
+        {/* Hero band: readiness when available, otherwise diagnostic progress. */}
         <section className="journey-hero card-with-illustration mt-7 rounded-3xl">
           <CardIllustration src={journeyPath} />
           <div className="grid gap-6 p-7 sm:p-8 md:grid-cols-[minmax(0,1fr)_15rem] md:items-center">
@@ -237,9 +226,7 @@ export default function Journey() {
                   : upNext[progress.next.id]}
               </p>
 
-              {/* Only while the diagnostic is unfinished. Once the gap exists the
-                  band is a reading, and the two cards at the foot of the page
-                  are where the next move actually is. */}
+              {/* Resume action, shown only while the diagnostic is incomplete. */}
               {!gapResult && (
                 <>
                   <div
@@ -265,29 +252,6 @@ export default function Journey() {
           </div>
         </section>
 
-        <section className="mt-4 flex flex-wrap items-center gap-5 overflow-hidden rounded-2xl border border-pink-600/25 bg-pink-100/70 p-5 sm:p-6">
-          <span
-            aria-hidden="true"
-            className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-white text-pink-600 shadow-card"
-          >
-            <JourneyIcon name="story" className="size-6" />
-          </span>
-          <div className="min-w-0 flex-1">
-            <p className="eyebrow text-pink-600">Application ready</p>
-            <h2 className="mt-1 font-display text-xl font-bold tracking-[-0.015em] text-ink">
-              Build your refreshed CV
-            </h2>
-            <p className="mt-1 max-w-[62ch] text-sm leading-relaxed text-ink-soft">
-              {cvReady
-                ? `Create a professional first draft for your ${selectedRole.role} goal using only the experience and skills already in your journey.`
-                : 'Complete your Skill Snapshot and choose a target role first. We’ll then create your draft from the information already in your journey.'}
-            </p>
-          </div>
-          <GradientButton size="md" onClick={() => navigate('/plan/cv')}>
-            {cvReady ? 'Open CV Builder' : 'See what you need'} <span aria-hidden="true">→</span>
-          </GradientButton>
-        </section>
-
         <SectionHead
           title="Your skills"
           intro="What your CV and your time away add up to, named the way an employer reads them."
@@ -300,9 +264,7 @@ export default function Journey() {
             <div className="min-w-0 flex-1">
               {byId.skills.done ? (
                 <>
-                  {/* Two colours are already doing work in the chips below, so
-                      the legend says what they mean rather than leaving her to
-                      infer that green is the half she earned while away. */}
+                  {/* Legend for the chip colours: core vs. transferable skills. */}
                   <ul className="flex flex-wrap gap-x-4 gap-y-1 pt-1 text-xs text-ink-soft">
                     <li className="flex items-center gap-1.5">
                       <span aria-hidden="true" className="size-2 rounded-full bg-ink/45" />
@@ -361,8 +323,7 @@ export default function Journey() {
               </p>
             )}
 
-            {/* Ranked because they genuinely are a sequence: the first one buys
-                the most readiness per evening spent on it. */}
+            {/* Ordered list: focus areas are ranked by uplift. */}
             <ol
               className={`mt-4 overflow-hidden rounded-2xl border border-line bg-surface transition-opacity ${
                 switching ? 'opacity-40' : ''
@@ -396,8 +357,8 @@ export default function Journey() {
             />
 
             <div className="mt-4 grid gap-4 sm:grid-cols-2">
-              <section className="flex flex-col rounded-2xl border border-line bg-blue-100/60 p-5 sm:p-6">
-                <IconTile name="learning" tone="bg-surface text-blue-600" />
+              <section className="flex flex-col rounded-2xl border border-pink-600/15 bg-pink-100/50 p-5 sm:p-6">
+                <IconTile name="learning" tone="bg-surface text-pink-600" />
                 <h3 className="mt-4 font-display text-lg font-bold tracking-[-0.01em] text-ink">
                   Your learning plan
                 </h3>
@@ -409,13 +370,12 @@ export default function Journey() {
                   className="mt-5 self-start"
                   onClick={() => navigate('/plan/learning')}
                 >
-                  View your learning plan
-                  <span aria-hidden="true">→</span>
+                  View learning plan
                 </GradientButton>
               </section>
 
-              <section className="flex flex-col rounded-2xl border border-line bg-verify-soft p-5 sm:p-6">
-                <IconTile name="employers" tone="bg-surface text-verify" />
+              <section className="flex flex-col rounded-2xl border border-pink-600/15 bg-pink-100/50 p-5 sm:p-6">
+                <IconTile name="employers" tone="bg-surface text-pink-600" />
                 <h3 className="mt-4 font-display text-lg font-bold tracking-[-0.01em] text-ink">
                   Employer fit finder
                 </h3>
@@ -427,33 +387,10 @@ export default function Journey() {
                   className="mt-5 self-start"
                   onClick={() => navigate('/plan/employers/matches')}
                 >
-                  Find your next opportunity
-                  <span aria-hidden="true">→</span>
+                  See employer matches
                 </GradientButton>
               </section>
             </div>
-
-            <section className="mt-4 flex flex-wrap items-center gap-5 overflow-hidden rounded-2xl border border-pink-600/20 bg-pink-100/70 p-5 sm:p-6">
-              <span
-                aria-hidden="true"
-                className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-white text-pink-600"
-              >
-                <JourneyIcon name="skills" className="size-6" />
-              </span>
-              <div className="min-w-0 flex-1">
-                <p className="eyebrow text-pink-600">Build interview confidence</p>
-                <h3 className="mt-1 font-display text-xl font-bold tracking-[-0.015em] text-ink">
-                  Practise for your target role
-                </h3>
-                <p className="mt-1 text-sm leading-relaxed text-ink-soft">
-                  Answer five tailored questions, get feedback, then see the patterns worth
-                  improving.
-                </p>
-              </div>
-              <GradientButton size="md" onClick={() => navigate('/interview-practice')}>
-                Start interview practice <span aria-hidden="true">→</span>
-              </GradientButton>
-            </section>
           </>
         )}
       </main>

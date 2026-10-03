@@ -10,7 +10,7 @@ beforeEach(() => {
   vi.spyOn(window, 'scrollTo').mockImplementation(() => {});
   vi.stubGlobal(
     'matchMedia',
-    vi.fn(() => ({ matches: false }))
+    vi.fn(() => ({ matches: false, addEventListener() {}, removeEventListener() {} }))
   );
   useIntakeStore.setState({ cv: null, cvParsed: false, snapshot: null });
 });
@@ -31,8 +31,7 @@ function open(initialEntries = ['/']) {
 describe('screen navigation', () => {
   it('opens the CV screen and focuses its heading without requiring animation support', async () => {
     const navigate = open();
-    // The hero and the closing band make the same offer, so the name is on
-    // the page twice; the hero is the one under test.
+    // The CTA appears in both the hero and the closing band; target the hero.
     fireEvent.click(screen.getAllByRole('button', { name: 'Get started' })[0]);
     const heading = await screen.findByRole('heading', { name: 'Upload your CV' });
     expect(heading).toHaveFocus();

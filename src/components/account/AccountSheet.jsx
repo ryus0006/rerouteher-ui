@@ -20,9 +20,8 @@ const HELP = 'mt-1.5 text-xs text-ink-soft';
 const ERROR = 'mt-1.5 text-xs font-medium text-pink-600';
 
 /**
- * Create an account, or sign in. Opens over whatever screen she is on: the URL
- * does not change and the result behind it stays rendered, so this reads as
- * keeping her work rather than being sent somewhere to register.
+ * Modal sheet for creating an account or signing in. Rendered over the current
+ * route without changing the URL, so the underlying page stays mounted.
  */
 export default function AccountSheet() {
   const navigate = useSmoothNavigate();
@@ -45,15 +44,14 @@ export default function AccountSheet() {
 
   const creating = mode === 'create';
 
-  /* Errors are cleared on the way out rather than on the way in, so opening the
-     sheet never has to write state from inside an effect. */
+  /* Errors are cleared on close so opening the sheet does not need to reset
+     state from inside an effect. */
   function dismiss() {
     setErrors({});
     closeSheet();
   }
 
-  /* The destination rides along: toggling between the two modes is a change of
-     mind about having an account, not about where she was heading. */
+  /* Preserve the redirect target when switching between sign-in and create. */
   function switchMode() {
     setErrors({});
     openSheet(creating ? 'signIn' : 'create', sheetRedirect);
@@ -130,15 +128,13 @@ export default function AccountSheet() {
       const store = useIntakeStore.getState();
       const onDevice = store.exportPlan();
 
-      /* Signing in means "take me back to my work", so the saved journey
-         replaces whatever this device was holding — unless there is no saved
-         journey to speak of. An account made before the diagnostic was started
-         holds an empty plan, and letting that win would wipe the CV, snapshot
-         and readiness she built as a guest in the meantime.
+      /* On sign-in the account's saved journey replaces the local one, unless
+         the saved plan is empty (e.g. an account created before the diagnostic),
+         in which case the local guest progress is kept.
 
-         It lands before the account does: `setUser` is what tells the sync
-         whose plan to keep, and putting it second stops the import being
-         posted straight back to the server it just came from. */
+         The import runs before `setUser`: setting the user initialises the
+         sync baseline, so importing first prevents the imported plan from being
+         posted straight back to the server. */
       const keptDevice = !creating && !hasJourney(result.plan);
       if (!creating && !keptDevice) store.importPlan(result.plan);
 
@@ -150,21 +146,20 @@ export default function AccountSheet() {
         }),
       });
 
-      // Her work is now the account's only copy, and the sync's baseline was
-      // just set to it, so this is the one save it will not make by itself.
-      // The server reads the session cookie the create/sign-in just set, so no
-      // username travels in the body.
+      // The sync baseline was just set to the local plan, so the sync will not
+      // detect it as a change; save it explicitly. The account is identified by
+      // the session cookie set by the sign-in request.
       if (keptDevice && hasJourney(onDevice)) {
         await savePlan({ plan: onDevice });
       }
 
-      if (!creating) navigate('/journey');
-      /* Signing up before starting is a decision to begin, so she is taken to
-         the beginning rather than left on the page she signed up from. */
+      /* Sign-in goes to the redirect target when the opener provided one,
+         otherwise to the journey. */
+      if (!creating) navigate(sheetRedirect ?? '/journey');
+      /* A new account with no journey starts the diagnostic. */
       else if (!hasJourney(onDevice)) navigate('/diagnostic/background');
-      /* Signing up with work in hand leaves her on the page she signed up from,
-         so she carries on from where the offer reached her. An opener that wants
-         her somewhere else passes a destination. */
+      /* A new account with existing progress stays on the current page unless
+         the opener provided a redirect target. */
       else if (sheetRedirect) navigate(sheetRedirect);
     } catch (cause) {
       setErrors({ form: cause.message });

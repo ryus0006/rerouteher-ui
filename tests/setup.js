@@ -31,8 +31,7 @@ class MemoryStorage {
   }
 }
 
-// The stores persist to sessionStorage; localStorage is here for anything the
-// libraries under test reach for.
+// Stores persist to sessionStorage; localStorage is provided for libraries that use it.
 for (const name of ['localStorage', 'sessionStorage']) {
   if (typeof globalThis[name] !== 'undefined') continue;
 

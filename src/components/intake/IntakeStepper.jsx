@@ -13,8 +13,7 @@ const LABEL_STATE = {
   upcoming: 'text-ink-faint',
 };
 
-// Markers size to their labels and the connectors absorb the slack, so the
-// track always reaches both edges of the content column.
+// Markers size to their labels and connectors flex to fill the remaining width.
 const CONNECTOR = 'mt-[15px] h-px flex-1';
 
 /**
@@ -28,8 +27,7 @@ export default function IntakeStepper({ currentIndex }) {
         const complete = index < currentIndex;
         const current = index === currentIndex;
         const state = complete ? 'complete' : current ? 'current' : 'upcoming';
-        // A connector belongs to the step on its right, so it is travelled as
-        // soon as the step on its left is done.
+        // The connector before each step is filled once that step is reached.
         const travelled = index <= currentIndex;
 
         return (

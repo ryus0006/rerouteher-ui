@@ -17,8 +17,7 @@ export default function SkillItem({ skill }) {
         {skill.skill}
       </p>
 
-      {/* The section heading already names the source, so only the activity that
-          produced this skill adds anything. */}
+      {/* Show the originating activity; the section heading already names the source. */}
       {activityLabel && <p className="mt-0.5 text-xs text-ink-faint">from {activityLabel}</p>}
 
       {skill.evidence && <p className="mt-1 text-xs text-ink-soft">{skill.evidence}</p>}

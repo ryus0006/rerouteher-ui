@@ -23,7 +23,7 @@ beforeEach(() => {
   vi.spyOn(window, 'scrollTo').mockImplementation(() => {});
   vi.stubGlobal(
     'matchMedia',
-    vi.fn(() => ({ matches: false }))
+    vi.fn(() => ({ matches: false, addEventListener() {}, removeEventListener() {} }))
   );
   useIntakeStore.getState().reset();
 });
@@ -64,14 +64,12 @@ describe('resume point', () => {
       '/diagnostic/break'
     );
 
-    // The break is finished once an activity is named, so the question after it
-    // is the one she is waiting on.
+    // The break step is complete once an activity is selected, so resume at the next step.
     expect(resumePoint({ ...partway, cvParsed: true, activities: ['caregiving'] }).to).toBe(
       '/diagnostic/priorities'
     );
 
-    // Her snapshot exists, so that screen is answered and the role is what is
-    // left; sending her back to the snapshot would be a step she has done.
+    // With a snapshot present, resume at the gap step rather than the snapshot.
     expect(
       resumePoint({
         cvParsed: true,
@@ -131,11 +129,11 @@ describe('replacing the CV', () => {
 
     fireEvent.click(await screen.findByRole('button', { name: 'Remove' }));
 
-    // The redo has wiped everything downstream of the CV, as it must.
+    // The redo cleared all state downstream of the CV.
     expect(useIntakeStore.getState().snapshot).toBeNull();
     expect(useIntakeStore.getState().previousPlan.snapshot).toEqual(SNAPSHOT);
 
-    // She abandons it, and gets back exactly what she had.
+    // Abandoning the redo restores the previous plan.
     fireEvent.click(await screen.findByRole('button', { name: 'Keep my previous plan' }));
 
     await waitFor(() => expect(useIntakeStore.getState().snapshot).toEqual(SNAPSHOT));
@@ -196,10 +194,10 @@ describe('signing up before starting', () => {
   });
 
   it('never lets an empty saved plan overwrite work done on the device', async () => {
-    // She signed up first, so the account holds nothing.
+    // Account created before starting, so it holds an empty plan.
     await createAccount({ username: 'early', password: 'password1', plan: { cvParsed: false } });
 
-    // Then did the whole diagnostic as a guest, and signed in.
+    // Complete the diagnostic as a guest, then sign in.
     useIntakeStore.setState(finished);
     open();
 
@@ -213,7 +211,7 @@ describe('signing up before starting', () => {
     await waitFor(() => expect(useAccountStore.getState().user).not.toBeNull());
     expect(useIntakeStore.getState().snapshot).toEqual(SNAPSHOT);
 
-    // And it is on the account now, so the next device gets it too.
+    // The local plan is saved to the account.
     await waitFor(async () => {
       const result = await signIn({ username: 'early', password: 'password1' });
       expect(result.plan.snapshot).toEqual(SNAPSHOT);
@@ -226,8 +224,7 @@ describe('signing up before starting', () => {
 
     open(['/diagnostic/gap']);
 
-    // An account saves the journey rather than buying the plan, so a guest is
-    // handed both halves of it and asked for nothing.
+    // Both plan links are available to guests without an account.
     expect(await screen.findByRole('link', { name: /Open your learning plan/ })).toBeVisible();
     expect(screen.getByRole('link', { name: /See your matches/ })).toBeVisible();
     expect(screen.queryByRole('button', { name: 'Create a free account' })).toBeNull();
@@ -258,8 +255,7 @@ describe('plan sync', () => {
     await createAccount({ username: 'leaver', password: 'password1', plan: { cvParsed: false } });
     useAccountStore.setState({ user: { username: 'leaver', displayName: 'leaver' } });
 
-    // Edited and signed out inside the debounce window, which is the one way
-    // an edit could have been wiped locally without ever reaching the account.
+    // Edit and sign out within the debounce window; the pending edit must still be saved.
     useIntakeStore.setState({ cvParsed: true, snapshot: SNAPSHOT });
     useAccountStore.getState().signOut();
 
@@ -279,8 +275,8 @@ describe('plan sync', () => {
 
     useIntakeStore.setState({ cvParsed: true, snapshot: SNAPSHOT });
 
-    // No account is signed in, so there is nowhere for this to have gone; the
-    // mock server errors on an unhandled request, so a stray save would fail.
+    // No user is signed in, so no save should be sent; the mock server fails on
+    // unhandled requests, so any stray save would fail the test.
     await new Promise((resolve) => setTimeout(resolve, 1000));
     expect(useAccountStore.getState().user).toBeNull();
   });

@@ -1,519 +1,383 @@
 import { useMemo, useState } from 'react';
+import { AnimatePresence, MotionConfig, motion } from 'motion/react';
 import Header from '../components/layout/Header.jsx';
-import interviewIllustration from '../assets/interview-practice-illustration.webp';
+import GradientButton from '../components/ui/GradientButton.jsx';
+import AreasView from '../components/interview/AreasView.jsx';
+import PillButton from '../components/interview/PillButton.jsx';
+import QuestionCard from '../components/interview/QuestionCard.jsx';
+import SessionSteps from '../components/interview/SessionSteps.jsx';
+import SetComplete from '../components/interview/SetComplete.jsx';
+import SetupPanel from '../components/interview/SetupPanel.jsx';
+import {
+  QUESTIONS_PER_SET,
+  focusLabel,
+  generateQuestions,
+  interviewContext,
+} from '../api/interview.js';
+import { ACTIVITY_LABELS } from '../config/activityTaxonomy.js';
+import useSmoothNavigate from '../hooks/useSmoothNavigate.js';
+import { summariseFeedback } from '../lib/interviewAreas.js';
+import { journeyProgress } from '../lib/journeyProgress.js';
+import { upcomingCount, useInterviewStore } from '../store/interviewStore.js';
+import { useAccountStore } from '../store/accountStore.js';
 import { useIntakeStore } from '../store/intakeStore.js';
 
-const QUESTIONS = [
-  'Tell me about yourself and why you are interested in this role.',
-  'Tell me about a time you solved a problem at work.',
-  'How have your experiences prepared you for this role?',
-  'What would you bring to this team in your first few months?',
-  'What would you like to ask us about this opportunity?',
-];
-
-const FEEDBACK = {
-  summary:
-    'You gave a warm, clear overview of your experience and showed genuine interest in the role.',
-  good: [
-    [
-      'Clear and well-structured',
-      'You introduced your experience and motivation in an easy-to-follow way.',
-    ],
-    ['Relevant experience', 'You highlighted practical skills that relate to the work.'],
-    ['A positive, professional tone', 'Your answer felt considered, open and motivated.'],
-  ],
-  improve: [
-    [
-      'Use more specific examples',
-      'Bring one real example to life so your answer feels more memorable.',
-    ],
-    [
-      'Explain the outcome',
-      'Share what changed as a result of your actions, even if it was small.',
-    ],
-    [
-      'Connect experience to the role',
-      'Name the part of your experience that maps most directly to this role.',
-    ],
-  ],
+const SLIDE = {
+  enter: (direction) => ({ opacity: 0, x: direction * 48 }),
+  centre: { opacity: 1, x: 0 },
+  exit: (direction) => ({ opacity: 0, x: direction * -48 }),
 };
 
-function Icon({ name, className = 'size-5' }) {
-  const paths = {
-    briefcase: (
-      <path d="M4 7.5h16v11.25H4zM8 7.5V5.25A1.25 1.25 0 0 1 9.25 4h5.5A1.25 1.25 0 0 1 16 5.25V7.5M4 12h16M10 12v2h4v-2" />
-    ),
-    target: (
-      <>
-        <circle cx="12" cy="12" r="7.5" />
-        <circle cx="12" cy="12" r="3" />
-        <path d="m15 9 5-5M16.5 4H20v3.5" />
-      </>
-    ),
-    pencil: (
-      <>
-        <path d="m4 20 4.1-1.05L19 8.05 15.95 5 5.05 15.9 4 20Z" />
-        <path d="m14.9 6.05 3.05 3.05" />
-      </>
-    ),
-    mic: (
-      <>
-        <rect x="8.25" y="3" width="7.5" height="12" rx="3.75" />
-        <path d="M5.5 11.75a6.5 6.5 0 0 0 13 0M12 18.25V21M8.5 21h7" />
-      </>
-    ),
-    check: <path d="m5 12.5 4.1 4.1L19.5 6.5" />,
-    refresh: (
-      <>
-        <path d="M19.5 10a7.75 7.75 0 1 0 .1 4" />
-        <path d="M19.5 5.5V10H15" />
-      </>
-    ),
-    chart: (
-      <>
-        <path d="M5 19V12M12 19V5M19 19V9" />
-        <path d="M3.5 20.5h17" />
-      </>
-    ),
-    bulb: (
-      <>
-        <path d="M8.1 17.2h7.8M9.3 20h5.4M8.2 14.5A6.5 6.5 0 1 1 15.8 14.5c-.85.7-1.25 1.36-1.35 2.05h-4.9c-.1-.7-.5-1.36-1.35-2.05Z" />
-      </>
-    ),
-    arrow: <path d="M5 12h13M13 6.5l5.5 5.5-5.5 5.5" />,
-  };
-
+/** Shown when no target role exists yet; practice requires one. */
+function NotReady() {
+  const navigate = useSmoothNavigate();
+  const cvParsed = useIntakeStore((state) => state.cvParsed);
+  const activities = useIntakeStore((state) => state.break?.activities);
+  const employerPriorities = useIntakeStore((state) => state.employerPriorities);
+  const snapshot = useIntakeStore((state) => state.snapshot);
+  const gapResult = useIntakeStore((state) => state.gapResult);
+  const { next } = journeyProgress({
+    cvParsed,
+    activities,
+    employerPriorities,
+    snapshot,
+    gapResult,
+  });
   return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.9"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-      className={className}
-    >
-      {paths[name]}
-    </svg>
-  );
-}
-
-function CircleIcon({ name, tone = 'lavender' }) {
-  return (
-    <span className={`interview-icon interview-icon-${tone}`}>
-      <Icon name={name} />
-    </span>
-  );
-}
-
-function SetupBar({ role, focus, open, onToggle }) {
-  return (
-    <section className="interview-setup-bar" aria-label="Practice setup">
-      <div className="flex min-w-0 items-center gap-3.5">
-        <CircleIcon name="briefcase" />
-        <div className="min-w-0">
-          <p className="text-sm text-ink-soft">Target role</p>
-          <p className="truncate font-display text-lg font-bold text-ink">{role}</p>
-        </div>
-      </div>
-      <div className="interview-setup-divider" aria-hidden="true" />
-      <div className="flex min-w-0 items-center gap-3.5">
-        <CircleIcon name="target" tone="pink" />
-        <div className="min-w-0">
-          <p className="text-sm text-ink-soft">Practice focus</p>
-          <p className="font-display text-lg font-bold text-ink">{focus}</p>
-          <p className="hidden text-xs text-ink-soft sm:block">
-            General and role-specific questions
-          </p>
-        </div>
-      </div>
-      <button type="button" onClick={onToggle} className="interview-text-action">
-        <Icon name="pencil" className="size-4" />
-        {open ? 'Close setup' : 'Change setup'}
-      </button>
-    </section>
-  );
-}
-
-function SetupEditor({ roles, role, focus, onRoleChange, onFocusChange, onStart }) {
-  return (
-    <section className="interview-editor" aria-labelledby="practice-setup-title">
-      <div>
-        <p className="eyebrow text-pink-600">Your practice session</p>
-        <h2 id="practice-setup-title" className="mt-1 font-display text-xl font-bold text-ink">
-          Make this practice useful to you
-        </h2>
-      </div>
-      <label className="interview-field">
-        <span>Target role</span>
-        <select value={role} onChange={(event) => onRoleChange(event.target.value)}>
-          {roles.map((option) => (
-            <option key={option}>{option}</option>
-          ))}
-        </select>
-      </label>
-      <fieldset className="interview-focus-picker">
-        <legend>Practice focus</legend>
-        {['General', 'Role-specific', 'Mixed'].map((option) => (
-          <label key={option}>
-            <input
-              type="radio"
-              name="practice-focus"
-              checked={focus === option}
-              onChange={() => onFocusChange(option)}
-            />
-            <span>{option}</span>
-          </label>
-        ))}
-      </fieldset>
-      <button type="button" onClick={onStart} className="interview-primary-button">
-        Start 5-question practice <Icon name="arrow" className="size-4" />
-      </button>
-    </section>
-  );
-}
-
-function FeedbackColumn({ title, items, tone }) {
-  return (
-    <section className={`interview-feedback-column interview-feedback-${tone}`}>
-      <div className="flex items-center gap-3">
-        <CircleIcon
-          name={tone === 'good' ? 'check' : 'chart'}
-          tone={tone === 'good' ? 'green' : 'pink'}
-        />
-        <h3 className="font-display text-lg font-bold text-ink">{title}</h3>
-      </div>
-      <ul className="mt-4 space-y-3">
-        {items.map(([heading, detail]) => (
-          <li key={heading} className="flex gap-2.5 text-sm leading-relaxed text-ink-soft">
-            <span
-              className={`mt-1.5 size-2 shrink-0 rounded-full ${tone === 'good' ? 'bg-verify' : 'bg-pink-500'}`}
-            />
-            <span>
-              <strong className="font-semibold text-ink">{heading}</strong> — {detail}
-            </span>
-          </li>
-        ))}
-      </ul>
-    </section>
-  );
-}
-
-function GoodToKnow() {
-  return (
-    <section className="interview-good-card">
-      <div className="flex items-center gap-3">
-        <CircleIcon name="bulb" />
-        <h2 className="font-display text-xl font-bold text-ink">Good to know</h2>
-      </div>
-      <ul className="mt-5 space-y-4 text-sm leading-relaxed text-ink-soft">
-        {[
-          'You’ll get immediate, personalised feedback after each answer.',
-          'Focus on progress, not perfection.',
-          'You can try the same question again whenever you need to.',
-          'Each practice session helps you build confidence for a real interview.',
-        ].map((item) => (
-          <li key={item} className="flex gap-3">
-            <span className="interview-check-small">
-              <Icon name="check" className="size-3" />
-            </span>
-            <span>{item}</span>
-          </li>
-        ))}
-      </ul>
-    </section>
-  );
-}
-
-function AreasPanel({ onContinue }) {
-  const areas = [
-    [
-      'Use more specific examples',
-      'Support your answers with clear, real examples from your experience.',
-      '3 responses',
-    ],
-    [
-      'Explain the result of your actions',
-      'Share the outcomes or impact of your work, even when they felt small.',
-      '3 responses',
-    ],
-    [
-      'Connect your experience to the role',
-      'Make the link between your skills and the role requirements explicit.',
-      '2 responses',
-    ],
-  ];
-  return (
-    <div className="interview-area-layout">
-      <section className="interview-areas-card">
-        <h2 className="font-display text-2xl font-bold tracking-[-0.02em] text-ink">
-          Recurring areas to improve
-        </h2>
-        <p className="mt-1 text-sm leading-relaxed text-ink-soft">
-          These are the themes that have appeared most often in your recent practice feedback.
+    <div className="flex min-h-screen flex-col">
+      <Header />
+      <main className="page-shell max-w-[760px] flex-1 py-16">
+        <h1 className="font-display text-3xl font-bold tracking-[-0.02em] text-ink">
+          Interview practice
+        </h1>
+        <p className="mt-3 max-w-[58ch] text-sm leading-relaxed text-ink-soft">
+          Questions are written for your target role, so practice opens once you have one. Finish
+          your Target Role & Gap step first.
         </p>
-        <div className="mt-5 space-y-3">
-          {areas.map(([title, description, count], index) => (
-            <article className="interview-area-row" key={title}>
-              <CircleIcon
-                name={index === 0 ? 'pencil' : index === 1 ? 'chart' : 'target'}
-                tone={index === 0 ? 'pink' : 'lavender'}
-              />
-              <div className="min-w-0 flex-1">
-                <h3 className="font-display text-lg font-bold text-ink">{title}</h3>
-                <p className="mt-0.5 text-sm leading-relaxed text-ink-soft">{description}</p>
-              </div>
-              <span className="interview-count">Appeared in {count}</span>
-              <Icon name="arrow" className="size-4 shrink-0 text-violet-600" />
-            </article>
-          ))}
-        </div>
-        <button type="button" onClick={onContinue} className="interview-primary-button mt-6">
-          Continue practising <Icon name="arrow" className="size-4" />
-        </button>
-      </section>
-      <section className="interview-strengths-card">
-        <h2 className="font-display text-2xl font-bold tracking-[-0.02em] text-ink">
-          What you’re doing well
-        </h2>
-        <p className="mt-2 text-sm leading-relaxed text-ink-soft">
-          These strengths have been highlighted in your recent practice sessions.
-        </p>
-        <div className="mt-6 divide-y divide-line">
-          {FEEDBACK.good.map(([title, detail]) => (
-            <div className="flex gap-4 py-5 first:pt-0" key={title}>
-              <CircleIcon name="check" tone="lavender" />
-              <div>
-                <h3 className="font-display text-lg font-bold text-ink">{title}</h3>
-                <p className="mt-1 text-sm leading-relaxed text-ink-soft">{detail}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
+        <GradientButton
+          className="mt-6"
+          size="md"
+          onClick={() => navigate(next?.to ?? '/diagnostic/gap')}
+        >
+          Continue your journey
+        </GradientButton>
+      </main>
     </div>
   );
+}
+
+/** Sign-in gate: practice history is stored per account. */
+function SignInRequired() {
+  const openSheet = useAccountStore((state) => state.openSheet);
+  return (
+    <div className="flex min-h-screen flex-col">
+      <Header />
+      <main className="page-shell grid max-w-[1080px] flex-1 items-center gap-16 py-16 lg:grid-cols-[minmax(0,1fr)_20rem]">
+        <div>
+          <h1 className="font-display text-4xl font-bold tracking-[-0.03em] text-ink">
+            Interview practice
+          </h1>
+          <p className="mt-3 max-w-[54ch] text-base leading-relaxed text-ink-soft">
+            Sign in to practise. You answer questions for your target role out loud, get feedback on
+            each answer, and see which areas come up most across your practice.
+          </p>
+          <p className="mt-2 max-w-[54ch] text-sm leading-relaxed text-ink-soft">
+            New here? Creating an account keeps the journey you have done as a guest.
+          </p>
+          <div className="mt-7 flex flex-wrap gap-3">
+            <GradientButton size="md" onClick={() => openSheet('signIn', '/interview-practice')}>
+              Sign in
+            </GradientButton>
+            <GradientButton
+              variant="secondary"
+              size="md"
+              onClick={() => openSheet('create', '/interview-practice')}
+            >
+              Create an account
+            </GradientButton>
+          </div>
+        </div>
+        <SessionSteps />
+      </main>
+    </div>
+  );
+}
+
+/**
+ * Optional note above a question: its kind in a mixed set, or the setup it was
+ * generated under if the setup has since changed.
+ */
+function questionNote(question, setup) {
+  if (question.role.role_id !== setup.role.role_id || question.focus !== setup.focus) {
+    return `Asked when practising for ${question.role.role}, ${focusLabel(question.focus).toLowerCase()} focus`;
+  }
+  if (setup.focus === 'mixed') {
+    return question.kind === 'role_specific' ? 'Role-specific question' : 'General question';
+  }
+  return null;
 }
 
 export default function InterviewPractice() {
-  const selectedRole = useIntakeStore((state) => state.selectedRole);
+  const user = useAccountStore((state) => state.user);
+  const cv = useIntakeStore((state) => state.cv);
+  const careerBreak = useIntakeStore((state) => state.break);
   const snapshot = useIntakeStore((state) => state.snapshot);
-  const [role, setRole] = useState(selectedRole?.role ?? 'Marketing Executive');
-  const [focus, setFocus] = useState('Mixed');
-  const [setupOpen, setSetupOpen] = useState(true);
-  const [screen, setScreen] = useState('practice');
-  const [status, setStatus] = useState('feedback');
-  const [questionIndex, setQuestionIndex] = useState(0);
+  const selectedRole = useIntakeStore((state) => state.selectedRole);
+  const gapResult = useIntakeStore((state) => state.gapResult);
 
-  const question = useMemo(() => QUESTIONS[questionIndex], [questionIndex]);
-  const progress = ((questionIndex + 1) / QUESTIONS.length) * 100;
-  const roles = snapshot?.recommended_roles?.map((candidate) => candidate.role) ?? [role];
+  const storedSetup = useInterviewStore((state) => state.setup);
+  const questions = useInterviewStore((state) => state.questions);
+  const index = useInterviewStore((state) => state.index);
+  const attempts = useInterviewStore((state) => state.attempts);
+  const earlier = useInterviewStore((state) => state.earlier);
+  const finishedASet = useInterviewStore((state) => state.finishedASet);
+  const finishSet = useInterviewStore((state) => state.finishSet);
+  const startSet = useInterviewStore((state) => state.startSet);
+  const replaceUpcoming = useInterviewStore((state) => state.replaceUpcoming);
+  const goTo = useInterviewStore((state) => state.goTo);
 
-  function startPractice() {
-    setSetupOpen(false);
-    setScreen('practice');
-    setQuestionIndex(0);
-    setStatus('ready');
+  // null when closed; 'change' edits the current set, 'new' starts a new set.
+  const [setupMode, setSetupMode] = useState(null);
+  const [view, setView] = useState('practice');
+  const [busy, setBusy] = useState(false);
+  const [direction, setDirection] = useState(1);
+  const [pending, setPending] = useState(false);
+  const [setupError, setSetupError] = useState(null);
+
+  const roles = useMemo(() => {
+    const matched = snapshot?.recommended_roles ?? [];
+    if (!selectedRole || matched.some((role) => role.role_id === selectedRole.role_id))
+      return matched;
+    return [selectedRole, ...matched];
+  }, [snapshot, selectedRole]);
+
+  const context = useMemo(
+    () =>
+      interviewContext({
+        cv,
+        careerBreak: careerBreak && {
+          duration_years: careerBreak.duration_years,
+          activities: careerBreak.activities.map((id) => ACTIVITY_LABELS[id] ?? id),
+        },
+        snapshot,
+        gapResult,
+      }),
+    [cv, careerBreak, snapshot, gapResult]
+  );
+
+  const summary = useMemo(
+    () => summariseFeedback([...earlier, ...questions], attempts),
+    [earlier, questions, attempts]
+  );
+
+  if (!user) return <SignInRequired />;
+  if (!snapshot || !gapResult || roles.length === 0) return <NotReady />;
+
+  // Fall back to the journey's selected role if the saved role is no longer available.
+  const setup =
+    storedSetup && roles.some((role) => role.role_id === storedSetup.role.role_id)
+      ? storedSetup
+      : { role: selectedRole ?? roles[0], focus: 'mixed' };
+
+  const started = questions.length > 0;
+  const upcoming = upcomingCount({ questions, attempts, index });
+  const answeredInSet = questions.filter((q) => attempts[q.id]?.length).length;
+  const statuses = questions.map((q, position) =>
+    position === index ? 'current' : attempts[q.id]?.length ? 'done' : 'todo'
+  );
+  const question = questions[index];
+  const setupOpen = setupMode !== null;
+  const showSetup = !started || setupOpen;
+
+  function move(to) {
+    setDirection(to >= index ? 1 : -1);
+    goTo(to);
   }
 
-  function nextQuestion() {
-    setQuestionIndex((index) => Math.min(index + 1, QUESTIONS.length - 1));
-    setStatus('ready');
+  async function confirmSetup(next) {
+    const asked = [...earlier, ...questions].map((q) => q.text);
+    const replacing = started && setupMode === 'change' && upcoming > 0;
+    const count = replacing ? upcoming : QUESTIONS_PER_SET;
+
+    setPending(true);
+    setSetupError(null);
+    try {
+      const { questions: generated } = await generateQuestions({
+        role: next.role,
+        focus: next.focus,
+        count,
+        exclude: asked,
+        context,
+      });
+      const stamp = Date.now();
+      const fresh = generated
+        .filter((q) => !asked.includes(q.text))
+        .slice(0, count)
+        .map((q, position) => ({
+          id: `${stamp}-${position}`,
+          text: q.text,
+          kind: q.kind,
+          role: { role: next.role.role, role_id: next.role.role_id },
+          focus: next.focus,
+        }));
+      if (fresh.length === 0) throw new Error('No new questions came back');
+
+      if (replacing) replaceUpcoming(next, fresh);
+      else startSet(next, fresh);
+      setSetupMode(null);
+      setView('practice');
+    } catch (cause) {
+      setSetupError(`Questions could not be prepared (${cause.message}). Try again.`);
+    } finally {
+      setPending(false);
+    }
   }
 
   return (
-    <div className="interview-page-background flex min-h-screen flex-col">
-      <Header />
-      <main className="mx-auto w-full max-w-[1440px] flex-1 px-5 py-8 sm:px-8 lg:px-12 lg:py-10">
-        <div className="max-w-[880px]">
-          <p className="eyebrow text-pink-600">Practise · prepare · progress</p>
-          <h1 className="mt-2 font-display text-4xl font-bold tracking-[-0.035em] text-ink sm:text-5xl">
-            Interview practice
-          </h1>
-          <p className="mt-2 max-w-[58ch] text-base leading-relaxed text-ink-soft sm:text-lg">
-            Build confidence by practising interview questions for your target role.
-          </p>
-        </div>
-
-        <div className="mt-6 grid gap-6 xl:grid-cols-[minmax(0,1fr)_23rem]">
-          <div className="min-w-0">
-            <SetupBar
-              role={role}
-              focus={focus}
-              open={setupOpen}
-              onToggle={() => setSetupOpen((open) => !open)}
-            />
-            {setupOpen && (
-              <SetupEditor
-                roles={roles}
-                role={role}
-                focus={focus}
-                onRoleChange={setRole}
-                onFocusChange={setFocus}
-                onStart={startPractice}
-              />
-            )}
-
-            {screen === 'areas' ? (
-              <div className="mt-5">
-                <AreasPanel onContinue={() => setScreen('practice')} />
-              </div>
-            ) : (
-              <section className="interview-question-card mt-5" aria-labelledby="question-title">
-                <p className="text-sm font-medium text-violet-600">
-                  Question {questionIndex + 1} of {QUESTIONS.length}
+    <MotionConfig reducedMotion="user">
+      <div className="flex min-h-screen flex-col">
+        <Header />
+        <main className="page-shell max-w-[1200px] flex-1 pt-14 pb-20">
+          <div className={`flex justify-between gap-8 ${started ? 'items-center' : 'items-end'}`}>
+            <div className="min-w-0 flex-1">
+              {/* Visually hidden once practice starts; the question acts as the headline. */}
+              <h1
+                className={
+                  started
+                    ? 'sr-only'
+                    : 'font-display text-4xl font-bold leading-[1.05] tracking-[-0.035em] text-ink'
+                }
+              >
+                Interview practice
+              </h1>
+              {started ? (
+                <p className="text-base text-ink-soft">
+                  Practising for <span className="font-semibold text-ink">{setup.role.role}</span>,{' '}
+                  {focusLabel(setup.focus).toLowerCase()} focus
                 </p>
-                <h2
-                  id="question-title"
-                  className="mt-2 max-w-[48ch] font-display text-2xl font-bold leading-tight tracking-[-0.02em] text-ink sm:text-[1.7rem]"
+              ) : (
+                <p className="mt-2 max-w-[60ch] text-base leading-relaxed text-ink-soft">
+                  Practise answering out loud, get feedback on each answer, and try any question
+                  again until it feels right.
+                </p>
+              )}
+            </div>
+
+            {started && !setupOpen && (
+              <div className="flex shrink-0 items-center gap-3 pb-0.5">
+                {finishedASet && summary.answered > 0 && view !== 'areas' && (
+                  <PillButton
+                    icon="chart"
+                    iconSide="start"
+                    disabled={busy}
+                    onClick={() => setView('areas')}
+                  >
+                    See areas to improve
+                  </PillButton>
+                )}
+                <PillButton
+                  icon="pencil"
+                  iconSide="start"
+                  disabled={busy}
+                  onClick={() => {
+                    setSetupError(null);
+                    setSetupMode('change');
+                  }}
                 >
-                  {question}
-                </h2>
-
-                {status === 'ready' && (
-                  <div className="interview-record-ready mt-6">
-                    <CircleIcon name="mic" tone="pink" />
-                    <div>
-                      <h3 className="font-display text-lg font-bold text-ink">
-                        Ready when you are
-                      </h3>
-                      <p className="mt-1 text-sm text-ink-soft">
-                        Speak naturally. Your response will be transcribed and reviewed
-                        automatically.
-                      </p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => setStatus('recording')}
-                      className="interview-primary-button ml-auto"
-                    >
-                      Start recording <Icon name="mic" className="size-4" />
-                    </button>
-                  </div>
-                )}
-
-                {status === 'recording' && (
-                  <div className="interview-recording mt-6" role="status">
-                    <span className="interview-record-pulse" aria-hidden="true" />
-                    <CircleIcon name="mic" tone="pink" />
-                    <div>
-                      <h3 className="font-display text-lg font-bold text-ink">
-                        Recording your answer
-                      </h3>
-                      <p className="mt-1 text-sm text-ink-soft">
-                        Take your time. Press stop when you’re ready.
-                      </p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => setStatus('feedback')}
-                      className="interview-secondary-button ml-auto"
-                    >
-                      Stop recording
-                    </button>
-                  </div>
-                )}
-
-                {status === 'feedback' && (
-                  <>
-                    <section
-                      className="interview-transcript mt-6"
-                      aria-label="Your answer transcript"
-                    >
-                      <div className="flex items-start justify-between gap-4">
-                        <div className="flex items-center gap-3">
-                          <CircleIcon name="mic" />
-                          <h3 className="font-display text-lg font-bold text-ink">
-                            Your answer{' '}
-                            <span className="font-sans text-sm font-medium text-ink-soft">
-                              (transcript)
-                            </span>
-                          </h3>
-                        </div>
-                        <span className="text-sm tabular text-ink-soft">0:58</span>
-                      </div>
-                      <p className="mt-4 max-w-[72ch] text-sm leading-relaxed text-ink-soft">
-                        I have experience in marketing and content planning, where I have enjoyed
-                        finding practical ways to connect people with useful information. I’m
-                        returning to work because I’m ready to bring that experience, my
-                        organisation skills and fresh energy to a role where I can keep learning and
-                        contribute to a team.
-                      </p>
-                    </section>
-                    <section className="interview-feedback-summary mt-4">
-                      <CircleIcon name="bulb" tone="pink" />
-                      <div>
-                        <h3 className="font-display text-lg font-bold text-ink">Your feedback</h3>
-                        <p className="mt-1 text-sm leading-relaxed text-ink-soft">
-                          {FEEDBACK.summary}
-                        </p>
-                      </div>
-                    </section>
-                    <div className="mt-4 grid gap-3 lg:grid-cols-2">
-                      <FeedbackColumn title="What worked well" items={FEEDBACK.good} tone="good" />
-                      <FeedbackColumn
-                        title="What to improve"
-                        items={FEEDBACK.improve}
-                        tone="improve"
-                      />
-                    </div>
-                    <div className="mt-5 flex flex-wrap items-center gap-3">
-                      <button
-                        type="button"
-                        onClick={() => setStatus('ready')}
-                        className="interview-secondary-button"
-                      >
-                        <Icon name="refresh" className="size-4" />
-                        Try again
-                      </button>
-                      <button
-                        type="button"
-                        onClick={nextQuestion}
-                        className="interview-primary-button"
-                      >
-                        Next question <Icon name="arrow" className="size-4" />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setScreen('areas')}
-                        className="ml-auto inline-flex items-center gap-2 text-sm font-semibold text-violet-600 underline decoration-violet-600/30 underline-offset-4 hover:text-pink-600"
-                      >
-                        <Icon name="chart" className="size-4" />
-                        See areas to improve
-                      </button>
-                    </div>
-                  </>
-                )}
-              </section>
+                  Change setup
+                </PillButton>
+              </div>
             )}
           </div>
 
-          <aside className="space-y-5 xl:pt-0">
-            <section className="interview-progress-card">
-              <div className="flex items-baseline justify-between gap-4">
-                <h2 className="font-display text-xl font-bold text-ink">Practice progress</h2>
-                <span className="text-sm tabular text-ink-soft">
-                  {questionIndex + 1} of {QUESTIONS.length}
-                </span>
-              </div>
-              <div className="mt-4 h-2.5 overflow-hidden rounded-full bg-violet-400/20">
+          <AnimatePresence initial={false}>
+            {showSetup && (
+              <motion.div
+                key="setup"
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: 'auto', opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: 0.55, ease: [0.32, 0.72, 0, 1] }}
+                className="overflow-hidden"
+              >
                 <div
-                  className="h-full rounded-full bg-pink-500 transition-[width] duration-300"
-                  style={{ width: `${progress}%` }}
-                />
-              </div>
-            </section>
-            <figure className="interview-illustration">
-              <img
-                src={interviewIllustration}
-                alt="A woman preparing confidently for an interview at her desk"
+                  className={`grid items-start gap-6 pt-8 ${started ? 'pb-2' : 'lg:grid-cols-[minmax(0,1fr)_19rem]'}`}
+                >
+                  <SetupPanel
+                    key={`${setup.role.role_id}-${setup.focus}-${setupMode}`}
+                    roles={roles}
+                    setup={setup}
+                    midSet={started}
+                    upcoming={setupMode === 'new' ? 0 : upcoming}
+                    pending={pending}
+                    error={setupError}
+                    onConfirm={confirmSetup}
+                    onCancel={() => setSetupMode(null)}
+                  />
+                  {!started && <SessionSteps />}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {started && view === 'areas' && (
+            <div className="mt-8">
+              <AreasView summary={summary} onBack={() => setView('practice')} />
+            </div>
+          )}
+
+          {started && view === 'complete' && !setupOpen && (
+            <div className="mt-8">
+              <SetComplete
+                answered={answeredInSet}
+                total={questions.length}
+                onNewSet={() => {
+                  setSetupError(null);
+                  setSetupMode('new');
+                }}
+                onSeeAreas={() => setView('areas')}
+                onReview={() => setView('practice')}
               />
-            </figure>
-            <GoodToKnow />
-          </aside>
-        </div>
-      </main>
-    </div>
+            </div>
+          )}
+
+          {started && view === 'practice' && question && (
+            <div className="mt-12 max-w-[56rem]">
+              {/* Slide direction follows navigation direction (next/previous). */}
+              <AnimatePresence mode="wait" initial={false} custom={direction}>
+                <motion.div
+                  key={question.id}
+                  custom={direction}
+                  variants={SLIDE}
+                  initial="enter"
+                  animate="centre"
+                  exit="exit"
+                  transition={{ type: 'spring', stiffness: 260, damping: 30 }}
+                  className="min-w-0"
+                >
+                  <QuestionCard
+                    question={question}
+                    position={index}
+                    total={questions.length}
+                    note={questionNote(question, setup)}
+                    attempts={attempts[question.id] ?? []}
+                    context={context}
+                    onBusyChange={setBusy}
+                    onPrevious={() => move(index - 1)}
+                    onNext={() => move(index + 1)}
+                    statuses={statuses}
+                    onJump={move}
+                    onFinish={() => {
+                      finishSet();
+                      setView('complete');
+                    }}
+                  />
+                </motion.div>
+              </AnimatePresence>
+            </div>
+          )}
+        </main>
+      </div>
+    </MotionConfig>
   );
 }

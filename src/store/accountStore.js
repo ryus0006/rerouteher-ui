@@ -2,36 +2,33 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { signOut as signOutRequest } from '../api/account.js';
 import { sessionBacked, useIntakeStore } from './intakeStore.js';
+import { useInterviewStore } from './interviewStore.js';
 
 export const ACCOUNT_STORAGE_KEY = 'rerouteher.account';
 
 /**
- * Who is signed in, and whether the account sheet is open.
+ * Signed-in user and account sheet state.
  *
- * Deliberately holds no plan data: the journey lives in `intakeStore`, and this
- * store only records whether it now has somewhere to be saved to. The session
- * itself is a cookie the server sets, never a token kept here.
+ * Holds no plan data (see `intakeStore`). Authentication uses a server-set
+ * session cookie; no token is stored client-side.
  */
 export const useAccountStore = create(
   persist(
     (set) => ({
       /**
-       * `username` signs her in and never changes; `displayName` is what the
-       * screen calls her and she can rewrite at will.
+       * `username` is the immutable login id; `displayName` is the editable name
+       * shown in the UI.
        *
        * @type {{ username: string, displayName: string } | null}
        */
       user: null,
 
-      /** @type {'create' | 'signIn' | null} — which mode the sheet is open in */
+      /** @type {'create' | 'signIn' | null} Mode the account sheet is open in. */
       sheet: null,
 
       /**
-       * Where to go after a successful create when guest work is being kept.
-       * Null leaves her on the page she signed up from, so an offer can reach
-       * her mid-journey without interrupting the thing she signed up to keep.
-       * An opener passes a path when the destination is the offer: the
-       * readiness card sells the dashboard, so it sends her to one.
+       * Path to navigate to after a successful sign-in or account creation.
+       * See `AccountSheet` for the default destinations when null.
        * @type {string | null}
        */
       sheetRedirect: null,
@@ -43,36 +40,30 @@ export const useAccountStore = create(
       setDisplayName: (displayName) =>
         set((state) => (state.user ? { user: { ...state.user, displayName } } : state)),
       /**
-       * Signing out returns the device to a guest, with nothing of hers on it.
-       *
-       * The journey persists separately and would otherwise outlive the sign-out,
-       * handing the next person to open the browser — a shared laptop, the common
-       * case here — her CV, her snapshot and her readiness. Clearing it is only
-       * safe because the plan is saved to the account on every change (see
-       * `planSync`), so signing back in brings it all back.
+       * Signs out and clears all local journey data, so nothing remains on a
+       * shared device. Safe because `planSync` saves the plan to the account on
+       * every change; signing in restores it.
        */
       signOut: () => {
-        // Best-effort: drop the server session cookie. The local clear happens
-        // regardless, so a failed request never traps her signed in on the device.
+        // Best-effort server sign-out; local state is cleared regardless of the result.
         signOutRequest().catch(() => {});
         set({ user: null, sheet: null });
         useIntakeStore.getState().reset();
+        useInterviewStore.getState().reset();
       },
     }),
     {
       name: ACCOUNT_STORAGE_KEY,
       version: 2,
-      /* Signed in for the tab, like the journey it belongs to. Outliving it
-         would leave her apparently signed in with an empty dashboard, since
-         the plan itself is gone and cannot be fetched back without her
-         password. Signing in again restores the whole thing. */
+      /* Session-scoped, matching the journey store. Persisting longer would show
+         a signed-in user with no local plan after the tab closes. */
       storage: sessionBacked(),
-      // v1 accounts predate display names; the username is what they were shown by.
+      // v1 state has no displayName; default it to the username.
       migrate: (state, version) =>
         version < 2 && state?.user
           ? { ...state, user: { ...state.user, displayName: state.user.username } }
           : state,
-      // `sheet` is view state for one visit; only identity outlives a reload.
+      // Persist only the user; sheet state is transient.
       partialize: (state) => ({ user: state.user }),
     }
   )

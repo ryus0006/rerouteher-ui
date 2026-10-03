@@ -3,7 +3,7 @@ import GlassCard from '../ui/GlassCard.jsx';
 import CardIllustration from '../ui/CardIllustration.jsx';
 import SkillChip from './SkillChip.jsx';
 
-// how many skill chips to show before collapsing the rest behind a toggle
+// Number of skill chips shown before the rest are collapsed behind a toggle.
 const INITIAL_VISIBLE = 12;
 
 /**

@@ -1,15 +1,13 @@
 // @ts-check
 
 /**
- * Compose the focus areas from the backend's uplift-ranked gaps.
+ * Selects focus areas from the backend's uplift-ranked gaps.
  *
- * Most returners have no AI skills on their CV, so AI-literacy gaps would other-
- * wise flood the list and crowd out role skills. To keep role (technical) skills
- * visible, only one slot is reserved for the highest-uplift AI-literacy gap and
- * the remaining slots go to the highest-uplift role gaps. If role gaps run out,
- * the leftover slots are backfilled from the remaining gaps (including more AI)
- * rather than left empty. The result is then presented in uplift order (highest
- * first); the reserved AI gap keeps its slot but is not forced last.
+ * AI-literacy gaps are common and would otherwise crowd out role skills, so at
+ * most one slot is reserved for the highest-uplift AI-literacy gap and the rest
+ * go to the highest-uplift role gaps. If there are too few role gaps, remaining
+ * slots are backfilled from the other gaps. The result is sorted by uplift,
+ * highest first.
  *
  * @param {import('../types/api.js').Gap[]} gaps  ranked by uplift (backend order)
  * @param {number} max  how many focus areas to surface

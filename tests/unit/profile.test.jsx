@@ -11,7 +11,7 @@ beforeEach(() => {
   vi.spyOn(window, 'scrollTo').mockImplementation(() => {});
   vi.stubGlobal(
     'matchMedia',
-    vi.fn(() => ({ matches: false }))
+    vi.fn(() => ({ matches: false, addEventListener() {}, removeEventListener() {} }))
   );
 });
 
@@ -78,7 +78,7 @@ describe('profile', () => {
     expect(await screen.findByText('hr-officer-cv.pdf')).toBeVisible();
     expect(screen.getByText('7 years')).toBeVisible();
 
-    // Stored ids are resolved to the words she picked, not counted.
+    // Stored ids are resolved to their labels.
     expect(screen.getByText('Childcare')).toBeVisible();
     expect(screen.getByText('Budgeting')).toBeVisible();
     expect(screen.getByText('Flexible Work')).toBeVisible();
@@ -112,7 +112,7 @@ describe('profile', () => {
 
     expect(screen.queryByRole('button', { name: 'Edit' })).toBeNull();
 
-    // Clearing is confirmed first, so the click alone goes nowhere.
+    // Restart requires confirmation; the first click only opens the dialog.
     fireEvent.click(screen.getByRole('button', { name: /Start again from your CV/ }));
     expect(router.state.location.pathname).toBe('/profile');
 

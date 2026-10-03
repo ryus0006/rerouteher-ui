@@ -3,9 +3,9 @@ import { getSkillDefinition } from '../../lib/skillDefinition.js';
 import SkillDefinitionPopover from '../skills/SkillDefinitionPopover.jsx';
 
 /**
- * A single skill rendered as a compact pill. A supplied ESCO definition is
- * revealed on hover, focus or tap. If the dataset has no definition, the skill
- * deliberately remains a label only.
+ * A single skill rendered as a compact pill. A supplied ESCO definition opens
+ * in a small floating card on hover or focus. Without a definition the pill is
+ * a plain label, with its evidence in the native title.
  */
 export default function SkillChip({ skill }) {
   const fromBreak = skill.source === 'break';
@@ -19,29 +19,34 @@ export default function SkillChip({ skill }) {
     : skill.evidence || undefined;
 
   const definition = getSkillDefinition(skill);
-  const chipClass = [
-    'rounded-xl border px-3 py-2 text-sm transition-colors',
-    definition && 'hover:border-pink-200 focus-within:border-pink-300',
+  const pill = [
+    'inline-flex items-center rounded-full border px-3 py-1 text-sm font-medium transition-colors',
     fromBreak ? 'border-verify/25 bg-verify-soft text-verify' : 'border-line bg-canvas text-ink',
   ].join(' ');
 
+  if (!definition) {
+    return (
+      <li title={title} className={pill}>
+        {skill.skill}
+      </li>
+    );
+  }
+
   return (
-    <li title={definition ? undefined : title} className={chipClass}>
-      {definition ? (
-        <SkillDefinitionPopover definition={definition} label={skill.skill}>
-          {(triggerProps) => (
-            <button
-              type="button"
-              {...triggerProps}
-              className="w-full cursor-help text-left font-medium outline-none focus-visible:underline focus-visible:decoration-pink-400 focus-visible:decoration-2 focus-visible:underline-offset-4"
-            >
-              {skill.skill}
-            </button>
-          )}
-        </SkillDefinitionPopover>
-      ) : (
-        <p className="font-medium">{skill.skill}</p>
-      )}
+    <li className="inline-flex">
+      <SkillDefinitionPopover definition={definition} label={skill.skill}>
+        {(triggerProps) => (
+          <button
+            type="button"
+            {...triggerProps}
+            className={`${pill} cursor-help ${
+              fromBreak ? 'hover:border-verify/50' : 'hover:border-line-strong hover:bg-surface'
+            }`}
+          >
+            {skill.skill}
+          </button>
+        )}
+      </SkillDefinitionPopover>
     </li>
   );
 }

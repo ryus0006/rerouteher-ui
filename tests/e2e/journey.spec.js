@@ -28,6 +28,6 @@ test('@journey — a guest goes from landing to readiness without signing up @sm
   await page.getByRole('button', { name: 'See my readiness & gaps' }).click();
   await expect(page.getByRole('img', { name: '78% Ready today' })).toBeVisible();
 
-  // No account was ever asked for along the way.
+  // No sign-up or sign-in prompt appears during the guest journey.
   await expect(page.getByText(/sign ?up|log ?in|create an account/i)).toHaveCount(0);
 });

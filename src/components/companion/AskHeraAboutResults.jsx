@@ -1,10 +1,9 @@
 import { useCompanionStore } from '../../store/companionStore.js';
+import HeraBot from './HeraBot.jsx';
 
 /**
- * A quiet, contextual entry into results Q&A (US8.2), placed where her results
- * already are so "opens the companion from her results" is a real affordance and
- * not only the floating bubble. It opens on her tap in ask mode; nothing opens on
- * its own, which is what the UX calls for.
+ * Inline button that opens the companion in ask mode from a results page, as
+ * an alternative to the floating launcher. Opens only on user action.
  */
 export default function AskHeraAboutResults({ className = '' }) {
   const openCompanion = useCompanionStore((state) => state.openCompanion);
@@ -13,9 +12,9 @@ export default function AskHeraAboutResults({ className = '' }) {
     <button
       type="button"
       onClick={() => openCompanion('ask')}
-      className={`inline-flex items-center gap-1.5 rounded-full border border-line-strong px-3.5 py-1.5 text-xs font-medium text-ink-soft transition hover:border-ink/30 hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 ${className}`}
+      className={`inline-flex items-center gap-2 rounded-full border border-line-strong py-1.5 pr-3.5 pl-2 text-xs font-medium text-ink-soft transition hover:border-ink/30 hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 ${className}`}
     >
-      <span aria-hidden="true">💬</span>
+      <HeraBot className="size-5" />
       Ask Hera about your results
     </button>
   );

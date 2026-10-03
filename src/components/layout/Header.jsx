@@ -9,20 +9,16 @@ import { journeyProgress } from '../../lib/journeyProgress.js';
 import Avatar from '../account/Avatar.jsx';
 
 /**
- * Logo, and the account state on the right.
+ * Global header: logo, main navigation and account controls.
  *
- * The guest and signed-in states share one shape — label, avatar, action — so
- * signing in reads as the same slot changing rather than the bar reflowing.
- * Once signed in, the label and avatar together are the link to the profile.
- *
- * Signing out lives inside the menu rather than the bar: it is a once-a-session,
- * mildly destructive action, and a permanent top-level slot for it reads as an
- * account-first product.
+ * Guest and signed-in states share the same layout (label, avatar, action) so
+ * the bar does not reflow on sign-in. When signed in, the name and avatar link
+ * to the profile.
  */
 const RING_RADIUS = 7;
 const RING_CIRCUMFERENCE = 2 * Math.PI * RING_RADIUS;
 
-/** How much of the diagnostic is done, small enough to sit inside a nav link. */
+/** Compact progress ring showing diagnostic completion, sized for a nav link. */
 function ProgressRing({ percent }) {
   return (
     <span className="relative flex size-4 shrink-0">
@@ -53,7 +49,7 @@ function ProgressRing({ percent }) {
   );
 }
 
-export default function Header({ onGround = false }) {
+export default function Header() {
   const user = useAccountStore((state) => state.user);
   const openSheet = useAccountStore((state) => state.openSheet);
   const signOut = useAccountStore((state) => state.signOut);
@@ -74,35 +70,43 @@ export default function Header({ onGround = false }) {
     gapResult,
   });
 
-  // Never read `displayName` straight: an account stored before display names
-  // existed has only a username, and the bar must still render.
+  // Resolve via the helper: some stored accounts have no `displayName`.
   const name = user ? resolveDisplayName(user) : null;
 
-  /* The journey belongs to an account, so the door only exists for one. Hidden
-     rather than shown disabled: a dead control a guest cannot use explains
-     nothing, and the Sign in beside it is already the way to earn it.
-
-     For an account holder it is always there, including on the journey itself,
-     where it marks the current page instead of vanishing. A nav item that
-     disappears once you arrive makes the bar look like it lost something. */
-  const showJourney = Boolean(user);
-  const onJourney = pathname === '/journey';
-  const showInterviewPractice = Boolean(gapResult);
-  const onInterviewPractice = pathname === '/interview-practice';
-  const onCv = pathname === '/plan/cv';
-
-  /* The ring is a nudge to finish, so it retires the moment finishing is done.
-     A meter pinned at 100% forever is decoration, and the slot is wanted for
-     roadmap progress later. */
+  /* The progress ring is hidden once the diagnostic is complete. */
   const showProgress = progress.percent < 100;
 
+  /* "My journey" is shown only to signed-in users. The remaining tools depend
+     on the target role, so they appear once a gap result exists. The active
+     item is marked as current rather than removed. */
+  const unlocked = Boolean(gapResult);
+  const links = [
+    user && {
+      to: '/journey',
+      label: 'My journey',
+      current: pathname === '/journey',
+      ring: showProgress,
+    },
+    unlocked && {
+      to: '/plan/learning',
+      label: 'Learning plan',
+      current: pathname === '/plan/learning',
+    },
+    unlocked && {
+      to: '/plan/employers/matches',
+      label: 'Employer fit',
+      current: pathname.startsWith('/plan/employers'),
+    },
+    unlocked && {
+      to: '/interview-practice',
+      label: 'Interview practice',
+      current: pathname === '/interview-practice',
+    },
+    unlocked && { to: '/plan/cv', label: 'CV builder', current: pathname === '/plan/cv' },
+  ].filter(Boolean);
+
   return (
-    <header
-      className={[
-        'flex items-center justify-between gap-4 px-5 py-4 sm:px-8 sm:py-5',
-        onGround ? '' : 'border-b border-line bg-surface',
-      ].join(' ')}
-    >
+    <header className="page-bar flex items-center gap-8 border-b border-line bg-surface py-4 sm:py-5">
       <Link
         to="/"
         aria-label="ReRouteHer — new paths, still you — home"
@@ -120,57 +124,31 @@ export default function Header({ onGround = false }) {
         </picture>
       </Link>
 
-      <div className="flex items-center gap-2 sm:gap-4">
-        {showJourney && (
-          <Link
-            to="/journey"
-            aria-current={onJourney ? 'page' : undefined}
-            className={[
-              'flex items-center gap-2 rounded-full px-3 py-1.5 text-sm font-medium transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600',
-              onJourney
-                ? 'bg-canvas-sunk text-ink'
-                : 'text-ink-soft hover:bg-canvas-sunk hover:text-ink',
-            ].join(' ')}
-          >
-            {showProgress && <ProgressRing percent={progress.percent} />}
-            My journey
-          </Link>
-        )}
+      {links.length > 0 && (
+        <nav aria-label="Main" className="flex items-center gap-1">
+          {links.map((link) => (
+            <Link
+              key={link.to}
+              to={link.to}
+              aria-current={link.current ? 'page' : undefined}
+              className={[
+                'flex items-center gap-2 rounded-full px-3 py-1.5 text-sm font-medium transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600',
+                link.current
+                  ? 'bg-canvas-sunk text-ink'
+                  : 'text-ink-soft hover:bg-canvas-sunk hover:text-ink',
+              ].join(' ')}
+            >
+              {link.ring && <ProgressRing percent={progress.percent} />}
+              {link.label}
+            </Link>
+          ))}
+        </nav>
+      )}
 
-        {showInterviewPractice && (
-          <Link
-            to="/interview-practice"
-            aria-current={onInterviewPractice ? 'page' : undefined}
-            className={[
-              'hidden rounded-full px-3 py-1.5 text-sm font-semibold transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 md:inline-flex',
-              onInterviewPractice
-                ? 'bg-pink-100 text-pink-600 shadow-card'
-                : 'text-ink-soft hover:bg-pink-100 hover:text-pink-600',
-            ].join(' ')}
-          >
-            Interview practice
-          </Link>
-        )}
-        {showInterviewPractice && (
-          <Link
-            to="/plan/cv"
-            aria-current={onCv ? 'page' : undefined}
-            className={[
-              'hidden rounded-full px-3 py-1.5 text-sm font-medium transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 lg:inline-flex',
-              onCv
-                ? 'bg-canvas-sunk text-ink'
-                : 'text-ink-soft hover:bg-canvas-sunk hover:text-ink',
-            ].join(' ')}
-          >
-            Refresh CV
-          </Link>
-        )}
-
+      <div className="ml-auto flex shrink-0 items-center gap-2 sm:gap-4">
         {user ? (
           <div className="flex items-center gap-3">
-            {/* Name and avatar are one target, not two: they read as a single
-              identity, and splitting them would give the same destination two
-              hit areas of very different size. */}
+            {/* Name and avatar share a single link to the profile. */}
             <Link
               to="/profile"
               className="flex items-center gap-3 rounded-full transition hover:opacity-80 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
@@ -182,13 +160,10 @@ export default function Header({ onGround = false }) {
             <button
               type="button"
               onClick={() => {
-                /* Nothing signed-out belongs on her journey, and the landing page
-                   is the only screen that explains the service from scratch.
-                   Navigate first, then clear, both in the same tick: React batches
-                   them, so the re-render lands on the landing (no results page left
-                   mounted to trip its no-snapshot guard) with her data already
-                   cleared. Awaiting the navigate would defer the clear to a later
-                   tick, leaving her signed in and her data on the device until then. */
+                /* Navigate to the landing page and sign out in the same tick.
+                   React batches both updates, so no results page stays mounted to
+                   hit its missing-snapshot guard. Awaiting navigate would delay the
+                   sign-out and briefly leave the user's data on the device. */
                 navigate('/');
                 signOut();
               }}

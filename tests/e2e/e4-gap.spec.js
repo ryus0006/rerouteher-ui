@@ -23,8 +23,8 @@ async function reachGap(page) {
 const focusAreas = (page) =>
   page.getByRole('listitem').filter({ has: page.getByText(/% if learned/) });
 
-/* The "what's next" panel names her focus areas too, so assertions about a
-   named gap go through the ranked list rather than the whole page. */
+/* Focus-area names also appear in the closing panel, so gap assertions are
+   scoped to the ranked list. */
 
 /** The radio itself is visually hidden, so selection goes through its label. */
 const selectRole = (page, role) => page.getByText(role, { exact: true }).click();
@@ -147,7 +147,7 @@ test.describe('E4 — Role Readiness & Skill Gap', () => {
     await expect(met).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Missing for this role' })).toBeVisible();
 
-    // The names she already covers are detail behind the count, not a second list.
+    // Met requirement names stay collapsed behind the count.
     await expect(page.getByText('User Research & Persona Synthesis')).toBeHidden();
     await met.click();
     await expect(page.getByText('User Research & Persona Synthesis')).toBeVisible();

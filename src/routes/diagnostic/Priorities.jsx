@@ -9,14 +9,9 @@ import { generateSnapshot } from '../../api/snapshot.js';
 import { useIntakeStore } from '../../store/intakeStore.js';
 
 /**
- * What she is asking employers for, asked while she is still answering
- * questions rather than after she has been given an answer.
- *
- * It comes before the snapshot, so she is choosing what a workplace owes her
- * without a role in front of her. That is the right order for this question —
- * what she needs from an employer is true of her, not of the job — but it does
- * mean the copy has to say the answer is for later, since the next screen is
- * her skills and not a list of companies.
+ * Intake step for employer priorities. Runs before the snapshot, since
+ * priorities are independent of the target role; the copy notes that they
+ * are used later for employer matching.
  */
 export default function Priorities() {
   const navigate = useSmoothNavigate();

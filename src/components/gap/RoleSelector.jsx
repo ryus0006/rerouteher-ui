@@ -1,14 +1,13 @@
 /**
- * Target-role chips. Index 0 is her previous occupation and carries the
- * "Closest match" marker, which stays on that role whatever she selects.
+ * Target-role chips. Index 0 is the previous occupation and always carries the
+ * "Closest match" marker, regardless of the current selection.
  */
 export default function RoleSelector({ roles, selected, onSelect, disabled = false }) {
   if (roles.length === 0) return null;
 
   return (
     <fieldset disabled={disabled}>
-      {/* The page heading already asks the question, so this labels the group
-          for assistive tech only. */}
+      {/* Visually hidden: the page heading serves as the visible label. */}
       <legend className="sr-only">Select your target role</legend>
 
       <div className="flex flex-wrap gap-2">

@@ -1,334 +1,445 @@
 import { useEffect, useMemo, useState } from 'react';
 import Header from '../../components/layout/Header.jsx';
-import BackLink from '../../components/intake/BackLink.jsx';
-import CardIllustration from '../../components/ui/CardIllustration.jsx';
 import GradientButton from '../../components/ui/GradientButton.jsx';
+import CvRail from '../../components/cv/CvRail.jsx';
+import CvSheet from '../../components/cv/CvSheet.jsx';
+import { CaretDown } from '@phosphor-icons/react';
+import { improveCvText } from '../../api/cv.js';
+import { computeGap } from '../../api/gap.js';
+import useSmoothNavigate from '../../hooks/useSmoothNavigate.js';
+import {
+  createCvDraft,
+  missingForCv,
+  normaliseDraft,
+  openCvBook,
+  roleRelevant,
+  supportedSkills,
+} from '../../lib/cvDraft.js';
+import { buildCvPdf, cvFileName } from '../../lib/cvPdf.js';
 import { useAccountStore } from '../../store/accountStore.js';
 import { useIntakeStore } from '../../store/intakeStore.js';
-import cvStationery from '../../assets/page-illustrations/cv-stationery.png';
 
-const PERSONAL_FIELDS = [
-  { key: 'name', label: 'Full name', required: true, autoComplete: 'name' },
-  { key: 'email', label: 'Email', required: true, autoComplete: 'email' },
-  { key: 'phone', label: 'Phone', required: true, autoComplete: 'tel' },
-  { key: 'location', label: 'Location', autoComplete: 'address-level2' },
-  { key: 'linkedin', label: 'LinkedIn', autoComplete: 'url' },
-];
-
-function sourceSkills(snapshot) {
-  return [
-    ...(snapshot?.professional_skills ?? []),
-    ...(snapshot?.reframed_skills ?? []),
-  ].map((skill) => skill.skill);
-}
-
-function createDraft({ cv, snapshot, selectedRole }) {
-  const professionalSkills = (snapshot?.professional_skills ?? []).map((skill) => skill.skill);
-  const reframedSkills = (snapshot?.reframed_skills ?? []).map((skill) => skill.skill);
-  const strongestSkills = professionalSkills.slice(0, 4);
-  const summary = [
-    `Targeting a ${selectedRole.role} role.`,
-    strongestSkills.length > 0 && `Brings recognised strengths in ${strongestSkills.join(', ')}.`,
-    reframedSkills.length > 0 && 'Also brings transferable strengths identified from a career break.',
-  ]
-    .filter(Boolean)
-    .join(' ');
-
-  return {
-    personal: { name: '', email: '', phone: '', location: '', linkedin: '' },
-    summary,
-    skills: professionalSkills,
-    experiences: (cv?.experiences ?? []).map((experience) => ({
-      title: experience.title ?? '',
-      organisation: experience.organisation ?? '',
-      start: experience.start ?? '',
-      end: experience.end ?? '',
-      description: experience.description ?? '',
-    })),
-    // A career break is never presented as employment by default.
-    includeCareerBreak: false,
-  };
-}
-
-function suggestionFor(text, variant) {
-  const trimmed = text.trim();
-  if (!trimmed) return '';
-
-  // A local mock only reframes the supplied wording. It never adds claims.
-  return `${variant % 2 === 0 ? 'Relevant experience: ' : 'Professional profile: '}${trimmed}`;
-}
-
-function Field({ field, value, onChange }) {
+function Notice({ title, children }) {
   return (
-    <label className="block min-w-0">
-      <span className="cv-field-label">
-        {field.label}
-        {field.required && <span aria-hidden="true"> *</span>}
-      </span>
-      <input
-        type={field.key === 'email' ? 'email' : field.key === 'phone' ? 'tel' : 'text'}
-        name={field.key}
-        autoComplete={field.autoComplete}
-        value={value}
-        onChange={(event) => onChange(field.key, event.target.value)}
-        className="cv-field-input"
-      />
-    </label>
+    <div className="flex min-h-screen flex-col">
+      <Header />
+      <main className="page-shell max-w-[760px] flex-1 py-16">
+        <h1 className="font-display text-3xl font-bold tracking-[-0.02em] text-ink">{title}</h1>
+        {children}
+      </main>
+    </div>
   );
 }
 
-function AiSuggestion({ suggestion, onAccept, onDismiss, onTryAnother }) {
-  if (!suggestion) return null;
+/** Skeleton CV page shown behind the sign-in gate. */
+function SheetOutline() {
+  const line = (width, strong = false) => (
+    <span className={`cv-outline-line ${strong ? 'cv-outline-strong' : ''}`} style={{ width }} />
+  );
+  return (
+    <div className="cv-outline" aria-hidden="true">
+      {line('55%', true)}
+      <div className="mt-3 flex gap-3">
+        {line('28%')}
+        {line('20%')}
+        {line('22%')}
+      </div>
+      <span className="cv-outline-rule" />
+      {['Professional summary', 'Core skills', 'Work experience'].map((title, at) => (
+        <div key={title} className="mt-7">
+          {line('34%', true)}
+          <div className="mt-3 space-y-2">
+            {line('100%')}
+            {line(at === 1 ? '70%' : '92%')}
+            {at !== 1 && line('64%')}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function SignInRequired() {
+  const openSheet = useAccountStore((state) => state.openSheet);
+  return (
+    <div className="flex min-h-screen flex-col">
+      <Header />
+      <main className="page-shell grid max-w-[1080px] flex-1 items-center gap-16 py-16 lg:grid-cols-[minmax(0,1fr)_24rem]">
+        <div>
+          <h1 className="font-display text-4xl font-bold tracking-[-0.03em] text-ink">
+            CV builder
+          </h1>
+          <p className="mt-3 max-w-[50ch] text-base leading-relaxed text-ink-soft">
+            Sign in to use the CV builder. It writes a first draft from your journey and saves every
+            edit to your account, so it needs an account to keep it in.
+          </p>
+          <p className="mt-2 max-w-[50ch] text-sm leading-relaxed text-ink-soft">
+            New here? Creating an account keeps the journey you have done as a guest.
+          </p>
+          <div className="mt-7 flex flex-wrap gap-3">
+            <GradientButton size="md" onClick={() => openSheet('signIn', '/plan/cv')}>
+              Sign in
+            </GradientButton>
+            <GradientButton
+              variant="secondary"
+              size="md"
+              onClick={() => openSheet('create', '/plan/cv')}
+            >
+              Create an account
+            </GradientButton>
+          </div>
+        </div>
+        <SheetOutline />
+      </main>
+    </div>
+  );
+}
+
+function MissingInformation({ missing }) {
+  const navigate = useSmoothNavigate();
+  return (
+    <Notice title="A little more before your CV">
+      <p className="mt-3 max-w-[58ch] text-sm leading-relaxed text-ink-soft">
+        Your CV is written only from what your journey holds, so these need to be in place first.
+      </p>
+      <ul className="mt-6 space-y-3">
+        {missing.map((item) => (
+          <li key={item.label} className="cv-missing">
+            <div className="min-w-0 flex-1">
+              <p className="font-semibold text-ink">{item.label}</p>
+              <p className="mt-0.5 text-sm text-ink-soft">{item.detail}</p>
+            </div>
+            <GradientButton variant="secondary" size="sm" onClick={() => navigate(item.to)}>
+              Complete this
+            </GradientButton>
+          </li>
+        ))}
+      </ul>
+    </Notice>
+  );
+}
+
+/**
+ * Role selector for the CV: a styled pill over a native select, keeping native
+ * keyboard and screen reader behaviour.
+ */
+function RolePicker({ roles, value, targetId, disabled, onChange }) {
+  const current = roles.find((role) => role.role_id === value);
+  if (roles.length < 2) return <span className="cv-role-pill">{current?.role}</span>;
 
   return (
-    <aside className="cv-ai-suggestion" aria-live="polite">
-      <p className="text-xs font-semibold text-pink-600">AI wording suggestion</p>
-      <p className="mt-1 text-sm leading-relaxed text-ink">{suggestion.text}</p>
-      <p className="mt-1 text-xs leading-relaxed text-ink-soft">
-        It only reframes text already in your draft. No new achievements or experience are added.
-      </p>
-      <div className="mt-3 flex flex-wrap gap-2">
-        <button type="button" onClick={onAccept} className="cv-small-button cv-small-button-primary">
-          Use suggestion
-        </button>
-        <button type="button" onClick={onTryAnother} className="cv-small-button">
-          Try another
-        </button>
-        <button type="button" onClick={onDismiss} className="cv-small-button">
-          Dismiss
-        </button>
-      </div>
-    </aside>
+    <span className="cv-role-pill cv-role-pill-picker" data-disabled={disabled || undefined}>
+      {current?.role}
+      <span className="cv-role-pill-icon" aria-hidden="true">
+        <CaretDown weight="bold" className="size-3.5" />
+      </span>
+      <select
+        aria-label="Role this CV is for"
+        value={value}
+        disabled={disabled}
+        onChange={(event) => onChange(event.target.value)}
+      >
+        {roles.map((role) => (
+          <option key={role.role_id} value={role.role_id}>
+            {role.role}
+            {role.role_id === targetId ? ' (your target role)' : ''}
+          </option>
+        ))}
+      </select>
+    </span>
   );
 }
 
 export default function Cv() {
   const user = useAccountStore((state) => state.user);
-  const openSheet = useAccountStore((state) => state.openSheet);
+  const cv = useIntakeStore((state) => state.cv);
+  const cvParsed = useIntakeStore((state) => state.cvParsed);
+  const careerBreak = useIntakeStore((state) => state.break);
   const snapshot = useIntakeStore((state) => state.snapshot);
   const selectedRole = useIntakeStore((state) => state.selectedRole);
-  const cv = useIntakeStore((state) => state.cv);
-  const storedDraft = useIntakeStore((state) => state.cvDraft);
+  const gapResult = useIntakeStore((state) => state.gapResult);
+  const confirmedSkills = useIntakeStore((state) => state.confirmedSkills);
+  const storedBook = useIntakeStore((state) => state.cvDraft);
   const setCvDraft = useIntakeStore((state) => state.setCvDraft);
-  const [downloadErrors, setDownloadErrors] = useState([]);
+
   const [suggestion, setSuggestion] = useState(null);
+  const [downloadError, setDownloadError] = useState(null);
+  // Role whose gap result is being fetched before its draft is created.
+  const [tailoring, setTailoring] = useState(null);
+  const [roleError, setRoleError] = useState(null);
 
-  const generatedDraft = useMemo(
-    () => (snapshot && selectedRole ? createDraft({ cv, snapshot, selectedRole }) : null),
-    [cv, selectedRole, snapshot],
+  const ready = Boolean(user && snapshot && selectedRole);
+  const book = useMemo(() => openCvBook(storedBook), [storedBook]);
+
+  const roles = useMemo(() => {
+    const recommended = snapshot?.recommended_roles ?? [];
+    if (!selectedRole || recommended.some((role) => role.role_id === selectedRole.role_id))
+      return recommended;
+    return [selectedRole, ...recommended];
+  }, [snapshot, selectedRole]);
+
+  const activeRole = roles.find((role) => role.role_id === book.activeRoleId) ?? selectedRole;
+  const roleId = activeRole?.role_id;
+  const roleGap = roleId === selectedRole?.role_id ? gapResult : (book.gaps[roleId] ?? null);
+
+  const generated = useMemo(
+    () =>
+      ready
+        ? createCvDraft({
+            cv,
+            careerBreak,
+            snapshot,
+            selectedRole: activeRole,
+            gapResult: roleGap,
+            confirmedSkills,
+          })
+        : null,
+    [ready, cv, careerBreak, snapshot, activeRole, roleGap, confirmedSkills]
   );
-  const draft = storedDraft ?? generatedDraft;
+  const saved = roleId ? book.drafts[roleId] : undefined;
+  const base = ready ? normaliseDraft(saved, generated) : null;
+  const draft = base && { ...base, personal: book.personal };
 
-  // Persist the generated first draft as well as subsequent manual changes so
-  // returning to the builder restores the same version on the account.
+  // Persist a newly generated draft immediately so it is reused on return.
   useEffect(() => {
-    if (user && !storedDraft && generatedDraft) setCvDraft(generatedDraft);
-  }, [generatedDraft, setCvDraft, storedDraft, user]);
+    if (!base || (book === storedBook && base === saved)) return;
+    setCvDraft({ ...book, drafts: { ...book.drafts, [roleId]: base } });
+  }, [base, saved, book, storedBook, roleId, setCvDraft]);
 
-  if (!user) {
-    return (
-      <div className="flex min-h-screen flex-col">
-        <Header />
-        <main className="mx-auto w-full max-w-[760px] flex-1 px-5 py-16 sm:px-6">
-          <p className="eyebrow text-pink-600">CV Builder</p>
-          <h1 className="mt-2 font-display text-3xl font-bold tracking-[-0.02em] text-ink">
-            Sign in to build and save your CV
-          </h1>
-          <p className="mt-3 max-w-[58ch] text-sm leading-relaxed text-ink-soft">
-            Your draft is built from your saved Journey and kept with your account. Sign in to
-            generate, edit and download it.
-          </p>
-          <GradientButton className="mt-6" onClick={() => openSheet('signIn', '/plan/cv')}>
-            Sign in to continue
-          </GradientButton>
-        </main>
-      </div>
-    );
-  }
+  if (!user) return <SignInRequired />;
 
-  if (!snapshot || !selectedRole || !draft) {
-    return (
-      <div className="flex min-h-screen flex-col">
-        <Header />
-        <main className="mx-auto w-full max-w-[760px] flex-1 px-5 py-16 sm:px-6">
-          <p className="eyebrow text-pink-600">CV Builder</p>
-          <h1 className="mt-2 font-display text-3xl font-bold text-ink">
-            Your CV will be ready after two steps
-          </h1>
-          <p className="mt-3 max-w-[58ch] text-sm leading-relaxed text-ink-soft">
-            Complete your Skill Snapshot and choose a target role first. We’ll then create a CV
-            from only the information saved in your journey.
-          </p>
-          <a
-            href="/diagnostic/background"
-            className="mt-6 inline-flex rounded-full bg-pink-600 px-5 py-3 text-sm font-semibold text-white shadow-card transition hover:bg-pink-500"
-          >
-            Continue your journey
-          </a>
-        </main>
-      </div>
-    );
-  }
+  const missing = missingForCv({ cvParsed, snapshot, selectedRole });
+  if (missing.length > 0 || !draft) return <MissingInformation missing={missing} />;
 
-  const suggestedSkills = sourceSkills(snapshot).filter((skill) => !draft.skills.includes(skill));
+  const supported = supportedSkills({ snapshot, confirmedSkills });
+  const suggestedSkills = supported
+    .filter((skill) => !draft.skills.some((s) => s.toLowerCase() === skill.toLowerCase()))
+    .map((skill) => ({ skill, relevant: roleRelevant(skill, roleGap) }))
+    .sort((a, b) => Number(b.relevant) - Number(a.relevant));
 
-  function updateDraft(change) {
-    setCvDraft(change(draft));
-    setDownloadErrors([]);
-  }
+  /** Applies an edit: contact fields to the shared details, everything else to the active role's draft. */
+  const update = (change) => {
+    const { personal, ...rest } = change(draft);
+    setCvDraft({ ...book, personal, drafts: { ...book.drafts, [roleId]: rest } });
+    setDownloadError(null);
+  };
 
-  function updatePersonal(key, value) {
-    updateDraft((current) => ({ ...current, personal: { ...current.personal, [key]: value } }));
-  }
-
-  function updateExperience(index, description) {
-    updateDraft((current) => ({
+  const setExperience = (at, change) =>
+    update((current) => ({
       ...current,
-      experiences: current.experiences.map((experience, experienceIndex) =>
-        experienceIndex === index ? { ...experience, description } : experience,
+      experiences: current.experiences.map((item, index) =>
+        index === at ? { ...item, ...change } : item
       ),
     }));
+
+  /**
+   * Switches to another role's CV. The target role and previously opened roles
+   * load immediately; other roles first fetch their gap result so the draft can
+   * prioritise role-relevant skills.
+   */
+  function chooseRole(nextId) {
+    const role = roles.find((item) => item.role_id === nextId);
+    if (!role || nextId === roleId) return;
+    setSuggestion(null);
+    setRoleError(null);
+    setDownloadError(null);
+
+    const open = (gaps) => {
+      const latest = openCvBook(useIntakeStore.getState().cvDraft);
+      setCvDraft({ ...latest, activeRoleId: nextId, gaps: gaps ?? latest.gaps });
+    };
+
+    if (nextId === selectedRole.role_id || book.drafts[nextId] || book.gaps[nextId]) {
+      open();
+      return;
+    }
+    setTailoring(role.role);
+    computeGap(snapshot, role)
+      .then((gap) => {
+        const latest = openCvBook(useIntakeStore.getState().cvDraft);
+        open({ ...latest.gaps, [nextId]: gap });
+      })
+      .catch((cause) =>
+        setRoleError(`A CV for ${role.role} could not be prepared (${cause.message}). Try again.`)
+      )
+      .finally(() => setTailoring(null));
   }
 
-  function requestSuggestion(field, source, variant = 0) {
-    const text = suggestionFor(source, variant);
-    if (text) setSuggestion({ field, source, variant, text });
+  const textFor = (field) =>
+    field === 'summary'
+      ? draft.summary
+      : draft.experiences[Number(field.replace('experience-', ''))]?.description;
+
+  async function improve(field, source, another = false) {
+    if (!source?.trim()) {
+      setSuggestion({
+        field,
+        source,
+        previous: [],
+        error: 'Write something here first, then ask for clearer wording.',
+      });
+      return;
+    }
+    const previous =
+      another && suggestion?.field === field
+        ? [...suggestion.previous, suggestion.text].filter(Boolean)
+        : [];
+    setSuggestion({
+      field,
+      source,
+      previous,
+      text: another ? suggestion?.text : null,
+      loading: true,
+    });
+    try {
+      const { suggestion: text } = await improveCvText({
+        section: field === 'summary' ? 'summary' : 'experience',
+        text: source,
+        role: activeRole.role,
+        skills: supported,
+        previous,
+      });
+      setSuggestion({ field, source, previous, text, loading: false });
+    } catch (cause) {
+      setSuggestion({
+        field,
+        source,
+        previous,
+        error: `Wording help is unavailable right now (${cause.message}).`,
+      });
+    }
   }
 
   function acceptSuggestion() {
-    if (!suggestion) return;
-    if (suggestion.field === 'summary') {
-      updateDraft((current) => ({ ...current, summary: suggestion.text }));
-    } else {
-      updateExperience(Number(suggestion.field.replace('experience-', '')), suggestion.text);
-    }
+    if (!suggestion?.text) return;
+    if (suggestion.field === 'summary')
+      update((current) => ({ ...current, summary: suggestion.text }));
+    else
+      setExperience(Number(suggestion.field.replace('experience-', '')), {
+        description: suggestion.text,
+      });
     setSuggestion(null);
   }
 
-  function validateForDownload() {
-    const missing = PERSONAL_FIELDS.filter((field) => field.required && !draft.personal[field.key].trim()).map(
-      (field) => field.label,
-    );
-    setDownloadErrors(missing);
-    if (missing.length === 0) window.print();
+  function download() {
+    try {
+      const blob = buildCvPdf(draft, {
+        title: `${draft.personal.name.trim() || 'CV'} – ${activeRole.role}`,
+      });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = cvFileName(draft.personal.name);
+      document.body.append(link);
+      link.click();
+      link.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    } catch {
+      setDownloadError('The PDF could not be created. Try again.');
+    }
   }
 
   return (
     <div className="flex min-h-screen flex-col">
       <Header />
-      <main className="mx-auto w-full max-w-[1080px] flex-1 px-5 py-8 sm:px-6 sm:py-10">
-        <div className="cv-builder-controls">
-          <BackLink to="/journey">Back to your journey</BackLink>
-          <div className="mt-4 flex flex-wrap items-end justify-between gap-5">
-            <div>
-              <p className="eyebrow text-pink-600">Refreshed CV</p>
-              <h1 className="mt-2 font-display text-3xl font-bold tracking-[-0.02em] text-ink sm:text-4xl">
-                A CV built from your journey
-              </h1>
-              <p className="mt-2 max-w-[62ch] text-sm leading-relaxed text-ink-soft">
-                Your first draft is tailored to {selectedRole.role}. Edit it freely; changes save
-                to your account automatically.
-              </p>
-            </div>
-            <GradientButton variant="accent" size="md" onClick={validateForDownload}>
-              Download PDF
-            </GradientButton>
-          </div>
-          {downloadErrors.length > 0 && (
-            <p role="alert" className="mt-4 rounded-xl border border-pink-600/25 bg-pink-100/60 px-4 py-3 text-sm text-ink">
-              Add your {downloadErrors.join(', ')} before downloading your CV.
+      <main className="page-shell max-w-[1200px] flex-1 pt-14 pb-24">
+        {/* Visually hidden; the active nav item labels the page. */}
+        <h1 className="sr-only">CV builder</h1>
+        <div className="cv-rise" style={{ '--i': 0 }}>
+          <p className="font-display text-[2rem] leading-[1.25] font-bold tracking-[-0.025em] text-ink">
+            Your CV for{' '}
+            <RolePicker
+              roles={roles}
+              value={roleId}
+              targetId={selectedRole.role_id}
+              disabled={Boolean(tailoring)}
+              onChange={chooseRole}
+            />
+          </p>
+          <p className="mt-3 max-w-[60ch] text-base leading-relaxed text-ink-soft">
+            Built from your CV and career break. Click any text to edit it.
+            {roles.length > 1 && ' Each role keeps its own draft.'}
+          </p>
+          {roleError && (
+            <p role="alert" className="mt-3 text-sm text-pink-600">
+              {roleError}
             </p>
           )}
         </div>
 
-        <article className="cv-sheet card-with-illustration mt-8 bg-white p-7 shadow-card sm:p-10">
-          <CardIllustration src={cvStationery} />
-          <div className="border-b-2 border-ink pb-6">
-            <div className="flex flex-wrap items-end justify-between gap-3">
-              <div>
-                <p className="cv-heading">Personal details</p>
-                <p className="mt-1 text-xs text-ink-soft">Entered by you only — never used for AI wording help.</p>
-              </div>
-              <p className="cv-builder-meta text-xs font-medium text-verify">Saved to your account</p>
-            </div>
-            <div className="mt-5 grid gap-x-5 gap-y-4 sm:grid-cols-2">
-              {PERSONAL_FIELDS.map((field) => (
-                <Field key={field.key} field={field} value={draft.personal[field.key]} onChange={updatePersonal} />
-              ))}
+        <div className="mt-12 grid items-start gap-10 lg:grid-cols-[minmax(0,1fr)_21rem]">
+          <div className="cv-stage cv-rise" style={{ '--i': 1 }} aria-busy={Boolean(tailoring)}>
+            {tailoring && (
+              <p role="status" className="cv-tailoring">
+                <span className="iv-shimmer">Writing your CV for {tailoring}</span>
+              </p>
+            )}
+            <div key={roleId} className="cv-swap" data-dimmed={Boolean(tailoring) || undefined}>
+              <CvSheet
+                draft={draft}
+                suggestion={
+                  suggestion && textFor(suggestion.field) !== undefined ? suggestion : null
+                }
+                onPersonal={(key, value) =>
+                  update((current) => ({
+                    ...current,
+                    personal: { ...current.personal, [key]: value },
+                  }))
+                }
+                onSummary={(summary) => update((current) => ({ ...current, summary }))}
+                onExperience={setExperience}
+                onRemoveExperience={(at) => {
+                  setSuggestion(null);
+                  update((current) => ({
+                    ...current,
+                    experiences: current.experiences.filter((_, index) => index !== at),
+                  }));
+                }}
+                onAddExperience={() =>
+                  update((current) => ({
+                    ...current,
+                    experiences: [
+                      ...current.experiences,
+                      { title: '', organisation: '', start: '', end: '', description: '' },
+                    ],
+                  }))
+                }
+                onRemoveSkill={(skill) =>
+                  update((current) => ({
+                    ...current,
+                    skills: current.skills.filter((s) => s !== skill),
+                  }))
+                }
+                onCareerBreak={(change) =>
+                  update((current) => ({
+                    ...current,
+                    careerBreak: { ...current.careerBreak, ...change },
+                  }))
+                }
+                onImprove={improve}
+                onAccept={acceptSuggestion}
+                onDismiss={() => setSuggestion(null)}
+              />
             </div>
           </div>
-
-          <section className="mt-7">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <h2 className="cv-heading">Professional summary</h2>
-              <button type="button" onClick={() => requestSuggestion('summary', draft.summary)} className="cv-ai-button">
-                Improve with AI
-              </button>
-            </div>
-            <textarea value={draft.summary} onChange={(event) => updateDraft((current) => ({ ...current, summary: event.target.value }))} className="cv-textarea mt-3" aria-label="Professional summary" rows={4} />
-            {suggestion?.field === 'summary' && <AiSuggestion suggestion={suggestion} onAccept={acceptSuggestion} onDismiss={() => setSuggestion(null)} onTryAnother={() => requestSuggestion('summary', suggestion.source, suggestion.variant + 1)} />}
-          </section>
-
-          <section className="mt-7">
-            <h2 className="cv-heading">Core skills</h2>
-            <p className="mt-2 text-xs leading-relaxed text-ink-soft">These are supported by your Journey. Remove any that are not useful for this application.</p>
-            {draft.skills.length > 0 ? (
-              <ul className="mt-3 flex flex-wrap gap-2">
-                {draft.skills.map((skill) => (
-                  <li key={skill}><button type="button" onClick={() => updateDraft((current) => ({ ...current, skills: current.skills.filter((item) => item !== skill) }))} className="cv-skill-chip" aria-label={`Remove ${skill}`}>{skill} <span aria-hidden="true">×</span></button></li>
-                ))}
-              </ul>
-            ) : <p className="mt-3 text-sm text-ink-soft">No skills selected for this version yet.</p>}
-            {suggestedSkills.length > 0 && (
-              <div className="mt-4 rounded-xl border border-verify/25 bg-verify-soft/70 p-4">
-                <p className="text-sm font-semibold text-verify">Suggested from your Journey</p>
-                <p className="mt-1 text-xs leading-relaxed text-ink-soft">Add only the supported strengths that fit this application.</p>
-                <ul className="mt-3 flex flex-wrap gap-2">
-                  {suggestedSkills.map((skill) => (
-                    <li key={skill}><button type="button" onClick={() => updateDraft((current) => ({ ...current, skills: [...current.skills, skill] }))} className="cv-suggested-skill">Add {skill}</button></li>
-                  ))}
-                </ul>
-              </div>
-            )}
-          </section>
-
-          <section className="mt-7">
-            <h2 className="cv-heading">Work experience</h2>
-            {draft.experiences.length > 0 ? (
-              <div className="mt-4 space-y-6">
-                {draft.experiences.map((experience, index) => (
-                  <article key={`${experience.title}-${experience.organisation}-${index}`}>
-                    <div className="flex flex-wrap items-start justify-between gap-2">
-                      <div>
-                        <h3 className="font-semibold text-ink">{[experience.title, experience.organisation].filter(Boolean).join(' · ')}</h3>
-                        {(experience.start || experience.end) && <p className="mt-1 text-xs text-ink-soft">{[experience.start, experience.end].filter(Boolean).join(' — ')}</p>}
-                      </div>
-                      <button type="button" onClick={() => requestSuggestion(`experience-${index}`, experience.description)} className="cv-ai-button">Improve with AI</button>
-                    </div>
-                    <textarea value={experience.description} onChange={(event) => updateExperience(index, event.target.value)} className="cv-textarea mt-3" aria-label={`Work experience description for ${experience.title || 'experience'}`} rows={3} />
-                    {suggestion?.field === `experience-${index}` && <AiSuggestion suggestion={suggestion} onAccept={acceptSuggestion} onDismiss={() => setSuggestion(null)} onTryAnother={() => requestSuggestion(suggestion.field, suggestion.source, suggestion.variant + 1)} />}
-                  </article>
-                ))}
-              </div>
-            ) : <p className="mt-3 text-sm text-ink-soft">No work experience details are available in your Journey, so none have been added.</p>}
-          </section>
-
-          <section className="mt-7 border-t border-line pt-6">
-            <div className="flex flex-wrap items-start justify-between gap-4">
-              <div>
-                <h2 className="cv-heading">Career break</h2>
-                <p className="mt-2 max-w-[62ch] text-sm leading-relaxed text-ink-soft">You choose whether to mention this. If included, it is shown only as a career break and supported transferable strengths — never as employment.</p>
-              </div>
-              <label className="cv-toggle"><input type="checkbox" checked={draft.includeCareerBreak} onChange={(event) => updateDraft((current) => ({ ...current, includeCareerBreak: event.target.checked }))} /><span>Include</span></label>
-            </div>
-            {draft.includeCareerBreak && (
-              <div className="mt-4 rounded-xl border border-verify/25 bg-verify-soft/70 p-4">
-                <p className="font-semibold text-ink">Career break</p>
-                <p className="mt-1 text-sm leading-relaxed text-ink-soft">Transferable strengths identified in your Journey: {(snapshot.reframed_skills ?? []).map((skill) => skill.skill).join(' · ') || 'No transferable strengths were identified yet.'}</p>
-              </div>
-            )}
-          </section>
-        </article>
+          <CvRail
+            draft={draft}
+            role={activeRole.role}
+            suggestedSkills={suggestedSkills}
+            downloadError={downloadError}
+            disabled={Boolean(tailoring)}
+            onDownload={download}
+            onCareerBreakChoice={(include) =>
+              update((current) => ({
+                ...current,
+                careerBreak: { ...current.careerBreak, include },
+              }))
+            }
+            onAddSkill={(skill) =>
+              update((current) => ({ ...current, skills: [...current.skills, skill] }))
+            }
+          />
+        </div>
       </main>
     </div>
   );

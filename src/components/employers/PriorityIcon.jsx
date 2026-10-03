@@ -1,15 +1,11 @@
 /**
- * One line icon per priority.
- *
- * Five cards of pure text read as a form; the glyph is what lets her find the
- * one she is looking for without reading all five. Drawn in the same hairline
- * stroke as the rest of the product rather than pulled from an icon set, so
- * they sit at the weight of the type beside them.
+ * Line icon for each employer priority, keyed by priority id. Drawn with the
+ * same stroke weight as the other product icons.
  */
 const PATHS = {
-  // A laptop: work that travels.
+  // Laptop.
   flexible_work: <path d="M5 6h14v9H5zM3 18h18" />,
-  // A small figure under a roof.
+  // Figure under a roof.
   childcare_support: (
     <>
       <path d="M4 11 12 5l8 6" />
@@ -17,7 +13,7 @@ const PATHS = {
       <circle cx="12" cy="14.5" r="1.6" />
     </>
   ),
-  // Two figures, one held close.
+  // Adult and child.
   parental_support: (
     <>
       <circle cx="9.5" cy="7" r="2.6" />
@@ -26,14 +22,14 @@ const PATHS = {
       <path d="M14.6 19v-1.2a2.4 2.4 0 0 1 4.8 0V19" />
     </>
   ),
-  // An arrow coming back round.
+  // Circular return arrow.
   returning_to_work: (
     <>
       <path d="M20 12a8 8 0 1 1-2.6-5.9" />
       <path d="M20 4v4h-4" />
     </>
   ),
-  // Three abreast.
+  // Three figures side by side.
   inclusive_workplace: (
     <>
       <circle cx="12" cy="8" r="2.6" />

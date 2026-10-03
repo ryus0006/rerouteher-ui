@@ -29,8 +29,8 @@ export default function Gap() {
 
   useEffect(() => {
     if (!snapshot || !selectedRole) return;
-    if (gapResult) return; // already computed for the current role (store clears it on any change)
-    if (requestedRole.current === selectedRole.role_id) return; // request already in flight for this role
+    if (gapResult) return; // Already computed; the store clears it when the role changes.
+    if (requestedRole.current === selectedRole.role_id) return; // Request already in flight.
 
     requestedRole.current = selectedRole.role_id;
     setError(null);
@@ -52,7 +52,7 @@ export default function Gap() {
     <div className="flex min-h-screen flex-col">
       <Header />
 
-      <main className="mx-auto w-full max-w-[1000px] flex-1 px-5 py-8 sm:px-6 sm:py-10">
+      <main className="page-shell max-w-[1000px] flex-1 py-8 sm:py-10">
         <IntakeStepper currentIndex={4} />
 
         <div className="mt-8">
@@ -82,10 +82,8 @@ export default function Gap() {
         )}
 
         {gapResult && (
-          /* The score is a narrow summary rail; the focus areas are the work, so
-             they take the dominant column. The rail is the page's only dark
-             plane, including the closing band below it: the arc is what she came
-             for, and it reads brightest when nothing else on the page is dark. */
+          /* Narrow readiness panel (the page's only dark surface) beside the wider
+             focus-area column. */
           <div className="mt-6 grid items-start gap-5 md:grid-cols-[19.5rem_1fr]">
             <section className="overflow-hidden rounded-2xl bg-plane text-on-plane shadow-plane">
               <div className="p-6">

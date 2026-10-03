@@ -1,19 +1,25 @@
+import { useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import useSmoothNavigate from '../../hooks/useSmoothNavigate.js';
 import Header from '../../components/layout/Header.jsx';
 import GradientButton from '../../components/ui/GradientButton.jsx';
-import PriorityPicker from '../../components/employers/PriorityPicker.jsx';
 import HowItWorks from '../../components/employers/HowItWorks.jsx';
+import PriorityPicker from '../../components/employers/PriorityPicker.jsx';
 import { useIntakeStore } from '../../store/intakeStore.js';
 
+/** Summarises how the current selection differs from the baseline search. */
+function changeSummary(added, removed) {
+  if (added === 0 && removed === 0) return 'Same as your last search';
+
+  const parts = [];
+  if (added > 0) parts.push(`${added} added`);
+  if (removed > 0) parts.push(`${removed} removed`);
+  return `${parts.join(' · ')} since your last search`;
+}
+
 /**
- * Changing what she is asking employers for, after seeing who it matched.
- *
- * Reached from the results rather than standing in front of them: the question
- * is put once during the intake, and this is where she comes back to it when
- * the companies she got are not the ones she wanted. Separate from the results
- * because it is a different question — that page answers "who fits", this one
- * asks "what does fitting mean to you".
+ * Adjust-priorities page, reached from the employer matches. Edits the
+ * priorities used for matching, then returns to the matches.
  */
 export default function EmployerFinder() {
   const navigate = useSmoothNavigate();
@@ -22,64 +28,77 @@ export default function EmployerFinder() {
   const priorities = useIntakeStore((state) => state.employerPriorities);
   const setPriorities = useIntakeStore((state) => state.setEmployerPriorities);
 
+  // Priorities used for the current results; used to show changes and restored on Cancel.
+  const [baseline] = useState(() => priorities ?? []);
+
   if (!snapshot || !gapResult) return <Navigate to="/diagnostic/gap" replace />;
 
   const chosen = priorities ?? [];
+  const added = chosen.filter((id) => !baseline.includes(id)).length;
+  const removed = baseline.filter((id) => !chosen.includes(id)).length;
 
   function toggle(id) {
     setPriorities(chosen.includes(id) ? chosen.filter((value) => value !== id) : [...chosen, id]);
+  }
+
+  function cancel() {
+    setPriorities(baseline);
+    navigate('/plan/employers/matches');
   }
 
   return (
     <div className="flex min-h-screen flex-col">
       <Header />
 
-      {/* Tight enough that "See your matches" sits within the first screen: a
-          choice you must scroll past its own button to make reads unfinished. */}
-      <main className="mx-auto w-full max-w-[900px] flex-1 px-5 py-8 sm:px-6 sm:py-10">
-        <p className="eyebrow text-pink-600">Employer fit finder</p>
-
-        <h1 className="mt-1.5 max-w-[26ch] font-display text-2xl font-bold leading-[1.12] tracking-[-0.02em] text-ink sm:text-[2rem]">
-          Change what you are asking for
+      {/* Compact spacing keeps the actions visible without scrolling. */}
+      <main className="page-shell max-w-[900px] flex-1 py-10">
+        <h1 className="font-display text-[2rem] font-bold leading-[1.12] tracking-[-0.02em] text-ink">
+          What matters most for your return?
         </h1>
+        <p className="mt-2 text-sm text-ink-soft">Select all the priorities that matter to you.</p>
 
-        <p className="mt-2.5 max-w-[62ch] text-sm leading-relaxed text-ink-soft">
-          We match you with Malaysian listed companies based on their publicly disclosed ESG and
-          sustainability reports.
-        </p>
-
-        <div className="mt-7">
-          <h2 className="font-display text-lg font-bold tracking-[-0.015em] text-ink">
-            What matters most for your return?
-          </h2>
-          <p className="mt-1 text-sm text-ink-soft">Select all the priorities that matter to you.</p>
-        </div>
-
-        <div className="mt-3">
-          <PriorityPicker chosen={chosen} onToggle={toggle} />
+        <div className="mt-5">
+          <PriorityPicker chosen={chosen} baseline={baseline} onToggle={toggle} />
         </div>
 
         <div className="mt-6">
-          <HowItWorks />
+          <HowItWorks compact />
         </div>
 
-        <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
-          <GradientButton
-            variant="secondary"
-            size="md"
-            onClick={() => navigate('/plan/employers/matches')}
-          >
-            Cancel
-          </GradientButton>
+        {/* Actions bar: Cancel on the left; selection summary and submit on the right. */}
+        <div className="mt-6 flex items-center justify-between gap-6">
+          {/* Cancel is shown only when a previous search exists; with no
+              priorities the matches page redirects back here. */}
+          {baseline.length > 0 ? (
+            <GradientButton variant="secondary" size="md" onClick={cancel}>
+              Cancel
+            </GradientButton>
+          ) : (
+            <span />
+          )}
 
-          <GradientButton
-            variant="accent"
-            disabled={chosen.length === 0}
-            onClick={() => navigate('/plan/employers/matches')}
-          >
-            See your matches
-            <span aria-hidden="true">→</span>
-          </GradientButton>
+          <div className="flex items-center gap-5">
+            <p aria-live="polite" className="text-right">
+              <span className="block text-sm text-ink">
+                <span className="tabular font-semibold">{chosen.length}</span>{' '}
+                {chosen.length === 1 ? 'priority' : 'priorities'} chosen
+              </span>
+              <span className="block text-xs text-ink-faint">
+                {chosen.length === 0
+                  ? 'Choose at least one to see your matches'
+                  : changeSummary(added, removed)}
+              </span>
+            </p>
+
+            <GradientButton
+              variant="accent"
+              disabled={chosen.length === 0}
+              onClick={() => navigate('/plan/employers/matches')}
+            >
+              See your matches
+              <span aria-hidden="true">→</span>
+            </GradientButton>
+          </div>
         </div>
       </main>
     </div>

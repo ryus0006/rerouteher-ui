@@ -4,10 +4,10 @@ const SIZES = {
 };
 
 /**
- * Her initial, standing in for a photograph she has not been asked for.
+ * Initial-letter avatar.
  *
- * Decorative wherever her name is already on screen beside it, which is every
- * current use, so it stays out of the accessibility tree by default.
+ * Always rendered next to the user's name, so it is hidden from assistive
+ * technology by default.
  */
 export default function Avatar({ name, size = 'sm' }) {
   return (

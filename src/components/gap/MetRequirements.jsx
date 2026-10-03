@@ -1,11 +1,10 @@
 import { useId, useState } from 'react';
 
 /**
- * The requirements this role asks for that she already covers. Collapsed by
- * default: the count is what moves when she switches role, the names are detail.
+ * Collapsible list of role requirements the user already meets, collapsed to
+ * a count by default.
  *
- * `onPlane` recolours it for the dark readiness rail — same component, both
- * grounds, so the colours always come from the surface behind it.
+ * `onPlane` switches to the colour scheme for the dark readiness panel.
  */
 export default function MetRequirements({ skills, total, onPlane = false }) {
   const [open, setOpen] = useState(false);

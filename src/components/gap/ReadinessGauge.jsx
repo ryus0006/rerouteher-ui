@@ -2,15 +2,14 @@ const RADIUS = 84;
 const STROKE = 10;
 const CENTER = RADIUS + STROKE;
 
-// `pathLength` normalises the arc to 100 units, so every dash length below is
-// read directly as a readiness percentage instead of an arc-length calculation.
+// `pathLength` normalises the arc to 100 units, so dash lengths map directly to
+// readiness percentages.
 const PATH_LENGTH = 100;
 
-// Hairline break between segments, so three steps read as three.
+// Gap between adjacent segments, in path units.
 const GAP = 0.7;
 
-/* One set per ground it is drawn on. The arc is the same either way; only the
-   segments, the track and the reading have to change to stay legible. */
+/* Colour sets per background. Only the segments, track and label change. */
 const TONES = {
   plane: {
     track: 'text-white/12',
@@ -27,20 +26,14 @@ const TONES = {
 };
 
 /**
- * Readiness, drawn as a route rather than a dial.
+ * Readiness arc gauge.
  *
- * The gradient arc is ground already covered — the requirements she meets. Each
- * segment after it is one focus area, drawn at the width of the readiness it
- * would add, so the steps are visibly sized against each other and against the
- * distance still left. That is the difference between "78% → 97%" as a claim
- * and as something she can see is three specific moves.
+ * The gradient arc shows current readiness. Each following segment represents
+ * one focus area, sized by the readiness it would add. Segments are used
+ * instead of point markers because closely spaced markers overlap.
  *
- * Segments rather than markers because markers collide: at 78% with three
- * uplifts, all three dots land inside the last fifth of the arc and overlap.
- *
- * The segments carry no labels of their own. The ranked focus-area list sits
- * beside this and names them in the same order, so labelling them here would
- * set the same three strings on screen twice, a few centimetres apart.
+ * Segments are unlabelled; the adjacent focus-area list names them in the same
+ * order.
  *
  * @param {{ value: number, label?: string, tone?: 'plane' | 'light', markers?: { at: number, skill: string }[] }} props
  */
@@ -49,7 +42,7 @@ export default function ReadinessGauge({ value, label = 'Ready today', tone = 'p
   const clamped = Math.min(100, Math.max(0, value));
   const arc = `M ${STROKE} ${CENTER} A ${RADIUS} ${RADIUS} 0 0 1 ${CENTER * 2 - STROKE} ${CENTER}`;
 
-  // Each step spans from the readiness before it to the readiness it reaches.
+  // Each segment spans from the previous cumulative readiness to its own.
   const steps = markers.map((marker, index) => {
     const from = index === 0 ? clamped : markers[index - 1].at;
     return { ...marker, from, width: Math.max(0, Math.min(100, marker.at) - from) };
@@ -64,7 +57,7 @@ export default function ReadinessGauge({ value, label = 'Ready today', tone = 'p
           role="img"
           aria-label={`${clamped}% ${label}`}
         >
-          {/* Ground still ahead of everything she has planned. */}
+          {/* Track: the remaining arc. */}
           <path
             d={arc}
             pathLength={PATH_LENGTH}
@@ -75,7 +68,7 @@ export default function ReadinessGauge({ value, label = 'Ready today', tone = 'p
             className={palette.track}
           />
 
-          {/* One segment per focus area, sized by the readiness it adds. */}
+          {/* One segment per focus area, sized by its uplift. */}
           {steps.map((step, index) =>
             step.width > GAP ? (
               <path
@@ -91,7 +84,7 @@ export default function ReadinessGauge({ value, label = 'Ready today', tone = 'p
             ) : null
           )}
 
-          {/* Ground covered. Drawn last so its round cap sits above the steps. */}
+          {/* Current readiness. Drawn last so its round cap renders above the segments. */}
           <path
             d={arc}
             pathLength={PATH_LENGTH}

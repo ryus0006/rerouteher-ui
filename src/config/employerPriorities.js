@@ -1,12 +1,11 @@
 /**
- * What an employer can be asked for, at the grain a sustainability report
- * actually answers.
+ * Workplace priorities used for employer matching.
  *
- * Deliberately coarse: a company discloses "flexible working arrangements", not
- * "hybrid, three days". Asking her for detail the source cannot answer would
- * promise a precision the match does not have.
+ * Kept at the granularity sustainability reports disclose (e.g. "flexible
+ * working arrangements" rather than specific policies), since finer options
+ * could not be matched.
  *
- * Ids are the join key to each employer's disclosures, so they are stable.
+ * Ids are the join key to employer disclosures and must remain stable.
  */
 export const EMPLOYER_PRIORITIES = [
   {

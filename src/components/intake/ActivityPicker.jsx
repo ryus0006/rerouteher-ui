@@ -28,8 +28,8 @@ export default function ActivityPicker({ selected, onToggle }) {
           const headingId = `${labelId}-${category.id}`;
 
           return (
-            /* The category name sits in a fixed gutter so the chips get the full
-               remaining width and the four groups stay scannable down one edge. */
+            /* Fixed-width label column so chips use the remaining width and the
+               category labels align. */
             <div
               key={category.id}
               role="group"

@@ -12,10 +12,17 @@
       },
       "website": "https://www.maybank.com/",
       "summary": "Maybank reports flexible working arrangements, parental support and initiatives to promote workplace inclusion in its sustainability reporting.",
-      "job": {
-        "title": "Digital Marketing Executive",
-        "found_on": "26 Sep 2026",
-        "url": "https://www.maybank.com/"
+      "jobs": {
+        "role_ux": {
+          "title": "UX Designer, Digital Banking",
+          "found_on": "27 Sep 2026",
+          "url": "https://www.maybank.com/"
+        },
+        "role_marketing": {
+          "title": "Digital Marketing Executive",
+          "found_on": "26 Sep 2026",
+          "url": "https://www.maybank.com/"
+        }
       },
       "discloses": ["flexible_work", "childcare_support", "inclusive_workplace"],
       "report": {
@@ -35,10 +42,12 @@
       },
       "website": "https://www.petronas.com/",
       "summary": "PETRONAS discloses parental leave provisions, a returner programme and workplace flexibility initiatives in its sustainability reporting.",
-      "job": {
-        "title": "Marketing Executive",
-        "found_on": "26 Sep 2026",
-        "url": "https://www.petronas.com/"
+      "jobs": {
+        "role_marketing": {
+          "title": "Marketing Executive",
+          "found_on": "26 Sep 2026",
+          "url": "https://www.petronas.com/"
+        }
       },
       "discloses": [
         "flexible_work",
@@ -63,6 +72,18 @@
       },
       "website": "https://www.cimb.com/",
       "summary": "CIMB reports flexible work arrangements and diversity and inclusion programmes in its sustainability reporting.",
+      "jobs": {
+        "role_ux": {
+          "title": "Senior Product Designer",
+          "found_on": "25 Sep 2026",
+          "url": "https://www.cimb.com/"
+        },
+        "role_support": {
+          "title": "Customer Experience Executive",
+          "found_on": "24 Sep 2026",
+          "url": "https://www.cimb.com/"
+        }
+      },
       "discloses": ["flexible_work", "inclusive_workplace"],
       "report": {
         "label": "Sustainability Report 2024",
@@ -81,6 +102,13 @@
       },
       "website": "https://www.tm.com.my/",
       "summary": "Telekom Malaysia reports childcare facilities, parental leave provisions and flexible working in its sustainability reporting.",
+      "jobs": {
+        "role_support": {
+          "title": "Customer Service Specialist",
+          "found_on": "27 Sep 2026",
+          "url": "https://www.tm.com.my/"
+        }
+      },
       "discloses": ["flexible_work", "childcare_support", "parental_support"],
       "report": {
         "label": "Sustainability Report 2024",
@@ -140,10 +168,22 @@
       },
       "website": "https://www.celcomdigi.com/",
       "summary": "CelcomDigi reports hybrid working, a career reboot programme and diversity commitments in its sustainability reporting.",
-      "job": {
-        "title": "Content & Campaign Executive",
-        "found_on": "25 Sep 2026",
-        "url": "https://www.celcomdigi.com/"
+      "jobs": {
+        "role_ux": {
+          "title": "UI/UX Designer",
+          "found_on": "24 Sep 2026",
+          "url": "https://www.celcomdigi.com/"
+        },
+        "role_marketing": {
+          "title": "Content & Campaign Executive",
+          "found_on": "25 Sep 2026",
+          "url": "https://www.celcomdigi.com/"
+        },
+        "role_support": {
+          "title": "Customer Care Executive",
+          "found_on": "26 Sep 2026",
+          "url": "https://www.celcomdigi.com/"
+        }
       },
       "discloses": ["flexible_work", "returning_to_work", "inclusive_workplace"],
       "report": {

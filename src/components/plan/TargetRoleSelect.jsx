@@ -2,7 +2,7 @@ import { useId, useState } from 'react';
 import { computeGap } from '../../api/gap.js';
 import { useIntakeStore } from '../../store/intakeStore.js';
 
-/** The concentric target that marks the chosen role wherever it is shown. */
+/** Concentric-circle icon marking the selected target role. */
 function TargetMark() {
   return (
     <svg
@@ -21,19 +21,16 @@ function TargetMark() {
 }
 
 /**
- * The target role, and the way to change it without leaving the page.
+ * Displays the target role with an inline control to change it.
  *
- * A native select rather than a custom menu: it is one choice from a short
- * known list, and the platform control is the one she can already drive with a
- * keyboard, a screen reader and a thumb.
+ * Uses a native select for built-in keyboard, screen reader and touch
+ * support. Changing the role recomputes the gap; the current role stays
+ * displayed until the new result arrives. With only one role available it
+ * renders as plain text.
  *
- * Switching recomputes the gap, because the plan below is built from it. The
- * old role stays on screen until the new numbers land, so the page never blanks
- * while she waits.
- *
- * With nothing to switch between it renders as the readout it replaces.
+ * `bare` omits the card border for use inside an existing surface.
  */
-export default function TargetRoleSelect() {
+export default function TargetRoleSelect({ bare = false }) {
   const snapshot = useIntakeStore((state) => state.snapshot);
   const selectedRole = useIntakeStore((state) => state.selectedRole);
 
@@ -52,8 +49,8 @@ export default function TargetRoleSelect() {
 
     computeGap(snapshot, role)
       .then((result) => {
-        /* Committed in one write: setting the role on its own clears the gap,
-           which would empty the plan for as long as the request takes. */
+        /* Single write: `setSelectedRole` alone clears the gap result, which would
+           empty the page while the request is in flight. */
         useIntakeStore.setState({ selectedRole: role, gapResult: result });
         setError(null);
       })
@@ -63,7 +60,13 @@ export default function TargetRoleSelect() {
 
   return (
     <div className="shrink-0">
-      <div className="flex items-center gap-3 rounded-2xl border border-line bg-surface px-4 py-3">
+      <div
+        className={
+          bare
+            ? 'flex items-center gap-3'
+            : 'flex items-center gap-3 rounded-2xl border border-line bg-surface px-4 py-3'
+        }
+      >
         <TargetMark />
 
         <div className="min-w-0">

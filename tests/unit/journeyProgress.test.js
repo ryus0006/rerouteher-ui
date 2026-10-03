@@ -42,9 +42,8 @@ describe('journeyProgress', () => {
   });
 
   it('counts only the unbroken run, so a cleared answer is not skipped past', () => {
-    // What replacing the CV leaves behind: the break wiped, the priorities
-    // still standing. Counting the priorities here would offer her a screen
-    // built from a break she no longer has.
+    // After a CV redo the break is cleared but priorities remain; progress must
+    // stop at the break step rather than count the priorities.
     const afterRedo = journeyProgress({
       ...FULL,
       activities: [],
@@ -57,8 +56,8 @@ describe('journeyProgress', () => {
   });
 
   it('resumes to the snapshot screen once priorities are picked', () => {
-    // She picked her priorities and left without generating; the snapshot
-    // screen builds it on arrival, so that is where "See your skills" goes.
+    // Priorities set but no snapshot: resume at the snapshot screen, which
+    // generates the snapshot on load.
     const picked = journeyProgress({ ...FULL, snapshot: null, gapResult: null });
 
     expect(picked.completed).toBe(3);
@@ -66,8 +65,7 @@ describe('journeyProgress', () => {
   });
 
   it('reads a plan saved before a screen existed as whole, not as a hole', () => {
-    // Her gap is computed, so every screen before it was walked, whatever the
-    // plan itself happens to carry for any one of them.
+    // A gap result marks every step complete, even if an older plan lacks a field.
     const legacy = journeyProgress({ ...FULL, employerPriorities: [] });
 
     expect(legacy.completed).toBe(5);

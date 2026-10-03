@@ -27,11 +27,8 @@ const PATHS = {
 };
 
 /**
- * A focus area's mark on the learning plan.
- *
- * Line glyphs rather than filled shapes, to sit at the same weight as the
- * hairline cards they head. `case` is the fallback, so a focus area the
- * fixture has no icon for still gets a tile rather than a hole.
+ * Line icon for a focus area on the learning plan. Unknown names fall back to
+ * the `case` icon.
  */
 export default function LearningIcon({ name, className = '' }) {
   return (

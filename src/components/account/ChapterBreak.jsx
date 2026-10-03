@@ -19,17 +19,12 @@ const NEXT_PANELS = [
 ];
 
 /**
- * The end of the gap screen, which is the end of a chapter rather than of the
- * product: her readiness is a diagnosis, and both halves of the treatment sit
- * behind this card.
+ * Closing card on the gap screen linking to the learning plan and employer
+ * matches.
  *
- * It says what each thing is for rather than reciting its contents: she has
- * just read her focus areas a few centimetres above, and listing them again
- * here would lengthen the card without clarifying it.
- *
- * Both doors open for everyone. An account saves the journey rather than
- * buying the plan, so neither panel waits on one, and the offer to keep it is
- * a line of text below them rather than a third control beside them.
+ * Each panel describes what the destination is for rather than repeating the
+ * focus areas listed above it. Both links are available to guests; for guests
+ * a single line below offers to save the journey to an account.
  */
 export default function ChapterBreak() {
   const user = useAccountStore((state) => state.user);
@@ -73,12 +68,9 @@ export default function ChapterBreak() {
           ))}
         </div>
 
-        {/* The only place after the diagnostic that says where her work lives.
-            She is holding a readiness score here, so the tab it sits in is
-            worth naming; on the landing page the same sentence lands before
-            there is anything to lose. Signing up hands her the dashboard the
-            account just bought, which carries both of this card's doors plus
-            the progress behind them. */}
+        {/* Guest-only prompt explaining that progress is stored in this browser.
+            Creating an account redirects to the journey dashboard, which links
+            to both destinations above. */}
         {!user && (
           <p className="mt-5 text-sm text-ink-soft">
             Your plan lives in this tab.{' '}

@@ -1,8 +1,7 @@
 /**
- * Screens of the guest diagnostic, in order, as named in the intake stepper.
+ * Ordered diagnostic screens as labelled in the intake stepper.
  *
- * Distinct from `JOURNEY_STAGES`, which groups the same journey into the three
- * phases the landing page advertises.
+ * See `JOURNEY_STAGES` for the coarser three-stage grouping used on the landing page.
  */
 export const FLOW_STEPS = [
   { id: 'upload-cv', label: 'Upload CV' },

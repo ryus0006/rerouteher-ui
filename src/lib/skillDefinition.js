@@ -1,6 +1,6 @@
 /**
- * Descriptions are optional ESCO-backed data. Keeping this lookup small and
- * shared lets every skill surface respect the same "do not invent" rule.
+ * Returns the first non-empty definition field on the skill (ESCO-backed),
+ * or undefined. Definitions are never generated client-side.
  */
 export function getSkillDefinition(skill) {
   return [skill?.definition, skill?.description, skill?.short_description].find(

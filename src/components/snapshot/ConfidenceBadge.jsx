@@ -1,7 +1,7 @@
 import { toFraction } from '../../lib/confidence.js';
 import { formatConfidence } from '../../lib/formatters.js';
 
-/** Rendered only for an exploratory match: a confident one needs no badge. */
+/** Badge for low-confidence (exploratory) occupation matches; renders nothing otherwise. */
 export default function ConfidenceBadge({ confidence }) {
   return (
     <span className="shrink-0 rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-700">

@@ -4,12 +4,9 @@ const SIZES = {
   lg: 'px-7 py-3 text-base',
 };
 
-// Each variant carries its own focus-ring colour, so a button on a dark ground
-// gets a ring that is actually visible against it.
+// Each variant defines its own focus-ring colour so the ring stays visible on dark backgrounds.
 const VARIANTS = {
-  // Solid ink rather than a gradient: on a gradient page a gradient fill has
-  // nothing to sit against, and the one primary action on a screen needs a hard
-  // edge and real weight.
+  // Solid fill so the primary action stays distinct on gradient backgrounds.
   primary:
     'bg-ink text-white shadow-card hover:bg-plane-2 hover:shadow-card-hover disabled:hover:bg-ink focus-visible:outline-blue-600',
   accent:
@@ -21,10 +18,7 @@ const VARIANTS = {
 };
 
 /**
- * The primary action control.
- *
- * Solid despite the name, which is kept because it is imported across every
- * screen.
+ * Standard action button. See `VARIANTS` for the available styles.
  */
 export default function GradientButton({
   size = 'lg',
@@ -39,7 +33,8 @@ export default function GradientButton({
       type={type}
       className={[
         'inline-flex items-center justify-center gap-2 rounded-full font-semibold',
-        'transition duration-200 ease-spring hover:-translate-y-px',
+        // `group` lets an icon inside respond to hovering the whole button.
+        'group transition duration-200 ease-spring hover:-translate-y-px active:translate-y-0 active:scale-[0.97]',
         'focus-visible:outline-2 focus-visible:outline-offset-2',
         'disabled:pointer-events-none disabled:opacity-40',
         VARIANTS[variant],

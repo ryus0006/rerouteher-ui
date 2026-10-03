@@ -40,7 +40,7 @@ beforeEach(() => {
   vi.spyOn(window, 'scrollTo').mockImplementation(() => {});
   vi.stubGlobal(
     'matchMedia',
-    vi.fn(() => ({ matches: false }))
+    vi.fn(() => ({ matches: false, addEventListener() {}, removeEventListener() {} }))
   );
   Element.prototype.scrollIntoView = vi.fn();
 
@@ -103,11 +103,10 @@ describe('learning plan', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Videos' }));
 
-    // Design Ops has only articles, so filtering Videos removes its whole card
-    // rather than leaving an empty "nothing matches" shell.
+    // Design Ops has only articles, so filtering by Videos hides its card entirely.
     expect(screen.queryByRole('heading', { name: 'Design Ops & Handoff Automation' })).toBeNull();
 
-    // AI Design keeps its one video, and the count now reflects what is shown.
+    // AI Design keeps its one video, and the count reflects the visible items.
     expect(screen.getByText('Midjourney for product design')).toBeVisible();
     expect(screen.queryByText('AI features in Figma')).toBeNull();
     expect(within(aiSection()).getByRole('button', { name: /^1 resource/ })).toBeVisible();
@@ -118,8 +117,7 @@ describe('learning plan', () => {
 
     await screen.findByText('AI features in Figma');
 
-    // Every resource in the plan is free, so a "free only" chip would be a
-    // control that never changes what she sees.
+    // All resources are free, so no "Free only" filter is rendered.
     expect(screen.queryByRole('button', { name: 'Free only' })).toBeNull();
     expect(screen.queryByText(/RM |USD |\/ month/)).toBeNull();
   });
@@ -134,7 +132,7 @@ describe('learning plan', () => {
 
     expect(toggle).toHaveAttribute('aria-expanded', 'false');
     expect(screen.queryByText('AI features in Figma')).toBeNull();
-    // The card itself stays, so the plan still reads as four focus areas.
+    // The focus-area card remains, so all four focus areas are still listed.
     expect(
       screen.getByRole('heading', { name: 'AI Design Tools (Figma AI, Midjourney)' })
     ).toBeVisible();
@@ -164,7 +162,7 @@ describe('employer fit finder', () => {
     open(['/plan/employers']);
 
     expect(
-      await screen.findByRole('heading', { name: 'Change what you are asking for' })
+      await screen.findByRole('heading', { name: 'What matters most for your return?' })
     ).toBeVisible();
 
     const find = screen.getByRole('button', { name: /See your matches/ });
@@ -174,7 +172,7 @@ describe('employer fit finder', () => {
     fireEvent.click(screen.getByLabelText(/Childcare Support/));
     fireEvent.click(screen.getByLabelText(/Inclusive Workplace/));
 
-    // The cap was removed: a fourth priority stays selectable, not disabled.
+    // There is no selection limit: a fourth priority remains selectable.
     expect(screen.getByLabelText(/Parental Support/)).toBeEnabled();
     expect(find).toBeEnabled();
 
@@ -196,16 +194,16 @@ describe('employer fit finder', () => {
     const maybank = screen.getByRole('heading', { name: 'Maybank' }).closest('article');
     expect(within(maybank).getByText('Strong match')).toBeVisible();
 
-    // One source per company, not one repeated beside every priority.
+    // The report is linked once per company, not per priority.
     const sources = within(maybank).getAllByRole('link', { name: /Sustainability Report/ });
     expect(sources).toHaveLength(1);
     expect(sources[0]).toHaveAttribute('target', '_blank');
 
-    // Silence is reported as silence, not left out.
+    // Unmet priorities are listed explicitly.
     const cimb = screen.getByRole('heading', { name: 'CIMB' }).closest('article');
     expect(within(cimb).getByText('Not found in report')).toBeVisible();
 
-    // Company details go to the company, not to another page of ours.
+    // Company details link to the company's own website.
     expect(within(cimb).getByRole('link', { name: /View company details/ })).toHaveAttribute(
       'href',
       'https://www.cimb.com/'
@@ -231,7 +229,7 @@ describe('employer fit finder', () => {
     open(['/plan/employers/matches']);
 
     expect(
-      await screen.findByRole('heading', { name: 'Change what you are asking for' })
+      await screen.findByRole('heading', { name: 'What matters most for your return?' })
     ).toBeVisible();
     expect(router.state.location.pathname).toBe('/plan/employers');
   });
@@ -254,11 +252,11 @@ describe('companion', () => {
   it('opens results Q&A from her results page, guest-allowed (US8.2.1 entry)', async () => {
     open(['/diagnostic/snapshot']);
 
-    // A contextual entry on her results page, not only the floating bubble.
+    // Inline entry point on the results page, in addition to the floating launcher.
     fireEvent.click(await screen.findByRole('button', { name: 'Ask Hera about your results' }));
 
     expect(await screen.findByRole('dialog', { name: 'Ask Hera' })).toBeVisible();
-    // ask mode: it offers questions about her results, not profile-build openers.
+    // Ask mode: shows results questions, not profile-build openers.
     expect(screen.getByRole('button', { name: OPENERS_FIRST })).toBeVisible();
   });
 
@@ -275,7 +273,7 @@ describe('companion', () => {
     fireEvent.click(cta);
 
     expect(router.state.location.pathname).toBe('/plan/learning');
-    // the chat rides along the navigation instead of closing
+    // The chat stays open across the navigation.
     expect(screen.getByRole('dialog', { name: 'Ask Hera' })).toBeVisible();
   });
 
@@ -294,10 +292,10 @@ describe('companion', () => {
     fireEvent.click(cta);
 
     expect(router.state.location.pathname).toBe('/diagnostic/snapshot');
-    // The snapshot page has no snapshot yet, so it must generate from cv+break on
-    // arrival (skip-priorities path) and actually render - not sit on the loader.
+    // No snapshot exists yet, so the snapshot page generates it from cv + break on
+    // load and renders the result.
     expect(await screen.findByRole('heading', { name: 'Your skill snapshot' })).toBeVisible();
-    // and the chat rides along the navigation instead of closing
+    // The chat stays open across the navigation.
     expect(screen.getByRole('dialog', { name: 'Ask Hera' })).toBeVisible();
   });
 
@@ -403,8 +401,8 @@ describe('companion', () => {
   });
 
   it('keeps confirmed role skills when a chat profile is confirmed', async () => {
-    // She ticked role skills earlier; confirming the profile calls setCv, whose reset
-    // cascade would wipe them without the confirmProfile safeguard.
+    // Role skills confirmed earlier must survive confirmProfile, whose setCv call
+    // would otherwise clear them.
     useIntakeStore.setState({
       cv: null,
       cvParsed: false,
@@ -442,7 +440,7 @@ describe('companion', () => {
     });
     fireEvent.click(screen.getByRole('button', { name: 'Send' }));
 
-    // The drafted profile shows her priorities before anything is saved.
+    // The drafted profile shows the priorities before anything is saved.
     expect(await screen.findByText(/Flexible Work/)).toBeVisible();
     fireEvent.click(screen.getByRole('button', { name: 'Use this profile' }));
 
@@ -467,8 +465,8 @@ describe('companion', () => {
     expect(await screen.findByText(/Your profile so far/i)).toBeVisible();
     expect(useIntakeStore.getState().cvParsed).toBe(false);
 
-    // On confirm it enters the store through the same mutators the pages use, so
-    // the CV step reads as complete - no snapshot is produced here (next step).
+    // Confirming applies the profile through the store actions, marking the CV
+    // step complete; the snapshot is generated on the next step.
     fireEvent.click(screen.getByRole('button', { name: 'Use this profile' }));
     expect(useIntakeStore.getState().cvParsed).toBe(true);
     expect(useIntakeStore.getState().cv).not.toBeNull();
@@ -481,7 +479,7 @@ describe('companion', () => {
     open(['/diagnostic/background']);
 
     fireEvent.click(await screen.findByRole('button', { name: /Ask Hera/ }));
-    // Before a snapshot exists it opens in build mode, but is never stuck there.
+    // Build mode by default before a snapshot exists, with a switch to ask mode.
     fireEvent.click(await screen.findByRole('button', { name: 'Ask a question instead' }));
     expect(await screen.findByRole('button', { name: OPENERS_FIRST })).toBeVisible();
 

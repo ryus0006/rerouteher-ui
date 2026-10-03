@@ -86,8 +86,7 @@ describe('intake store', () => {
   it('persists the session for the tab, not for the browser', () => {
     store().setBreakDuration(5);
 
-    // sessionStorage, so a reload keeps her answers and closing the tab does
-    // not leave them on a shared machine.
+    // Persisted to sessionStorage (survives reloads, cleared when the tab closes).
     expect(sessionStorage.getItem('rerouteher.guestSession')).toContain('"duration_years":5');
     expect(localStorage.getItem('rerouteher.guestSession')).toBeNull();
   });

@@ -35,8 +35,7 @@ export default function DurationSlider({ value, onChange }) {
         value={value}
         onChange={(event) => onChange(Number(event.target.value))}
         aria-valuetext={formatYears(value)}
-        /* The gradient stops at the current value, so the track reads as filled
-           to the thumb rather than full at every value. */
+        /* Fill the track up to the current value. */
         style={{
           background: `linear-gradient(to right, var(--color-pink-500), var(--color-violet-600) ${filled}%, rgb(44 33 66 / 0.12) ${filled}%)`,
         }}

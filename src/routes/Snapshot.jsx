@@ -26,12 +26,10 @@ export default function Snapshot() {
   const [error, setError] = useState(null);
   const requested = useRef(false);
 
-  // A chat-built profile (US8.1) reaches here with cv+break but no snapshot yet -
-  // usually the Priorities page generates it. Generate on arrival from cv+break so
-  // the companion's "See my skill snapshot" button lands on a real snapshot instead
-  // of bouncing back. Generation stays on this page, never in the chat. The ref
-  // guard fires it once (and survives StrictMode's mount/cleanup/mount) the same
-  // way the Gap page guards its compute; the `snapshot` dep stops it re-firing.
+  // Generate the snapshot on arrival when cv and break exist but no snapshot does
+  // (e.g. a profile built through the companion, which skips the Priorities step).
+  // The ref guard ensures a single request, including under StrictMode's double
+  // mount; the `snapshot` dependency prevents re-running once it exists.
   useEffect(() => {
     if (snapshot || !canGenerate || requested.current) return;
     requested.current = true;
@@ -41,14 +39,14 @@ export default function Snapshot() {
       .catch((cause) => setError(cause.message));
   }, [snapshot, canGenerate, cv, careerBreak, confirmedSkills, setSnapshot]);
 
-  // No snapshot and nothing to generate it from: back to the start of the intake.
+  // No snapshot and no inputs to generate one: restart the intake.
   if (!snapshot && !canGenerate) return <Navigate to="/diagnostic/background" replace />;
 
   if (!snapshot) {
     return (
       <div className="flex min-h-screen flex-col">
         <Header />
-        <main className="mx-auto w-full max-w-[1000px] flex-1 px-5 py-8 sm:px-6 sm:py-10">
+        <main className="page-shell max-w-[1000px] flex-1 py-8 sm:py-10">
           <IntakeStepper currentIndex={3} />
           {error ? (
             <p role="alert" className="mt-8 text-sm font-medium text-pink-600">
@@ -68,7 +66,7 @@ export default function Snapshot() {
     <div className="flex min-h-screen flex-col">
       <Header />
 
-      <main className="mx-auto w-full max-w-[1000px] flex-1 px-5 py-8 sm:px-6 sm:py-10">
+      <main className="page-shell max-w-[1000px] flex-1 py-8 sm:py-10">
         <IntakeStepper currentIndex={3} />
 
         <div className="mt-8">
@@ -103,7 +101,7 @@ export default function Snapshot() {
         <div className="mt-8 flex justify-end">
           <GradientButton
             onClick={() => {
-              setGapResult(null); // force a fresh compute when entering the gap from the snapshot
+              setGapResult(null); // Force a fresh gap computation.
               navigate('/diagnostic/gap');
             }}
           >

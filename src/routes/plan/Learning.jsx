@@ -12,7 +12,6 @@ import { formatUplift } from '../../lib/formatters.js';
 import { recommendLearning } from '../../api/learning.js';
 import { useAccountStore } from '../../store/accountStore.js';
 import { useIntakeStore } from '../../store/intakeStore.js';
-import useSmoothNavigate from '../../hooks/useSmoothNavigate.js';
 
 import bannerWebp from '../../assets/learning-desk.webp';
 import bannerJpg from '../../assets/learning-desk.jpg';
@@ -22,8 +21,7 @@ import nngroupLogo from '../../assets/logos/nngroup.png';
 import openaiLogo from '../../assets/logos/openai.png';
 import learningDeskIllustration from '../../assets/page-illustrations/learning-desk.png';
 
-/* The providers' own marks, self-hosted rather than hot-linked, so the page
-   makes no request to anyone she has not chosen to visit. */
+/* Provider logos are self-hosted to avoid third-party requests. */
 const LOGOS = {
   figma: figmaLogo,
   youtube: youtubeLogo,
@@ -33,7 +31,7 @@ const LOGOS = {
 
 const ALL = 'all';
 
-/** "30 min" under the hour, "1.5h" over it — the way a course is advertised. */
+/** Formats minutes as "30 min" below an hour, otherwise as hours (e.g. "1.5h"). */
 function duration(minutes) {
   if (!minutes) return null;
   if (minutes < 60) return `${minutes} min`;
@@ -42,11 +40,8 @@ function duration(minutes) {
 }
 
 /**
- * The provider's own mark, with its initials as the fallback.
- *
- * She is being asked to trust a link and spend an evening on it, and a name
- * she recognises at a glance is most of that decision. Hidden from assistive
- * technology because the provider is written out beside it.
+ * Provider logo, falling back to initials. Hidden from assistive technology
+ * because the provider name is rendered beside it.
  */
 function ProviderMark({ logo, provider }) {
   const source = LOGOS[logo];
@@ -91,31 +86,49 @@ function Chip({ tone = 'neutral', children }) {
 }
 
 /**
- * One resource, with the reason it is here in her own terms.
- *
- * The `why` line is the whole point of the row (US6.2): a list of courses is
- * something she could have searched for herself, and what she cannot search for
- * is which one closes the gap she was just shown. Everything else on the row —
- * provider, format, length, price — is what she needs to judge whether it fits
- * a week that already has a family in it.
+ * Learning resource row: title, `why` (how it addresses the gap), and provider,
+ * format, duration and cost.
  */
 function Resource({ resource, completed, onToggle }) {
   return (
-    <li className="flex flex-wrap items-start gap-x-4 gap-y-3 border-t border-line px-5 py-4 sm:flex-nowrap sm:px-6">
+    <li
+      className={[
+        'flex flex-wrap items-start gap-x-4 gap-y-3 border-t border-line px-5 py-4 transition-colors sm:flex-nowrap sm:px-6',
+        completed ? 'bg-verify-soft/60' : '',
+      ].join(' ')}
+    >
       <label className="flex cursor-pointer items-center pt-1">
         <input
           type="checkbox"
           checked={completed}
           onChange={onToggle}
-          className="size-5 rounded border-line-strong text-pink-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
+          className="size-5 rounded border-line-strong accent-verify focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
         />
         <span className="sr-only">Mark {resource.title} as completed</span>
       </label>
       <ProviderMark logo={resource.logo} provider={resource.provider} />
 
       <div className="min-w-0 flex-1">
-        <h3 className={`font-semibold text-ink ${completed ? 'line-through opacity-60' : ''}`}>
+        <h3 className="font-semibold text-ink">
           {resource.title}
+          {/* Completed resources keep full-strength titles. */}
+          {completed && (
+            <span className="ml-2 inline-flex translate-y-[-1px] items-center gap-1 rounded-full bg-verify px-2 py-0.5 align-middle text-[0.6875rem] font-semibold text-white">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="3"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+                className="size-3"
+              >
+                <path d="m5 12.5 4.1 4.1L19.5 6.5" />
+              </svg>
+              Completed
+            </span>
+          )}
         </h3>
         <p className="mt-0.5 text-xs text-ink-faint">{resource.provider}</p>
         <p className="mt-1.5 max-w-[62ch] text-sm leading-relaxed text-ink-soft">{resource.why}</p>
@@ -146,15 +159,10 @@ function Resource({ resource, completed, onToggle }) {
 }
 
 /**
- * What to actually do about the gap (E6).
- *
- * Grouped under the focus area each resource closes rather than listed flat,
- * so relevance is carried by the structure instead of being asserted in a
- * label. The order is the gap's order, so the first thing on the page is the
- * thing that moves her readiness most.
+ * Learning plan page. Resources are grouped by focus area, in the gap
+ * result's ranking order.
  */
 export default function Learning() {
-  const navigate = useSmoothNavigate();
   const snapshot = useIntakeStore((state) => state.snapshot);
   const selectedRole = useIntakeStore((state) => state.selectedRole);
   const user = useAccountStore((state) => state.user);
@@ -174,7 +182,7 @@ export default function Learning() {
   useEffect(() => {
     if (!gapResult || !selectedRole) return undefined;
 
-    // A changed target role reissues this; the stale answer must not win.
+    // Ignore responses from a superseded request (e.g. after a target role change).
     let live = true;
 
     recommendLearning({
@@ -194,8 +202,8 @@ export default function Learning() {
     };
   }, [skillKey, gapResult, selectedRole]);
 
-  /* One filter per format actually present, so a chip never leads to an empty
-     page. "Free only" cuts across the formats, which is why it sits apart. */
+  /* Format filters, derived from the formats present so no filter yields an
+     empty result. */
   const formats = useMemo(() => {
     const seen = [];
     for (const resource of plan?.resources ?? []) {
@@ -204,10 +212,10 @@ export default function Learning() {
     return seen;
   }, [plan]);
 
-  // Everything in the plan is free, so there is no "free only" to offer.
+  // All resources are free, so only the format filter applies.
   const matches = (resource) => filter === ALL || resource.format === filter;
 
-  // The plan is built from the gap, so there is nothing to show without one.
+  // Requires a gap result.
   if (!snapshot || !gapResult) return <Navigate to="/diagnostic/gap" replace />;
 
   const shown = (plan?.resources ?? []).filter(matches);
@@ -216,9 +224,8 @@ export default function Learning() {
     <div className="flex min-h-screen flex-col">
       <Header />
 
-      <main className="mx-auto w-full max-w-[1080px] flex-1 px-5 py-8 sm:px-6 sm:py-10">
-        {/* The journey for an account, the gap screen for a guest, who has no
-            journey to be sent to. */}
+      <main className="page-shell max-w-[1200px] flex-1 pt-14 pb-20">
+        {/* Back target: the journey for signed-in users, the gap screen for guests. */}
         {user ? (
           <BackLink to="/journey">Back to your journey</BackLink>
         ) : (
@@ -252,8 +259,7 @@ export default function Learning() {
           </div>
 
           <div className="relative order-1 md:order-2">
-            {/* The band bleeds into the photograph rather than butting against
-                it, so the two halves read as one surface. */}
+            {/* Gradient overlay blending the text panel into the photograph. */}
             <div
               aria-hidden="true"
               className="learning-banner-blend pointer-events-none absolute inset-0 z-10"
@@ -310,8 +316,7 @@ export default function Learning() {
             const group = plan.groups?.find((entry) => entry.skill_id === gap.skill_id);
             const forGap = shown.filter((resource) => resource.skill_id === gap.skill_id);
 
-            // Hide a focus area whose resources are all filtered out, so a filter
-            // never leaves an empty card behind. The count reflects what is shown.
+            // Skip focus areas with no resources after filtering; counts reflect visible items.
             if (forGap.length === 0) return null;
 
             const count = forGap.length;
@@ -401,34 +406,6 @@ export default function Learning() {
           <p className="mt-8 max-w-[56ch] text-sm leading-relaxed text-ink-soft">
             No {filter}s here for your focus areas. Select “All” to see everything.
           </p>
-        )}
-
-        {plan && plan.resources.length > 0 && (
-          <section className="mt-8 flex flex-wrap items-center gap-5 rounded-2xl border border-pink-600/20 bg-pink-100/65 p-5 sm:p-6">
-            <span
-              aria-hidden="true"
-              className="flex size-12 items-center justify-center rounded-xl bg-white text-pink-600"
-            >
-              <LearningIcon name="confidence" className="size-6" />
-            </span>
-            <div className="min-w-0 flex-1">
-              <p className="eyebrow text-pink-600">Put your progress into words</p>
-              <h2 className="mt-1 font-display text-xl font-bold text-ink">
-                Practise for your target role
-              </h2>
-              <p className="mt-1 max-w-[60ch] text-sm leading-relaxed text-ink-soft">
-                Use the skills you are building to answer five interview questions with personalised
-                feedback.
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={() => navigate('/interview-practice')}
-              className="rounded-full bg-pink-600 px-5 py-3 text-sm font-semibold text-white shadow-card transition hover:bg-pink-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
-            >
-              Start interview practice <span aria-hidden="true">→</span>
-            </button>
-          </section>
         )}
       </main>
     </div>

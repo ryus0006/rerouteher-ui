@@ -21,20 +21,18 @@ const LABEL = 'text-sm font-medium text-ink';
 const HELP = 'mt-1.5 text-xs text-ink-soft';
 
 /**
- * Reads the intake back as prose, so the page shows answers rather than field
- * names. Only what she typed or picked: results live on the journey page, and
- * repeating them here would make both pages longer without making either
- * clearer.
+ * Formats the user's intake answers for display. Includes inputs only;
+ * computed results are shown on the journey page.
  *
- * Ids are stored, not labels, so each list is resolved through the config that
- * owns it — the same source the screen that asked the question renders from.
+ * The store holds ids, so labels are resolved through the same config the
+ * intake screens use.
  */
 function useAnswers() {
   const cv = useIntakeStore((state) => state.cv);
   const careerBreak = useIntakeStore((state) => state.break);
   const employerPriorities = useIntakeStore((state) => state.employerPriorities);
 
-  // A session stored before the break step was reached carries no break object.
+  // `careerBreak` is absent until the break step has been completed.
   const years = careerBreak?.duration_years ?? 0;
   const activities = careerBreak?.activities ?? [];
   const answered = activities.length > 0;
@@ -44,9 +42,9 @@ function useAnswers() {
     {
       id: 'break',
       label: 'Career break',
-      /* A duration of 0 is a real answer — "less than a year" — so an activity
-         is what separates it from a step she has not reached. The same signal
-         the break screen itself treats as answered. */
+      /* A duration of 0 is valid ("less than a year"), so the step counts as
+         answered once at least one activity is selected, matching the break
+         screen's own check. */
       value: !answered
         ? 'Not answered yet'
         : years === 0
@@ -57,8 +55,7 @@ function useAnswers() {
     {
       id: 'activities',
       label: 'What filled it',
-      // Named rather than counted: "3 activities" proves she answered without
-      // saying what, which is the one thing a record of her answers is for.
+      // List activity labels rather than a count.
       items: activities.map((activity) => ACTIVITY_LABELS[activity] ?? activity),
       empty: 'Not answered yet',
     },
@@ -72,12 +69,9 @@ function useAnswers() {
 }
 
 /**
- * Everything about the account that is not the plan itself.
- *
- * Split in two on purpose: the display name is hers to rewrite freely, while
- * the intake answers are a record of what the snapshot was built from — one
- * way back into the diagnostic, not a row of controls implying each answer can
- * be changed on its own.
+ * Profile page: editable display name and a read-only summary of intake
+ * answers. Answers cannot be edited individually; changing them means
+ * restarting the diagnostic.
  */
 export default function Profile() {
   const navigate = useSmoothNavigate();
@@ -86,8 +80,8 @@ export default function Profile() {
   const answers = useAnswers();
   const resetJourney = useIntakeStore((state) => state.reset);
 
-  /* Seeded once from the store rather than synced in an effect: the field is
-     hers to edit from here on, and nothing else writes the name. */
+  /* Initialised once from the store; nothing else updates the name while
+     this page is mounted, so no syncing effect is needed. */
   const [draft, setDraft] = useState(() => {
     const stored = useAccountStore.getState().user;
     return stored ? resolveDisplayName(stored) : '';
@@ -95,10 +89,10 @@ export default function Profile() {
   const [error, setError] = useState(null);
   const [saved, setSaved] = useState(false);
   const [confirmingRestart, setConfirmingRestart] = useState(false);
-  // Stable, so the dialog's key handling is not torn down on every render.
+  // Memoised so the dialog's key listener is not re-bound on every render.
   const cancelRestart = useCallback(() => setConfirmingRestart(false), []);
 
-  // Signed out, there is no profile to show; the header offers the way back in.
+  // Account-only route.
   if (!user) return <Navigate to="/" replace />;
 
   function handleSubmit(event) {
@@ -112,9 +106,8 @@ export default function Profile() {
     setSaved(true);
   }
 
-  /* A full clear, not the CV-only reset: the snapshot, priorities and any
-     stashed earlier plan all go. Signed in, plan sync then writes the empty
-     plan to the account. */
+  /* Full reset, including the snapshot, priorities and any stashed previous
+     plan. Plan sync then saves the empty plan to the account. */
   function handleRestart() {
     resetJourney();
     setConfirmingRestart(false);
@@ -127,7 +120,7 @@ export default function Profile() {
     <div className="flex min-h-screen flex-col">
       <Header />
 
-      <main className="mx-auto w-full max-w-[720px] flex-1 px-5 py-8 sm:px-6 sm:py-10">
+      <main className="page-shell max-w-[720px] flex-1 pt-14 pb-20">
         <BackLink to="/">Back to home</BackLink>
 
         <h1 className="mt-3 font-display text-2xl font-bold tracking-[-0.015em] text-ink sm:text-3xl">
@@ -192,9 +185,7 @@ export default function Profile() {
               <div key={answer.id} className="flex flex-wrap items-baseline gap-x-4 gap-y-1 py-3">
                 <dt className="eyebrow w-full sm:w-44 sm:shrink-0">{answer.label}</dt>
                 <dd className="min-w-0 flex-1 text-sm text-ink">
-                  {/* A list she built is shown as the things in it. Chips rather
-                      than a sentence because the break is uncapped: sixteen are
-                      selectable, and a comma run that long stops being read. */}
+                  {/* Multi-value answers render as chips, since lists can be long. */}
                   {answer.items ? (
                     answer.items.length === 0 ? (
                       <span className="text-ink-faint">{answer.empty}</span>
@@ -220,9 +211,8 @@ export default function Profile() {
             ))}
           </dl>
 
-          {/* One way back in, not three. Clearing starts the diagnostic from
-              nothing, so an "edit this one answer" control would have been a
-              promise the store cannot keep. */}
+          {/* Single restart action; the store does not support editing one answer
+              in isolation. */}
           <div className="mt-5 border-t border-line pt-4">
             <button
               type="button"

@@ -77,9 +77,9 @@ function AlsoMissingSkill({ gap }) {
 }
 
 /**
- * Every requirement this role asks for that she does not yet cover. The highest
- * impact ones are ranked; the rest are named but not prioritised. Uplift is
- * displayed as returned by the backend, never recomputed here.
+ * Lists the role requirements the user does not yet meet. The highest-impact
+ * gaps are ranked; the rest are listed unranked. Uplift values are displayed as
+ * returned by the backend and are not recomputed.
  */
 export default function FocusAreaList({ gaps, illustration }) {
   const focusAreas = pickFocusAreas(gaps, MAX_FOCUS_AREAS);
@@ -113,8 +113,7 @@ export default function FocusAreaList({ gaps, illustration }) {
 
           {alsoMissing.length > 0 && (
             <>
-              {/* Named so the count above reconciles, but left unranked: missing
-                  without being worth starting on. */}
+              {/* Remaining gaps, listed so the total count matches, but unranked. */}
               <p className={`mt-5 ${GROUP_LABEL}`}>Also missing</p>
 
               <ul className="mt-2 flex flex-wrap gap-1.5">

@@ -10,9 +10,9 @@ export default function IntakeLayout({ stageIndex, back, title, intro, children 
     <div className="flex min-h-screen flex-col">
       <Header />
 
-      <main className="mx-auto w-full max-w-[720px] flex-1 px-5 py-8 sm:px-6 sm:py-10">
-        {/* Above the stepper, so the way out is visible on every step of the
-            redo rather than only on the one where it started. */}
+      <main className="page-shell max-w-[720px] flex-1 py-8 sm:py-10">
+        {/* Rendered on every intake step so the restore option stays available
+            throughout a redo. */}
         <PreviousPlanBar />
 
         <IntakeStepper currentIndex={stageIndex} />

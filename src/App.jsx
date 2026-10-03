@@ -22,10 +22,10 @@ export default function App() {
     }
   }, [pathname]);
 
-  /* The companion closes on every move, and forgets which job it was opened
-     for. Left open across a navigation it would answer about the last screen.
-     Exception: a companion-driven navigation (a CTA button) sets keepOpenNav so
-     the chat rides along; that flag is consumed once here. */
+  /* Close the companion and reset its mode on every route change so it never
+     answers about the previous screen. A navigation triggered from inside the
+     companion sets a one-shot keep-open flag, consumed here, to keep the chat
+     open across that move. */
   useEffect(() => {
     if (useCompanionStore.getState().consumeKeepOpen()) return;
     closeCompanion();
@@ -36,10 +36,10 @@ export default function App() {
       <Outlet />
       <ScrollRestoration />
       <AccountSheet />
-      {/* Everywhere but the landing page: there, nothing of hers exists yet, so
-          a companion offering to explain her results would have none to read.
-          Before a snapshot exists it offers the conversational route into one
-          (US8.1) rather than to explain results she does not have (US8.2). */}
+      {/* Hidden on the landing page, where there is no user data to discuss.
+          Before a snapshot exists the companion opens in build mode (create a
+          profile through chat); afterwards it opens in ask mode (questions
+          about results). */}
       {pathname !== '/' && <Companion defaultMode={snapshot ? 'ask' : 'build'} />}
     </>
   );
