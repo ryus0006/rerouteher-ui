@@ -1,44 +1,19 @@
+import { useRef } from 'react';
+import { motion, useReducedMotion, useScroll, useTransform } from 'motion/react';
 import useSmoothNavigate from '../hooks/useSmoothNavigate.js';
-import Header from '../components/layout/Header.jsx';
-import GlassCard from '../components/ui/GlassCard.jsx';
-import GradientButton from '../components/ui/GradientButton.jsx';
-import Photo from '../components/ui/Photo.jsx';
-import CardIllustration from '../components/ui/CardIllustration.jsx';
-import JourneyRail from '../components/landing/JourneyRail.jsx';
-import ValueIcon from '../components/landing/ValueIcon.jsx';
 import useResumePoint from '../hooks/useResumePoint.js';
+import Header from '../components/layout/Header.jsx';
+import SkillTranslator from '../components/landing/SkillTranslator.jsx';
+import ToolTiles from '../components/landing/ToolTiles.jsx';
+import HeroVisual from '../components/landing/HeroVisual.jsx';
+import Reveal from '../components/landing/Reveal.jsx';
+import ScrubWords from '../components/landing/ScrubWords.jsx';
+import HeraChatDemo from '../components/landing/HeraChatDemo.jsx';
+import HeraBot from '../components/companion/HeraBot.jsx';
+import { JOURNEY_STAGES } from '../config/journeyStages.js';
 import { useAccountStore } from '../store/accountStore.js';
-
-// Hero photograph (WebP with JPEG fallback).
-import heroWebp from '../assets/hero-collaboration.webp';
-import heroJpg from '../assets/hero-collaboration.jpg';
-import journeyPath from '../assets/page-illustrations/journey-path.png';
-import snapshotKeepsake from '../assets/page-illustrations/snapshot-keepsake.png';
-import gapBridge from '../assets/page-illustrations/gap-bridge.png';
-
-const VALUE_CARDS = [
-  {
-    id: 'break-counts',
-    icon: 'intake',
-    illustration: snapshotKeepsake,
-    title: 'Your break counts as experience',
-    body: 'Budgeting, scheduling, coordination — named, then mapped to standard taxonomies.',
-  },
-  {
-    id: 'weighted-readiness',
-    icon: 'clock',
-    illustration: gapBridge,
-    title: 'Transparent, weighted readiness',
-    body: 'A score for any target role, with the reasoning behind every point.',
-  },
-  {
-    id: 'three-focus-areas',
-    icon: 'climb',
-    illustration: journeyPath,
-    title: 'Three focus areas, never a wall',
-    body: 'Three, ranked by impact — not a list of everything you have not done.',
-  },
-];
+import { useCompanionStore } from '../store/companionStore.js';
+import logoWebp from '../assets/logo-full.webp';
 
 let scrollFrame;
 
@@ -81,150 +56,367 @@ function scrollToHowItWorks(event) {
   scrollFrame = requestAnimationFrame(move);
 }
 
+/** Primary call to action. The arrow sits in its own circle and nudges on hover. */
+function StartButton({ resume, onClick }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="group inline-flex items-center gap-3 rounded-full bg-ink py-2 pr-2 pl-6 text-base font-semibold text-white shadow-card transition duration-300 ease-spring hover:bg-plane-2 hover:shadow-card-hover active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
+    >
+      {resume.label}
+      <span
+        aria-hidden="true"
+        className="flex size-9 items-center justify-center rounded-full bg-white/12 transition duration-300 ease-spring group-hover:translate-x-1 group-hover:-translate-y-px group-hover:scale-105 group-hover:bg-white/20"
+      >
+        →
+      </span>
+    </button>
+  );
+}
+
+/** Secondary call to action that opens Hera. Her avatar sits in its own circle. */
+function HeraButton({ onClick }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="group inline-flex items-center gap-3 rounded-full bg-surface py-2 pr-2 pl-6 text-base font-semibold text-ink shadow-[0_0_0_1px_rgb(44_33_66/0.08),0_12px_28px_-16px_rgb(44_33_66/0.3)] transition duration-300 ease-spring hover:shadow-[0_0_0_1px_rgb(44_33_66/0.12),0_18px_36px_-16px_rgb(44_33_66/0.4)] active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
+    >
+      Chat with Hera
+      <span
+        aria-hidden="true"
+        className="flex size-9 items-center justify-center rounded-full bg-pink-100 transition duration-300 ease-spring group-hover:translate-x-1 group-hover:-translate-y-px group-hover:scale-105"
+      >
+        <HeraBot className="size-7" waving />
+      </span>
+    </button>
+  );
+}
+
+/** One headline line that rises out of its own clipped box on arrival. */
+function MaskLine({ delay, className = '', children }) {
+  return (
+    <span className="block overflow-hidden pb-[0.1em] -mb-[0.1em]">
+      <span className={`land-line block ${className}`} style={{ '--d': `${delay}ms` }}>
+        {children}
+      </span>
+    </span>
+  );
+}
+
+/**
+ * One journey step. Its number lights up and the card settles into place as
+ * the rail's fill reaches it; the connector below fills towards the next step.
+ */
+function Step({ stage, index, count, progress, reduce }) {
+  const at = index / count;
+  const next = (index + 1) / count;
+
+  const lit = useTransform(progress, [at, at + 0.08], [0, 1]);
+  const settle = useTransform(progress, [at - 0.12, at + 0.06], [0.35, 1]);
+  const x = useTransform(progress, [at - 0.12, at + 0.06], [40, 0]);
+  const fill = useTransform(progress, [at + 0.04, next], [0, 1]);
+
+  return (
+    <motion.li className="land-shell relative" style={reduce ? undefined : { opacity: settle, x }}>
+      <div className="land-core flex gap-5 p-6">
+        <span className="relative flex size-10 shrink-0 items-center justify-center rounded-full bg-pink-100 font-display text-lg font-bold text-pink-600 tabular">
+          {index + 1}
+          {!reduce && (
+            <motion.span
+              aria-hidden="true"
+              className="absolute inset-0 flex items-center justify-center rounded-full bg-pink-600 text-white shadow-[0_8px_20px_-6px_rgb(190_63_108/0.6)]"
+              style={{ opacity: lit, scale: lit }}
+            >
+              {index + 1}
+            </motion.span>
+          )}
+        </span>
+        <div className="pt-1.5">
+          <h3 className="font-display text-xl font-bold tracking-[-0.015em] text-ink">
+            {stage.label}
+          </h3>
+          <p className="mt-1 text-[0.9375rem] leading-relaxed text-ink-soft">{stage.blurb}</p>
+        </div>
+      </div>
+
+      {/* Connector from this number down to the next one. */}
+      {index < count - 1 && (
+        <span
+          aria-hidden="true"
+          className="absolute top-[4.375rem] left-[3.0625rem] h-[calc(100%-3.125rem)] w-0.5 overflow-hidden rounded-full bg-pink-600/12"
+        >
+          {!reduce && (
+            <motion.span
+              className="absolute inset-0 origin-top rounded-full bg-pink-600"
+              style={{ scaleY: fill }}
+            />
+          )}
+        </span>
+      )}
+    </motion.li>
+  );
+}
+
+const CLOSING_TITLE = 'Your next move starts with what you already have.';
+
 export default function Landing() {
   const navigate = useSmoothNavigate();
   const openSheet = useAccountStore((state) => state.openSheet);
   const user = useAccountStore((state) => state.user);
   const resume = useResumePoint();
 
+  const start = () => navigate(resume.to);
+
+  /* Opens Hera in build mode on the first intake step, where she lives. The
+     keep-open flag stops the route change from closing her on arrival. */
+  const openCompanion = useCompanionStore((state) => state.openCompanion);
+  const holdOpenAcrossNav = useCompanionStore((state) => state.holdOpenAcrossNav);
+  const chatWithHera = () => {
+    holdOpenAcrossNav();
+    openCompanion('build');
+    navigate('/diagnostic/background');
+  };
+
+  const reduce = useReducedMotion();
+  const heroRef = useRef(null);
+  const stepsRef = useRef(null);
+  const closingRef = useRef(null);
+
+  /* Hero scroll-out: the stage recedes while its copy lifts away. */
+  const { scrollYProgress: heroOut } = useScroll({
+    target: heroRef,
+    offset: ['start start', 'end start'],
+  });
+  const stageScale = useTransform(heroOut, [0, 1], [1, 0.9]);
+  const copyY = useTransform(heroOut, [0, 1], [0, -140]);
+  const copyOpacity = useTransform(heroOut, [0, 0.75], [1, 0]);
+
+  /* How it works: steps light in sequence as the list crosses the viewport. */
+  const { scrollYProgress: stepsProgress } = useScroll({
+    target: stepsRef,
+    offset: ['start 0.8', 'end 0.45'],
+  });
+
+  /* Closing: the panel opens up to full size and the headline inks in. */
+  const { scrollYProgress: closingIn } = useScroll({
+    target: closingRef,
+    offset: ['start end', 'end end'],
+  });
+  const closingScale = useTransform(closingIn, [0, 0.55], [0.86, 1]);
+  const closingY = useTransform(closingIn, [0, 0.55], [120, 0]);
+  const arcOffset = useTransform(closingIn, [0.35, 1], [78, 0]);
+
+  const motionStyle = (style) => (reduce ? undefined : style);
+
   return (
     <div className="flex min-h-svh flex-col">
       <Header />
 
       <main className="flex-1">
-        <section className="relative overflow-hidden bg-plane">
-          <div className="absolute inset-0">
-            <Photo
-              webp={heroWebp}
-              jpg={heroJpg}
-              width={1672}
-              height={941}
-              loading="eager"
-              fetchPriority="high"
-              alt="Three women smiling as they work together around a laptop in a bright office."
-              className="block h-full w-full object-cover object-[center_20%]"
-            />
-          </div>
-          <div aria-hidden="true" className="landing-hero-shade absolute inset-0" />
+        {/* Hero: headline on the left, an example annotated CV on the right. */}
+        <section ref={heroRef} className="px-5 pt-5">
+          <motion.div
+            className="land-stage land-stage-in relative mx-auto max-w-[1440px] origin-top overflow-hidden rounded-[2.5rem]"
+            style={motionStyle({ scale: stageScale })}
+          >
+            <div className="relative mx-auto grid min-h-[min(46rem,calc(100svh-7rem))] max-w-[1200px] items-center gap-12 px-8 py-20 lg:grid-cols-[minmax(0,1fr)_34rem]">
+              <motion.div style={motionStyle({ y: copyY, opacity: copyOpacity })}>
+                <h1 className="font-display text-[4rem] font-bold leading-[1] tracking-[-0.045em] text-ink xl:text-[4.75rem]">
+                  <MaskLine delay={80}>Return to work</MaskLine>{' '}
+                  <MaskLine delay={190}>with a plan,</MaskLine>{' '}
+                  <MaskLine delay={300} className="text-pink-600">
+                    <span className="land-underline">not a guess.</span>
+                  </MaskLine>
+                </h1>
 
-          {/* Viewport-relative height. The 9rem offset accounts for the header and
-              the next section's top padding, so the fold falls on that padding
-              rather than through its text. The min-height applies on short
-              viewports. */}
-          <div className="relative mx-auto flex min-h-[42rem] w-full max-w-[1200px] items-end px-5 py-12 sm:px-8 md:min-h-[max(34rem,calc(100svh-9rem))] md:items-center md:py-20">
-            <div className="max-w-[34rem]">
-              <h1 className="font-display text-4xl font-bold leading-[1.04] tracking-[-0.025em] text-white sm:text-5xl md:text-[3.5rem]">
-                See what you still
-                <br />
-                have to offer
-              </h1>
-
-              <p className="mt-5 max-w-[44ch] text-base leading-relaxed text-white/90 sm:text-lg">
-                A career break can feel like starting from zero. It is not. We turn your past work
-                and your time away into a plan.
-              </p>
-
-              <div className="mt-8 flex flex-wrap items-center gap-5">
-                {/* Label and target depend on progress (see useResumePoint). Restarting
-                    the diagnostic is available from the profile page only. */}
-                <GradientButton variant="onPlane" onClick={() => navigate(resume.to)}>
-                  {resume.label}
-                  <span aria-hidden="true">→</span>
-                </GradientButton>
-
-                <a
-                  href="#how-it-works"
-                  onClick={scrollToHowItWorks}
-                  className="rounded-full px-2 py-1 text-sm font-medium text-white/90 underline underline-offset-4 transition hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+                <p
+                  className="land-step mt-7 max-w-[44ch] text-lg leading-relaxed text-ink-soft"
+                  style={{ '--d': '520ms' }}
                 >
-                  How it works
-                </a>
-              </div>
-
-              {!resume.started && (
-                <p className="mt-5 max-w-[44ch] text-sm text-white/90">
-                  Free. No signup until you want to keep it.
+                  A career break can feel like starting from zero. It is not. We turn your past work
+                  and your time away into a plan.
                 </p>
-              )}
-            </div>
-          </div>
 
-          <div aria-hidden="true" className="absolute inset-x-0 bottom-0 h-[3px] bg-grad-rule" />
-        </section>
-
-        <section id="how-it-works" className="scroll-mt-6 border-t border-line bg-surface">
-          <div className="mx-auto w-full max-w-[1200px] px-5 py-16 sm:px-8 md:py-20">
-            <h2
-              tabIndex="-1"
-              className="font-display text-3xl font-bold tracking-[-0.02em] text-ink sm:text-4xl"
-            >
-              How it works
-            </h2>
-            <p className="mt-3 max-w-[46ch] text-ink-soft">
-              Three stages, five screens, about ten minutes. Your break is skill-building, not a gap
-              to explain away.
-            </p>
-
-            <div className="mt-10">
-              <JourneyRail />
-            </div>
-
-            <div className="mt-14 grid gap-4 md:grid-cols-3">
-              {VALUE_CARDS.map((card) => (
-                <GlassCard
-                  key={card.id}
-                  interactive
-                  className="card-with-illustration landing-value-card p-6"
+                <div
+                  className="land-step mt-9 flex flex-wrap items-center gap-6"
+                  style={{ '--d': '640ms' }}
                 >
-                  <CardIllustration src={card.illustration} />
-                  <ValueIcon name={card.icon} />
-                  <h3 className="mt-4 font-semibold text-ink">{card.title}</h3>
-                  <p className="mt-2 text-sm leading-relaxed text-ink-soft">{card.body}</p>
-                </GlassCard>
-              ))}
+                  {/* Label and target depend on progress (see useResumePoint). */}
+                  <StartButton resume={resume} onClick={start} />
+                  <a
+                    href="#how-it-works"
+                    onClick={scrollToHowItWorks}
+                    className="rounded-full px-1 py-1 text-[0.9375rem] font-medium text-ink-soft underline decoration-ink/25 underline-offset-4 transition hover:text-ink hover:decoration-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
+                  >
+                    How it works
+                  </a>
+                </div>
+
+                {!resume.started && (
+                  <p className="land-step mt-6 text-sm text-ink-faint" style={{ '--d': '760ms' }}>
+                    Free · About ten minutes · No CV or account needed
+                  </p>
+                )}
+              </motion.div>
+
+              <div className="hidden lg:block">
+                <HeroVisual progress={heroOut} />
+              </div>
             </div>
-          </div>
+          </motion.div>
         </section>
 
-        {/* Dark section; the page's only use of the dark surface. */}
-        <section className="bg-plane text-on-plane">
-          <div className="mx-auto grid w-full max-w-[1200px] gap-8 px-5 py-14 sm:px-8 md:grid-cols-[1.2fr_0.8fr] md:items-center md:py-16">
-            <div>
-              <h2 className="font-display text-2xl font-bold tracking-[-0.015em] sm:text-3xl">
-                Free to start
-              </h2>
-              <p className="mt-3 max-w-[48ch] text-sm leading-relaxed text-on-plane-soft sm:text-base">
-                {user
-                  ? 'Your plan saves itself as you go, and opens on any device you sign in on.'
-                  : 'Signing up is optional. An account keeps your plan, so closing this tab does not start you over.'}
-              </p>
-            </div>
+        {/* The core idea, told as a live translation. */}
+        <SkillTranslator />
 
-            <div className="flex flex-wrap items-center gap-x-5 gap-y-3 md:justify-end">
-              {/* Same progress-aware action as the hero button. */}
-              <button
-                type="button"
-                onClick={() => navigate(resume.to)}
-                className="inline-flex items-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-semibold text-ink shadow-card transition duration-200 ease-spring hover:-translate-y-px hover:shadow-card-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+        {/* Building a profile through chat, for anyone without a CV. */}
+        <section aria-labelledby="hera-title" className="py-28">
+          <div className="mx-auto grid max-w-[1200px] items-center gap-16 px-8 lg:grid-cols-[minmax(0,1fr)_40rem]">
+            <Reveal>
+              <h2
+                id="hera-title"
+                className="font-display text-5xl font-bold leading-[1.02] tracking-[-0.035em] text-ink"
               >
-                {resume.label}
-                <span aria-hidden="true">→</span>
-              </button>
+                No CV? <span className="block text-pink-600">Just talk to Hera.</span>
+              </h2>
+              <p className="mt-6 max-w-[44ch] text-lg leading-relaxed text-ink-soft">
+                Tell Hera, our AI guide, about the work you did and your time away, in your own
+                words. She drafts your profile as you chat, and nothing is used until you confirm
+                it.
+              </p>
+              <p className="mt-4 max-w-[44ch] text-[0.9375rem] leading-relaxed text-ink-faint">
+                Once you confirm it, it takes the place of a CV in your readiness check. Later, with
+                a target role and an account, the CV builder can turn it into a CV.
+              </p>
+              <div className="mt-9">
+                <HeraButton onClick={chatWithHera} />
+              </div>
+            </Reveal>
 
-              {/* Guest-only sign-up prompt. Sign-in is available from the header. */}
-              {!user && (
-                <button
-                  type="button"
-                  onClick={() => openSheet('create')}
-                  className="text-sm text-on-plane-soft underline underline-offset-2 transition hover:text-on-plane focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
-                >
-                  Sign up
-                </button>
-              )}
+            <div className="hidden lg:block">
+              <HeraChatDemo />
             </div>
           </div>
+        </section>
+
+        <section aria-labelledby="how-it-works-title" className="px-5 pb-32">
+          <Reveal className="land-stage relative mx-auto max-w-[1440px] overflow-hidden rounded-[2.5rem]">
+            <div className="relative mx-auto grid max-w-[1200px] gap-14 px-8 py-24 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] lg:items-center">
+              <h2
+                id="how-it-works-title"
+                className="max-w-[14ch] font-display text-5xl font-bold leading-[1.02] tracking-[-0.035em] text-ink"
+              >
+                Three steps. About ten minutes.
+              </h2>
+
+              <ol ref={stepsRef} className="space-y-5">
+                {JOURNEY_STAGES.map((stage, index) => (
+                  <Step
+                    key={stage.id}
+                    stage={stage}
+                    index={index}
+                    count={JOURNEY_STAGES.length}
+                    progress={stepsProgress}
+                    reduce={reduce}
+                  />
+                ))}
+              </ol>
+            </div>
+          </Reveal>
+        </section>
+
+        <section aria-labelledby="tools-title" className="pb-32">
+          <div className="mx-auto w-full max-w-[1200px] px-8">
+            <Reveal className="mb-14 grid gap-6 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)] lg:items-end">
+              <h2
+                id="tools-title"
+                className="max-w-[16ch] font-display text-5xl font-bold leading-[1.02] tracking-[-0.035em] text-ink"
+              >
+                Then everything works from your result.
+              </h2>
+              <p className="max-w-[44ch] text-lg leading-relaxed text-ink-soft lg:justify-self-end">
+                Your readiness score and focus areas carry into four tools, so each one already
+                knows your skills and the role you are aiming for.
+              </p>
+            </Reveal>
+            <ToolTiles />
+          </div>
+        </section>
+
+        <section ref={closingRef} aria-labelledby="closing-title" className="px-5 pb-5">
+          <motion.div
+            className="land-closing relative mx-auto max-w-[1440px] origin-bottom overflow-hidden rounded-[2.5rem]"
+            style={motionStyle({ scale: closingScale, y: closingY })}
+          >
+            {/* Decorative readiness arc in the brand gradient. */}
+            <svg
+              aria-hidden="true"
+              viewBox="0 0 400 220"
+              className="absolute right-[6%] bottom-0 hidden w-[30rem] lg:block"
+            >
+              <defs>
+                <linearGradient id="closing-arc" x1="0" y1="0" x2="1" y2="0">
+                  <stop offset="0%" stopColor="#f2a0be" />
+                  <stop offset="52%" stopColor="#c3b1e4" />
+                  <stop offset="100%" stopColor="#93a0dd" />
+                </linearGradient>
+              </defs>
+              <path
+                d="M 30 220 A 170 170 0 0 1 370 220"
+                fill="none"
+                stroke="rgb(44 33 66 / 0.07)"
+                strokeWidth="34"
+              />
+              <motion.path
+                d="M 30 220 A 170 170 0 0 1 370 220"
+                fill="none"
+                stroke="url(#closing-arc)"
+                strokeWidth="34"
+                strokeLinecap="round"
+                pathLength="100"
+                strokeDasharray="78 100"
+                style={motionStyle({ strokeDashoffset: arcOffset })}
+              />
+            </svg>
+            <div className="relative mx-auto max-w-[1200px] px-8 py-28">
+              <h2
+                id="closing-title"
+                className="max-w-[15ch] font-display text-[3.75rem] font-bold leading-[1] tracking-[-0.04em] text-ink"
+              >
+                <ScrubWords text={CLOSING_TITLE} progress={closingIn} range={[0.3, 0.9]} />
+              </h2>
+              <p className="mt-6 max-w-[44ch] text-lg leading-relaxed text-ink-soft">
+                {user
+                  ? 'Your plan saves as you go, and opens on any device you sign in on.'
+                  : 'Free, and no account needed. Your plan stays in this tab. Sign up only if you want to keep it.'}
+              </p>
+
+              <div className="mt-9 flex flex-wrap items-center gap-6">
+                {/* Same progress-aware action as the hero button. */}
+                <StartButton resume={resume} onClick={start} />
+
+                {/* Guest-only sign-up prompt. Sign-in is available from the header. */}
+                {!user && (
+                  <button
+                    type="button"
+                    onClick={() => openSheet('create')}
+                    className="rounded-full px-1 py-1 text-[0.9375rem] font-medium text-ink-soft underline decoration-ink/25 underline-offset-4 transition hover:text-ink hover:decoration-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
+                  >
+                    Sign up
+                  </button>
+                )}
+              </div>
+            </div>
+          </motion.div>
         </section>
       </main>
+
+      <footer className="mx-auto flex w-full max-w-[1200px] flex-wrap items-center justify-between gap-4 px-8 py-10 text-sm text-ink-faint">
+        <img src={logoWebp} alt="ReRouteHer" width={752} height={192} className="h-7 w-auto" />
+        <p>For women returning to work in Malaysia.</p>
+      </footer>
     </div>
   );
 }

@@ -238,7 +238,10 @@ export default function InterviewPractice() {
       <div className="flex min-h-screen flex-col">
         <Header />
         <main className="page-shell max-w-[1200px] flex-1 pt-14 pb-20">
-          <div className={`flex justify-between gap-8 ${started ? 'items-center' : 'items-end'}`}>
+          <div
+            className={`iv-reveal flex justify-between gap-8 ${started ? 'items-center' : 'items-end'}`}
+            style={{ '--i': 0 }}
+          >
             <div className="min-w-0 flex-1">
               {/* Visually hidden once practice starts; the question acts as the headline. */}
               <h1
@@ -300,8 +303,10 @@ export default function InterviewPractice() {
                 transition={{ duration: 0.55, ease: [0.32, 0.72, 0, 1] }}
                 className="overflow-hidden"
               >
+                {/* Rises in on first load only; mid-set the panel opens via the height animation. */}
                 <div
-                  className={`grid items-start gap-6 pt-8 ${started ? 'pb-2' : 'lg:grid-cols-[minmax(0,1fr)_19rem]'}`}
+                  className={`grid items-start gap-6 pt-8 ${started ? 'pb-2' : 'iv-reveal lg:grid-cols-[minmax(0,1fr)_19rem]'}`}
+                  style={started ? undefined : { '--i': 1 }}
                 >
                   <SetupPanel
                     key={`${setup.role.role_id}-${setup.focus}-${setupMode}`}
@@ -342,7 +347,7 @@ export default function InterviewPractice() {
           )}
 
           {started && view === 'practice' && question && (
-            <div className="mt-12 max-w-[56rem]">
+            <div className="iv-reveal mt-12 max-w-[56rem]" style={{ '--i': 1 }}>
               {/* Slide direction follows navigation direction (next/previous). */}
               <AnimatePresence mode="wait" initial={false} custom={direction}>
                 <motion.div

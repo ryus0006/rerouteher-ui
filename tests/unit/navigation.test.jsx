@@ -56,7 +56,7 @@ describe('screen navigation', () => {
     await screen.findByRole('heading', { name: 'Upload your CV' });
     expect(router.state.location.pathname).toBe('/diagnostic/background');
     await router.navigate('/does-not-exist');
-    await screen.findByRole('heading', { name: /See what you still/ });
+    await screen.findByRole('heading', { name: /Return to work with a plan, not a guess/ });
     expect(router.state.location.pathname).toBe('/');
   });
 });
