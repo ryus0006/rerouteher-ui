@@ -8,7 +8,7 @@ const MAX_DOTS = 12;
 
 /**
  * Frequency of a theme: one dot per answer, filled where the theme appeared.
- * Falls back to a proportional bar above MAX_DOTS answers.
+ * `total` is the busiest theme's count, so the most frequent theme fills the row.
  */
 function Frequency({ count, total, tone, size = 'sm' }) {
   if (total > MAX_DOTS) {
@@ -27,7 +27,7 @@ function Frequency({ count, total, tone, size = 'sm' }) {
   );
 }
 
-/** Highlighted card for the most frequent theme. */
+/** Highlighted card for the most frequent improvement theme. */
 function Focus({ theme, total }) {
   return (
     <div className="iv-bezel iv-reveal" style={{ '--i': 1 }}>
@@ -36,13 +36,12 @@ function Focus({ theme, total }) {
           <InterviewIcon name="target" weight="bold" className="size-3.5" />
           Your main focus
         </span>
-        <h3 className="iv-focus-title">{theme.area}</h3>
-        <p className="mt-3 max-w-[52ch] text-base leading-relaxed text-ink-soft">{theme.detail}</p>
+        <h3 className="iv-focus-title">{theme.title}</h3>
         <div className="mt-8 flex flex-wrap items-center gap-x-5 gap-y-3">
-          <Frequency count={theme.count} total={total} tone="improve" size="lg" />
+          <Frequency count={theme.response_count} total={total} tone="improve" size="lg" />
           <p className="text-sm text-ink-soft">
             <span className="font-semibold text-ink tabular">
-              Came up in {theme.count} of {answers(total)}
+              Came up in {answers(theme.response_count)}
             </span>
             {total <= MAX_DOTS && (
               <span className="block text-xs">Each mark is one answer you gave</span>
@@ -54,7 +53,7 @@ function Focus({ theme, total }) {
   );
 }
 
-/** Ranked row for a theme: rank, name, frequency and description. */
+/** Ranked row for an improvement theme: rank, name, frequency. */
 function ThemeRow({ theme, total, rank, order }) {
   return (
     <li className="iv-theme-row iv-reveal" style={{ '--i': order }}>
@@ -63,27 +62,34 @@ function ThemeRow({ theme, total, rank, order }) {
       </span>
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2">
-          <h4 className="font-display text-lg font-bold text-ink">{theme.area}</h4>
+          <h4 className="font-display text-lg font-bold text-ink">{theme.title}</h4>
           <span className="flex items-center gap-3">
-            <Frequency count={theme.count} total={total} tone="improve" />
+            <Frequency count={theme.response_count} total={total} tone="improve" />
             <span className="text-xs font-semibold text-ink-soft tabular">
-              {theme.count} of {total}
+              {theme.response_count}
             </span>
           </span>
         </div>
-        <p className="mt-1.5 max-w-[60ch] text-sm leading-relaxed text-ink-soft">{theme.detail}</p>
       </div>
     </li>
   );
 }
 
 /**
- * Aggregated feedback themes across the latest attempt of each answered
- * question: the most frequent improvement area is highlighted, the rest are
- * ranked below it, and strengths are listed alongside.
+ * Server-aggregated interview themes: the most frequent improvement area is
+ * highlighted, the rest are ranked below it, and strengths are listed alongside.
+ * Each theme carries a title and a response_count; the aggregate has no per-area
+ * detail text.
  */
-export default function AreasView({ summary, onBack }) {
-  const [focus, ...rest] = summary.improve;
+export default function AreasView({ areas, onBack }) {
+  const improvements = areas?.improvements ?? [];
+  const strengths = areas?.strengths ?? [];
+  const [focus, ...rest] = improvements;
+  const total = Math.max(
+    1,
+    ...improvements.map((a) => a.response_count),
+    ...strengths.map((a) => a.response_count)
+  );
 
   return (
     <section aria-labelledby="interview-areas-title">
@@ -96,8 +102,8 @@ export default function AreasView({ summary, onBack }) {
             Areas to improve
           </h2>
           <p className="mt-2 max-w-[60ch] text-base leading-relaxed text-ink-soft">
-            Recurring themes from your feedback across {answers(summary.answered)}, ranked by how
-            often they appear. Each question counts once, based on your most recent attempt.
+            Recurring themes from your feedback across your practice, ranked by how often they
+            appear. Each question counts once, based on your most recent attempt.
           </p>
         </div>
         <PillButton icon="left" iconSide="start" onClick={onBack}>
@@ -108,10 +114,10 @@ export default function AreasView({ summary, onBack }) {
       <div className="mt-12 grid items-start gap-x-14 gap-y-14 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
         <div>
           {focus ? (
-            <Focus theme={focus} total={summary.answered} />
+            <Focus theme={focus} total={total} />
           ) : (
             <p className="iv-reveal text-base text-ink-soft" style={{ '--i': 1 }}>
-              Nothing to improve came up in your feedback. Keep practising to see patterns.
+              Nothing to improve came up yet. Keep practising to see patterns.
             </p>
           )}
 
@@ -126,9 +132,9 @@ export default function AreasView({ summary, onBack }) {
               <ol className="mt-2">
                 {rest.map((theme, at) => (
                   <ThemeRow
-                    key={theme.area}
+                    key={theme.criterion_id ?? theme.title}
                     theme={theme}
-                    total={summary.answered}
+                    total={total}
                     rank={at + 2}
                     order={at + 3}
                   />
@@ -148,19 +154,18 @@ export default function AreasView({ summary, onBack }) {
           <p className="mt-2 text-sm leading-relaxed text-ink-soft">
             Strengths your feedback pointed out. Keep doing these in a real interview.
           </p>
-          {summary.strengths.length > 0 ? (
+          {strengths.length > 0 ? (
             <ul className="mt-6 space-y-6">
-              {summary.strengths.map((theme) => (
-                <li key={theme.area}>
+              {strengths.map((theme) => (
+                <li key={theme.criterion_id ?? theme.title}>
                   <div className="flex items-center justify-between gap-4">
-                    <span className="font-semibold text-ink">{theme.area}</span>
+                    <span className="font-semibold text-ink">{theme.title}</span>
                     <span className="text-xs font-semibold text-verify tabular">
-                      {theme.count} of {summary.answered}
+                      {theme.response_count}
                     </span>
                   </div>
-                  <p className="mt-1 text-sm leading-relaxed text-ink-soft">{theme.detail}</p>
                   <span className="mt-2.5 block">
-                    <Frequency count={theme.count} total={summary.answered} tone="good" />
+                    <Frequency count={theme.response_count} total={total} tone="good" />
                   </span>
                 </li>
               ))}

@@ -12,11 +12,12 @@ import { postJson } from './client.js';
  * @param {{ question: string, sessionId: string, journey: object, currentPage?: string }} r
  * @returns {Promise<{ answer: string, sources: string[], journey_update?: { cv?: object, break?: object, employerPriorities?: string[] }, cta?: { label: string, to: string }, skill_choices?: { skill_id: string, skill_name: string }[], skill_choices_role_id?: string }>}
  */
-export function askCompanion({ question, sessionId, journey, currentPage }) {
+export function askCompanion({ question, sessionId, journey, currentPage, interview }) {
   return postJson('/api/companion/ask', {
     question,
     session_id: sessionId,
     journey,
     current_page: currentPage ?? null,
+    interview: interview ?? null,
   });
 }

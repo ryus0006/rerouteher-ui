@@ -18,7 +18,7 @@ function Point({ item, tone }) {
         />
       </span>
       <p className="min-w-0">
-        <strong className="font-semibold text-ink">{item.area.replace(/[.!?]+$/, '')}.</strong>{' '}
+        <strong className="font-semibold text-ink">{item.title.replace(/[.!?]+$/, '')}.</strong>{' '}
         {item.detail}
       </p>
     </li>
@@ -32,7 +32,7 @@ function PointGroup({ title, items, tone, order }) {
       <h4 className="text-sm font-semibold text-ink-soft">{title}</h4>
       <ul className="mt-4 space-y-3.5">
         {items.map((item) => (
-          <Point key={item.area} item={item} tone={tone} />
+          <Point key={item.criterion_id ?? item.title} item={item} tone={tone} />
         ))}
       </ul>
     </section>
@@ -52,7 +52,9 @@ function Transcript({ attempt, foldable }) {
     <figure className="iv-reveal" style={{ '--i': 5 }}>
       <figcaption className="flex items-baseline gap-3 text-sm text-ink-soft">
         <span className="font-semibold text-ink">Your answer</span>
-        <span className="tabular">{clock(attempt.seconds)}</span>
+        {attempt.duration_s != null && (
+          <span className="tabular">{clock(Math.round(attempt.duration_s))}</span>
+        )}
       </figcaption>
       <blockquote id={textId} className="iv-transcript" data-folded={folded || undefined}>
         {attempt.transcript}
@@ -73,13 +75,29 @@ function Transcript({ attempt, foldable }) {
 }
 
 /**
- * One recorded answer with its feedback: summary, top improvement, remaining
- * points, then the transcript. If feedback fails, the transcript is kept and a
- * retry action is shown.
+ * One saved answer with its server feedback: summary, top improvement, remaining
+ * points, then the transcript. On a feedback error the transcript is kept and a
+ * retry action is shown. When the content has been purged for privacy, only a
+ * note is shown.
  */
-export default function AttemptView({ attempt, reviewing, feedbackError, onRetryFeedback }) {
-  const { feedback } = attempt;
-  const [next, ...alsoImprove] = feedback?.to_improve ?? [];
+export default function AttemptView({ attempt, reviewing, onRetryFeedback }) {
+  const ready = attempt.feedback_status === 'ready';
+  const failed = attempt.feedback_status === 'error';
+  const strengths = attempt.strengths ?? [];
+  const improvements = attempt.improvements ?? [];
+  const [next, ...alsoImprove] = improvements;
+
+  if (attempt.content_expired) {
+    return (
+      <div role="note" className="iv-alert">
+        <InterviewIcon name="alert" className="size-5 shrink-0 text-ink-faint" />
+        <p className="min-w-0 flex-1">
+          This answer and its feedback have been cleared to protect your privacy. Record the
+          question again for fresh feedback.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div>
@@ -89,25 +107,23 @@ export default function AttemptView({ attempt, reviewing, feedbackError, onRetry
         </p>
       )}
 
-      {!reviewing && !feedback && (
+      {!reviewing && failed && (
         <div role="alert" className="iv-alert mb-10">
           <InterviewIcon name="alert" className="size-5 shrink-0 text-pink-600" />
-          <p className="min-w-0 flex-1">
-            {feedbackError ?? 'Feedback for this answer is not ready.'} Your answer is saved.
-          </p>
+          <p className="min-w-0 flex-1">Feedback could not be generated. Your answer is saved.</p>
           <PillButton icon="retry" iconSide="start" onClick={onRetryFeedback}>
-            Get feedback
+            Try feedback again
           </PillButton>
         </div>
       )}
 
-      {feedback && (
+      {ready && (
         <section aria-label="Feedback on your answer" className="mb-14">
           <p className="iv-reveal text-sm font-semibold text-pink-600" style={{ '--i': 0 }}>
             Feedback
           </p>
           <p className="iv-verdict iv-reveal" style={{ '--i': 1 }}>
-            {feedback.summary}
+            {attempt.feedback_summary}
           </p>
 
           {next && (
@@ -118,7 +134,7 @@ export default function AttemptView({ attempt, reviewing, feedbackError, onRetry
               <div className="min-w-0">
                 <p className="text-sm font-semibold text-pink-600">Try this next time</p>
                 <p className="mt-1 font-display text-xl font-bold tracking-[-0.01em] text-ink">
-                  {next.area}
+                  {next.title}
                 </p>
                 <p className="mt-1 max-w-[58ch] text-base leading-relaxed text-ink-soft">
                   {next.detail}
@@ -128,12 +144,7 @@ export default function AttemptView({ attempt, reviewing, feedbackError, onRetry
           )}
 
           <div className="mt-10 grid gap-x-12 gap-y-8 lg:grid-cols-2">
-            <PointGroup
-              order={3}
-              title="What worked well"
-              items={feedback.worked_well ?? []}
-              tone="good"
-            />
+            <PointGroup order={3} title="What worked well" items={strengths} tone="good" />
             <PointGroup
               order={4}
               title="Also worth working on"
@@ -144,10 +155,9 @@ export default function AttemptView({ attempt, reviewing, feedbackError, onRetry
         </section>
       )}
 
-      <Transcript
-        attempt={attempt}
-        foldable={Boolean(feedback) && attempt.transcript.length > FOLD_AFTER}
-      />
+      {attempt.transcript && (
+        <Transcript attempt={attempt} foldable={ready && attempt.transcript.length > FOLD_AFTER} />
+      )}
     </div>
   );
 }

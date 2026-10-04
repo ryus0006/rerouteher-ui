@@ -2,6 +2,22 @@ import '@testing-library/jest-dom/vitest';
 import { afterAll, afterEach, beforeAll } from 'vitest';
 import { server } from '../src/mocks/server.js';
 
+class IntersectionObserverMock {
+  observe() {}
+
+  unobserve() {}
+
+  disconnect() {}
+
+  takeRecords() {
+    return [];
+  }
+}
+
+if (typeof globalThis.IntersectionObserver === 'undefined') {
+  globalThis.IntersectionObserver = IntersectionObserverMock;
+}
+
 // The jsdom environment does not expose Storage on the test global.
 class MemoryStorage {
   #entries = new Map();

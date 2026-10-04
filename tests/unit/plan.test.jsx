@@ -430,6 +430,13 @@ describe('employer fit finder', () => {
 
     const maybank = screen.getByRole('heading', { name: 'Maybank' }).closest('article');
     expect(within(maybank).getByText('Strong match')).toBeVisible();
+    expect(within(maybank).getByText('Hiring for your role.')).toBeVisible();
+    expect(within(maybank).getByText('UX Designer, Digital Banking')).toBeVisible();
+    expect(within(maybank).getByText(/Found 27 Sept? 2026/)).toBeVisible();
+    expect(within(maybank).getByRole('link', { name: /Open job/ })).toHaveAttribute(
+      'href',
+      'https://www.maybank.com/'
+    );
 
     // The report is linked once per company, not per priority.
     const sources = within(maybank).getAllByRole('link', { name: /Sustainability Report/ });
@@ -469,6 +476,17 @@ describe('employer fit finder', () => {
       await screen.findByRole('heading', { name: 'What matters most for your return?' })
     ).toBeVisible();
     expect(router.state.location.pathname).toBe('/plan/employers');
+  });
+
+  it('distinguishes temporary job-search unavailability from an empty search', async () => {
+    useIntakeStore.setState({
+      employerPriorities: ['flexible_work'],
+      selectedRole: { role: 'Unavailable role', role_id: 'role_unavailable' },
+    });
+    open(['/plan/employers/matches']);
+
+    expect(await screen.findByText(/Job openings are temporarily unavailable/i)).toBeVisible();
+    expect(screen.queryByText(/No current openings were found for this target role/i)).toBeNull();
   });
 });
 

@@ -3,53 +3,33 @@ import { PRACTICE_FOCUS } from '../../api/interview.js';
 import PillButton from './PillButton.jsx';
 
 /**
- * Selects the target role and practice focus used to generate questions.
- *
- * Changes are held in local state until confirmed, so closing the panel
- * discards them. `upcoming` is the number of unanswered questions a confirmed
- * change would replace; zero means a new set starts.
+ * Selects the target role and practice focus for a session. Choices are held in
+ * local state until confirmed, so closing the panel discards them. Confirming
+ * creates (or opens) the server session for that role and focus.
  */
 export default function SetupPanel({
   roles,
   setup,
-  midSet,
-  upcoming,
   pending,
   error,
   onConfirm,
   onCancel,
+  canCancel,
 }) {
   const [roleId, setRoleId] = useState(setup.role.role_id);
   const [focus, setFocus] = useState(setup.focus);
   const roleFieldId = useId();
 
-  const role = roles.find((candidate) => candidate.role_id === roleId) ?? setup.role;
-  const unchanged = roleId === setup.role.role_id && focus === setup.focus;
-
-  let action = 'Start practice';
-  if (midSet) {
-    action =
-      upcoming > 0
-        ? `Use for the next ${upcoming === 1 ? 'question' : `${upcoming} questions`}`
-        : 'Start a new set';
-  }
-
   return (
     <section className="iv-bezel" aria-labelledby="interview-setup-title">
       <div className="iv-bezel-core">
         <h2 id="interview-setup-title" className="font-display text-xl font-bold text-ink">
-          {!midSet
-            ? 'Set up your practice'
-            : upcoming > 0
-              ? 'Change your setup'
-              : 'Set up your next set'}
+          Set up your practice
         </h2>
         <p className="mt-1 max-w-[62ch] text-sm leading-relaxed text-ink-soft">
-          {!midSet
-            ? 'Five questions, answered out loud. You get feedback after each one and can try any question again.'
-            : upcoming > 0
-              ? 'Questions you have answered keep their transcript and feedback. Only the questions still ahead change.'
-              : 'Five new questions you have not had before. Feedback from earlier sets still counts towards your areas to improve.'}
+          Five questions, answered out loud. You get feedback after each one and can try any
+          question again. Your answers and feedback are saved, so you can come back to this set
+          later.
         </p>
 
         <div className="mt-8 grid gap-8">
@@ -109,14 +89,14 @@ export default function SetupPanel({
           <PillButton
             tone="accent"
             icon="right"
-            disabled={pending || (midSet && upcoming > 0 && unchanged)}
-            onClick={() => onConfirm({ role, focus })}
+            disabled={pending}
+            onClick={() => onConfirm({ roleId, focus })}
           >
-            {pending ? 'Preparing questions' : action}
+            {pending ? 'Preparing questions' : 'Start practice'}
           </PillButton>
-          {midSet && (
+          {canCancel && (
             <PillButton disabled={pending} onClick={onCancel}>
-              {upcoming > 0 ? 'Keep current setup' : 'Cancel'}
+              Cancel
             </PillButton>
           )}
         </div>

@@ -6,6 +6,8 @@ import { ArrowUp, ArrowUpRight, X } from '@phosphor-icons/react';
 import { askCompanion } from '../../api/companion.js';
 import useSmoothNavigate from '../../hooks/useSmoothNavigate.js';
 import { useIntakeStore } from '../../store/intakeStore.js';
+import { useInterviewStore } from '../../store/interviewStore.js';
+import { buildInterviewContext } from '../../lib/interviewContext.js';
 import { useCompanionStore } from '../../store/companionStore.js';
 import HeraBot from './HeraBot.jsx';
 import ProfileDraft from './ProfileDraft.jsx';
@@ -120,6 +122,12 @@ const BUILD_GREETING =
 const BUILD_GREETING_WITH_CV =
   'I’ve read your CV. Now let’s add your time away. What filled your days during your break?';
 
+const INTERVIEW_OPENERS = [
+  'How should I approach this question?',
+  'Help me understand my feedback',
+  'What would a good answer sound like?',
+];
+
 /** Returns a per-browser conversation id so history survives reloads. */
 function getSessionId() {
   const KEY = 'rerouteher.companionSession';
@@ -172,6 +180,7 @@ export default function Companion({ defaultMode = 'ask' }) {
   // An explicit mode from `openCompanion` takes precedence over the route default.
   const building = (open ? mode : defaultMode) === 'build';
   const buildGreeting = cv ? BUILD_GREETING_WITH_CV : BUILD_GREETING;
+  const askOpeners = location.pathname === '/interview-practice' ? INTERVIEW_OPENERS : ASK_OPENERS;
 
   useEffect(() => {
     if (!open) return undefined;
@@ -255,6 +264,13 @@ export default function Companion({ defaultMode = 'ask' }) {
           roleSkillsOfferedForRoleId,
         },
         currentPage: location.pathname,
+        interview:
+          location.pathname === '/interview-practice'
+            ? buildInterviewContext(
+                useInterviewStore.getState().current,
+                useInterviewStore.getState().index
+              )
+            : null,
       });
 
       // Track which role the checklist was offered for so it is not offered again.
@@ -409,7 +425,7 @@ export default function Companion({ defaultMode = 'ask' }) {
                   <div>
                     <p className="text-xs font-semibold text-ink-faint">Try asking</p>
                     <ul className="mt-3 space-y-2">
-                      {ASK_OPENERS.map((opener, at) => (
+                      {askOpeners.map((opener, at) => (
                         <li key={opener} className="hera-rise" style={{ '--i': at + 1 }}>
                           <button
                             type="button"

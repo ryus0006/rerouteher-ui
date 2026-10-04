@@ -21,6 +21,18 @@ function matchLabel(met, total) {
   return { text: 'Partial match', tone: 'text-ink-soft' };
 }
 
+function formatFoundAt(value) {
+  if (!value) return 'date unavailable';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return new Intl.DateTimeFormat('en-GB', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+    timeZone: 'UTC',
+  }).format(date);
+}
+
 const CHECK_PATH = 'm3.5 8.5 3 3 6-7';
 
 /** Circular arrow badge placed at the inner edge of a pill button. */
@@ -179,14 +191,16 @@ function EmployerCard({ employer, featured = false }) {
                 )}
               </div>
               <p className="mt-0.5 text-sm text-ink-soft">
-                {employer.industry} · {employer.location}
+                {employer.location ? `${employer.industry} · ${employer.location}` : employer.industry}
               </p>
             </div>
           </div>
 
-          <p className="mt-5 max-w-[60ch] text-[0.9375rem] leading-relaxed text-ink-soft">
-            {employer.summary}
-          </p>
+          {employer.summary && !employer.summary.trimStart().startsWith('{') && (
+            <p className="mt-5 max-w-[60ch] text-[0.9375rem] leading-relaxed text-ink-soft">
+              {employer.summary}
+            </p>
+          )}
 
           {/* Pinned to the bottom of the column. */}
           <div className="mt-auto pt-6">
@@ -195,11 +209,11 @@ function EmployerCard({ employer, featured = false }) {
                 <div className="min-w-0 flex-1">
                   <p className="flex items-center gap-2 text-[0.625rem] font-semibold uppercase tracking-[0.16em] text-ink-faint">
                     <span aria-hidden="true" className="size-1.5 rounded-full bg-verify" />
-                    Hiring now
+                    Hiring for your role.
                   </p>
                   <p className="mt-1 font-semibold text-ink">{employer.job.title}</p>
                   <p className="mt-0.5 text-xs text-ink-faint">
-                    Found {employer.job.found_on} · A listing may have closed since.
+                    Found {formatFoundAt(employer.job.found_at)} · A listing may have closed since.
                   </p>
                 </div>
 
@@ -217,16 +231,20 @@ function EmployerCard({ employer, featured = false }) {
             )}
 
             <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2">
-              <a
-                href={employer.website}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="group -ml-1 inline-flex items-center gap-2 rounded-full py-0.5 pl-1 text-sm font-semibold text-ink transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
-              >
-                View company details
-                <span className="sr-only">, opens {employer.name} in a new tab</span>
-                <ArrowBadge className="size-6 bg-canvas-sunk" />
-              </a>
+              {employer.website ? (
+                <a
+                  href={employer.website}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="group -ml-1 inline-flex items-center gap-2 rounded-full py-0.5 pl-1 text-sm font-semibold text-ink transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
+                >
+                  View company details
+                  <span className="sr-only">, opens {employer.name} in a new tab</span>
+                  <ArrowBadge className="size-6 bg-canvas-sunk" />
+                </a>
+              ) : (
+                <span />
+              )}
 
               {employer.report ? (
                 <p className="text-xs text-ink-faint">
@@ -360,6 +378,7 @@ export default function EmployerMatches() {
   const user = useAccountStore((state) => state.user);
 
   const [employers, setEmployers] = useState(null);
+  const [jobSearch, setJobSearch] = useState(null);
   const [error, setError] = useState(null);
 
   const chosen = priorities ?? [];
@@ -370,12 +389,12 @@ export default function EmployerMatches() {
 
     let live = true;
 
-    matchEmployers({ priorities: key.split('|'), targetRoleId: selectedRole?.role_id })
+    const targetRoleId = selectedRole?.role_id;
+    matchEmployers({ priorities: key.split('|'), targetRoleId })
       .then((result) => {
         if (!live) return;
-        setEmployers(
-          [...result.employers].sort((a, b) => Number(Boolean(b.job)) - Number(Boolean(a.job)))
-        );
+        setEmployers(result.employers);
+        setJobSearch(result.job_search);
         // Mirror into the store so the companion can reference the matches.
         setEmployerMatches(result.employers);
         setError(null);
@@ -385,7 +404,7 @@ export default function EmployerMatches() {
     return () => {
       live = false;
     };
-  }, [key, gapResult, selectedRole, setEmployerMatches]);
+  }, [key, gapResult, selectedRole?.role_id, setEmployerMatches]);
 
   if (!snapshot || !gapResult) return <Navigate to="/diagnostic/gap" replace />;
   // No priorities selected: redirect to the adjust page.
@@ -447,10 +466,17 @@ export default function EmployerMatches() {
           </p>
         )}
 
-        {employers?.length > 0 && !anyJob && (
+        {employers?.length > 0 && !anyJob && jobSearch?.status === 'empty' && (
           <p className="mt-12 rounded-2xl bg-ink/[0.03] px-5 py-3.5 text-sm text-ink-soft ring-1 ring-ink/[0.06]">
             No current openings were found for this target role among these employer matches. Your
             employer-fit results are still shown below.
+          </p>
+        )}
+
+        {jobSearch?.status === 'temporarily_unavailable' && (
+          <p className="mt-12 rounded-2xl bg-ink/[0.03] px-5 py-3.5 text-sm text-ink-soft ring-1 ring-ink/[0.06]">
+            Job openings are temporarily unavailable. Your employer-fit results are still shown
+            below.
           </p>
         )}
 
