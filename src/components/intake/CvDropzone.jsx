@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import CvSheet from './CvSheet.jsx';
 
 /**
  * Drag-and-drop or browse for a single PDF. The whole box is the label, so a
@@ -33,37 +34,18 @@ export default function CvDropzone({ onSelect, disabled = false }) {
       }}
       onDragLeave={() => setDragging(false)}
       onDrop={handleDrop}
-      className={[
-        'block rounded-2xl border border-dashed p-8 text-center transition',
-        'has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-blue-600',
-        dragging ? 'border-pink-500 bg-pink-100' : 'border-line-strong bg-canvas',
-        disabled ? 'opacity-50' : 'cursor-pointer hover:border-ink/30 hover:bg-canvas-sunk',
-      ].join(' ')}
+      data-dragging={dragging || undefined}
+      data-disabled={disabled || undefined}
+      className="cv-drop"
     >
-      <span
-        aria-hidden="true"
-        className="mx-auto flex size-12 items-center justify-center rounded-2xl border border-line bg-surface text-pink-600"
-      >
-        <svg
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          className="size-6.5"
-        >
-          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z" />
-          <path d="M14 2v6h6" />
-          <path d="M12 18v-6" />
-          <path d="m9 15 3-3 3 3" />
-        </svg>
-      </span>
+      <CvSheet state={disabled ? 'reading' : dragging ? 'dragging' : 'idle'} />
 
-      <span className="mt-3 block text-sm font-medium text-ink">
-        Drag a file, or click to browse
+      <span className="min-w-0">
+        <span className="block font-display text-xl font-bold tracking-[-0.015em] text-ink">
+          Drag a file, or click to browse
+        </span>
+        <span className="cv-drop-note">PDF, up to 10 MB</span>
       </span>
-      <span className="mt-1 block text-xs text-ink-faint">PDF, up to 10 MB</span>
 
       <input
         type="file"

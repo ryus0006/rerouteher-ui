@@ -1,5 +1,8 @@
 import { motion, useReducedMotion, useScroll, useTransform } from 'motion/react';
 import useReveal from '../../hooks/useReveal.js';
+import figmaLogo from '../../assets/logos/figma.png';
+import youtubeLogo from '../../assets/logos/youtube.png';
+import nngroupLogo from '../../assets/logos/nngroup.png';
 
 function Tick() {
   return (
@@ -58,9 +61,24 @@ function InterviewPreview() {
   );
 }
 
+/* Two employers from the sample data, with the logo tile colours the Employer
+   fit page uses and the support each one reports. Counted against four
+   priorities: flexible work, childcare, parental support, returning to work. */
 const EMPLOYERS = [
-  { name: 'Listed bank', place: 'Kuala Lumpur', met: 3 },
-  { name: 'Energy group', place: 'Kuala Lumpur', met: 4 },
+  {
+    name: 'PETRONAS',
+    place: 'Kuala Lumpur',
+    logo: { bg: '#00a19c', fg: '#ffffff' },
+    met: 3,
+    shows: ['Flexible Work', 'Returner programme'],
+  },
+  {
+    name: 'Maybank',
+    place: 'Kuala Lumpur',
+    logo: { bg: '#ffcc00', fg: '#1f2a44' },
+    met: 2,
+    shows: ['Flexible Work', 'Childcare'],
+  },
 ];
 
 function EmployerPreview() {
@@ -70,8 +88,12 @@ function EmployerPreview() {
         <Panel key={employer.name} className="py-3">
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-3">
-              <span className="flex size-8 items-center justify-center rounded-lg bg-canvas-sunk text-xs font-bold text-ink-soft">
-                {employer.name[0]}
+              <span
+                aria-hidden="true"
+                style={{ backgroundColor: employer.logo.bg, color: employer.logo.fg }}
+                className="flex h-10 w-14 shrink-0 items-center justify-center rounded-xl px-1 text-[0.5625rem] font-bold tracking-[0.02em] shadow-[inset_0_0_0_1px_rgb(44_33_66/0.06)]"
+              >
+                {employer.name}
               </span>
               <div>
                 <p className="text-sm font-semibold text-ink">{employer.name}</p>
@@ -81,12 +103,11 @@ function EmployerPreview() {
             <span className="text-xs font-semibold text-ink tabular">{employer.met} of 4</span>
           </div>
           <div className="mt-2.5 flex gap-3 text-xs text-ink-soft">
-            <span className="flex items-center gap-1">
-              <Tick /> Flexible Work
-            </span>
-            <span className="flex items-center gap-1">
-              <Tick /> Childcare
-            </span>
+            {employer.shows.map((item) => (
+              <span key={item} className="flex items-center gap-1">
+                <Tick /> {item}
+              </span>
+            ))}
           </div>
         </Panel>
       ))}
@@ -94,10 +115,12 @@ function EmployerPreview() {
   );
 }
 
+/* The first three courses from the sample learning plan, with their providers'
+   logos as the Learning page shows them. */
 const COURSES = [
-  { title: 'AI features in Figma', meta: 'Article · 30 min' },
-  { title: 'Variables and modes in Figma', meta: 'Article · 60 min' },
-  { title: 'Design tokens and theming', meta: 'Video · 2 hr' },
+  { title: 'AI features in Figma', meta: 'Figma Learn · Article', logo: figmaLogo },
+  { title: 'Midjourney for product design', meta: 'YouTube · Video', logo: youtubeLogo },
+  { title: 'AI in UX practice', meta: 'Nielsen Norman Group · Article', logo: nngroupLogo },
 ];
 
 function LearningPreview() {
@@ -107,14 +130,22 @@ function LearningPreview() {
         <ul className="divide-y divide-line">
           {COURSES.map((course, index) => (
             <li key={course.title} className="flex items-center gap-3 py-2.5">
-              <span
-                className={`flex size-5 shrink-0 items-center justify-center rounded-full border text-[0.625rem] ${
-                  index === 0
-                    ? 'border-verify bg-verify text-white'
-                    : 'border-line-strong text-transparent'
-                }`}
-              >
-                ✓
+              <span className="relative shrink-0">
+                <img
+                  src={course.logo}
+                  alt=""
+                  width="32"
+                  height="32"
+                  loading="lazy"
+                  decoding="async"
+                  className="size-8 rounded-lg object-contain shadow-[0_0_0_1px_rgb(44_33_66/0.06)]"
+                />
+                {/* The first course is marked done. */}
+                {index === 0 && (
+                  <span className="absolute -right-1 -bottom-1 flex size-4 items-center justify-center rounded-full bg-verify text-[0.5rem] text-white ring-2 ring-surface">
+                    ✓
+                  </span>
+                )}
               </span>
               <span className="min-w-0 flex-1">
                 <span className="block truncate text-sm font-medium text-ink">{course.title}</span>
@@ -131,24 +162,45 @@ function LearningPreview() {
   );
 }
 
+/* The CV builder's two update tools: suggested rewording for a line, and
+   skills from the user's profile that are not on the CV yet. */
+const CV_SKILLS = ['Time Management', 'Coordination', 'Design Systems'];
+
 function CvPreview() {
   return (
-    <div className="flex h-full items-center justify-center gap-4 px-8">
-      <Panel className="w-[45%] self-center opacity-80">
-        <p className="text-xs text-ink-faint">Before</p>
-        <p className="mt-2 text-sm font-semibold text-ink tabular">2018 – 2025</p>
-        <p className="mt-0.5 text-sm text-ink-faint italic">Career break</p>
-      </Panel>
-      <span aria-hidden="true" className="font-display text-2xl text-ink-faint">
-        →
-      </span>
-      <Panel className="w-[50%]">
-        <p className="text-xs text-pink-600">Tailored for Senior UX/UI Designer</p>
-        <p className="mt-2 text-sm font-semibold text-ink tabular">2018 – 2025 · Career break</p>
-        <p className="mt-1 text-[0.8125rem] leading-relaxed text-ink-soft">
-          Full-time caregiving. Managed family schedules and the household budget.
+    <div className="flex h-full items-center justify-center gap-3 px-7">
+      <Panel className="w-[58%]">
+        <p className="text-xs text-ink-faint">Experience · Senior UX Designer</p>
+        <p className="mt-1.5 text-[0.8125rem] leading-relaxed text-ink-soft">
+          Designed screens for the mobile banking app.
         </p>
-        <p className="mt-2 text-[0.8125rem] text-ink">Time Management · Coordination</p>
+        <div className="mt-2.5 rounded-xl bg-pink-100 p-2.5 shadow-[inset_0_0_0_1px_rgb(190_63_108/0.15)]">
+          <p className="text-[0.6875rem] font-semibold text-pink-600">Suggested wording</p>
+          <p className="mt-1 text-[0.8125rem] leading-relaxed text-ink">
+            Led the design of mobile banking screens, from user research to developer handoff.
+          </p>
+          <div className="mt-2 flex gap-1.5">
+            <span className="rounded-full bg-ink px-2.5 py-1 text-[0.6875rem] font-semibold text-white">
+              Use this
+            </span>
+            <span className="rounded-full px-2 py-1 text-[0.6875rem] font-medium text-ink-soft">
+              Try another
+            </span>
+          </div>
+        </div>
+      </Panel>
+      <Panel className="w-[38%] self-center">
+        <p className="text-xs font-semibold text-ink">Add skills from your profile</p>
+        <ul className="mt-2.5 flex flex-wrap gap-1.5">
+          {CV_SKILLS.map((skill) => (
+            <li
+              key={skill}
+              className="rounded-full bg-canvas-sunk px-2.5 py-1 text-[0.6875rem] font-medium text-ink"
+            >
+              <span className="text-pink-600">+</span> {skill}
+            </li>
+          ))}
+        </ul>
       </Panel>
     </div>
   );
@@ -157,6 +209,7 @@ function CvPreview() {
 const TOOLS = [
   {
     id: 'interview',
+    tone: 'pink',
     span: 'lg:col-span-7',
     tool: 'Interview practice',
     title: 'Rehearse out loud, without the pressure',
@@ -165,6 +218,7 @@ const TOOLS = [
   },
   {
     id: 'employers',
+    tone: 'indigo',
     span: 'lg:col-span-5',
     tool: 'Employer fit',
     title: 'Employers who fit your life',
@@ -173,6 +227,7 @@ const TOOLS = [
   },
   {
     id: 'learning',
+    tone: 'amber',
     span: 'lg:col-span-5',
     tool: 'Learning plan',
     title: 'Learning that fits around life',
@@ -181,10 +236,11 @@ const TOOLS = [
   },
   {
     id: 'cv',
+    tone: 'violet',
     span: 'lg:col-span-7',
     tool: 'CV builder',
-    title: 'A CV that tells your break straight',
-    body: 'Reworded for the role you want, with your break written as experience. It only uses what you told us.',
+    title: 'Bring your CV up to date',
+    body: 'Add the skills we named for you, and let AI suggest stronger wording, line by line. Nothing changes until you accept it.',
     Preview: CvPreview,
   },
 ];
@@ -225,15 +281,24 @@ function Tile({ tool, index }) {
       <div className="land-core group flex h-full flex-col overflow-hidden">
         <div
           aria-hidden="true"
+          data-tone={tool.tone}
           className="land-well m-2 mb-0 h-72 overflow-hidden rounded-[calc(2rem-0.875rem)]"
         >
           <motion.div className="h-full" style={reduce ? undefined : { y: previewY }}>
-            <tool.Preview />
+            <div className="land-lift h-full">
+              <tool.Preview />
+            </div>
           </motion.div>
         </div>
 
         <div className="px-7 pt-6 pb-8">
-          <p className="text-sm font-semibold text-pink-600">{tool.tool}</p>
+          <p
+            data-tone={tool.tone}
+            className="land-tag flex items-center gap-2 text-sm font-semibold"
+          >
+            <span aria-hidden="true" className="size-1.5 rounded-full bg-current" />
+            {tool.tool}
+          </p>
           <h3 className="mt-1.5 font-display text-2xl font-bold tracking-[-0.02em] text-ink">
             {tool.title}
           </h3>

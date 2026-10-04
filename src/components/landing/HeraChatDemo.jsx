@@ -5,12 +5,12 @@ import HeraBot from '../companion/HeraBot.jsx';
 
 const EASE = [0.32, 0.72, 0, 1];
 
-/* Example conversation in build mode. Hera's opening line and the first
-   reply are the companion's own opener copy. */
+/* Example conversation in build mode. Hera's opening line is the companion's
+   own build-mode greeting. */
 const MESSAGES = [
   {
     from: 'hera',
-    text: 'No CV needed. Tell me about your work and your time away, and I will build your profile.',
+    text: 'No CV needed. Let’s start with your last job before your break. What did you do, and for roughly how long?',
   },
   { from: 'you', text: 'I was a teacher for six years, then home with my kids.' },
   { from: 'hera', text: 'Thank you. What filled your days while you were at home?' },

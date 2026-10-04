@@ -91,19 +91,25 @@ export default function CvRail({
             <p className="mt-1.5 text-sm leading-relaxed text-ink-soft">
               Already in your journey, so safe to claim.
               {suggestedSkills.some((s) => s.relevant) && ` Marked ones fit ${role} best.`}
+              {suggestedSkills.some((s) => s.learned) &&
+                ' Learned ones come from focus areas you finished.'}
             </p>
             <ul className="mt-4 flex flex-wrap gap-2">
-              {suggestedSkills.map(({ skill, relevant }) => (
+              {suggestedSkills.map(({ skill, relevant, learned }) => (
                 <li key={skill}>
                   <button
                     type="button"
                     onClick={() => onAddSkill(skill)}
                     className="cv-skill-chip"
-                    data-relevant={relevant || undefined}
+                    data-relevant={relevant || learned || undefined}
                   >
                     <Plus weight="bold" className="size-3" aria-hidden="true" />
                     {skill}
-                    {relevant && <span className="cv-skill-fit">Fits role</span>}
+                    {learned ? (
+                      <span className="cv-skill-fit cv-skill-learned">Learned</span>
+                    ) : (
+                      relevant && <span className="cv-skill-fit">Fits role</span>
+                    )}
                     <span className="sr-only">, add to your CV</span>
                   </button>
                 </li>

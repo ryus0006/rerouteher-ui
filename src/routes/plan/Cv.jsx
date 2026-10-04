@@ -159,6 +159,7 @@ export default function Cv() {
   const selectedRole = useIntakeStore((state) => state.selectedRole);
   const gapResult = useIntakeStore((state) => state.gapResult);
   const confirmedSkills = useIntakeStore((state) => state.confirmedSkills);
+  const learnedSkills = useIntakeStore((state) => state.learnedSkills);
   const storedBook = useIntakeStore((state) => state.cvDraft);
   const setCvDraft = useIntakeStore((state) => state.setCvDraft);
 
@@ -212,10 +213,18 @@ export default function Cv() {
   if (missing.length > 0 || !draft) return <MissingInformation missing={missing} />;
 
   const supported = supportedSkills({ snapshot, confirmedSkills });
-  const suggestedSkills = supported
-    .filter((skill) => !draft.skills.some((s) => s.toLowerCase() === skill.toLowerCase()))
-    .map((skill) => ({ skill, relevant: roleRelevant(skill, roleGap) }))
-    .sort((a, b) => Number(b.relevant) - Number(a.relevant));
+  const onCv = (skill) => draft.skills.some((s) => s.toLowerCase() === skill.toLowerCase());
+  // Focus areas finished on the learning plan come first.
+  const learned = learnedSkills
+    .map((entry) => entry.skill)
+    .filter((skill) => !onCv(skill) && !supported.includes(skill));
+  const suggestedSkills = [
+    ...learned.map((skill) => ({ skill, relevant: false, learned: true })),
+    ...supported
+      .filter((skill) => !onCv(skill))
+      .map((skill) => ({ skill, relevant: roleRelevant(skill, roleGap), learned: false }))
+      .sort((a, b) => Number(b.relevant) - Number(a.relevant)),
+  ];
 
   /** Applies an edit: contact fields to the shared details, everything else to the active role's draft. */
   const update = (change) => {

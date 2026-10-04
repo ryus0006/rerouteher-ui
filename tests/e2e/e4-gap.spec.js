@@ -143,7 +143,7 @@ test.describe('E4 — Role Readiness & Skill Gap', () => {
     await mockApi(page);
     await reachGap(page);
 
-    const met = page.getByRole('button', { name: /You meet 7 of 11 requirements/ });
+    const met = page.getByRole('button', { name: /You meet 7 of 15 requirements/ });
     await expect(met).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Missing for this role' })).toBeVisible();
 
@@ -241,8 +241,8 @@ test.describe('E4 — Role Readiness & Skill Gap', () => {
     await mockApi(page);
     await reachGap(page);
 
-    // 7 met + 3 focus areas + 1 also-missing must reconcile with "7 of 11".
-    await expect(page.getByRole('button', { name: /You meet 7 of 11 requirements/ })).toBeVisible();
+    // 7 met + 3 focus areas + 5 also-missing must reconcile with "7 of 15".
+    await expect(page.getByRole('button', { name: /You meet 7 of 15 requirements/ })).toBeVisible();
     await expect(page.getByText('Prompt Engineering for UX Workflows')).toBeVisible();
   });
 

@@ -54,7 +54,7 @@ function useAnswers() {
     },
     {
       id: 'activities',
-      label: 'What filled it',
+      label: 'During your break',
       // List activity labels rather than a count.
       items: activities.map((activity) => ACTIVITY_LABELS[activity] ?? activity),
       empty: 'Not answered yet',

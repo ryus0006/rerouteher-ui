@@ -139,23 +139,6 @@
   background: linear-gradient(168deg, #f6f2fb 0%, #eee7f6 55%, #e6dcf1 100%);
 }
 
-/* Keep the full-bleed photograph visible while supporting overlaid copy. */
-.learning-banner {
-  background: #f1ecf7;
-}
-
-/* Horizontal fade on wide screens (side-by-side layout); vertical fade below
-   the breakpoint (stacked layout). */
-.learning-banner-blend {
-  background: linear-gradient(180deg, transparent 55%, #f1ecf7 100%);
-}
-
-@media (min-width: 48rem) {
-  .learning-banner-blend {
-    background: linear-gradient(90deg, #f1ecf7 0%, rgb(241 236 247 / 0) 22%);
-  }
-}
-
 /* Card with a right-aligned illustration masked to fade out before the text column. */
 .card-with-illustration {
   position: relative;
@@ -189,6 +172,338 @@
     -webkit-mask-image: linear-gradient(90deg, transparent, black 68%);
   }
 }
+/* Intake progress: one segmented track, each step named under its segment. */
+.intake-steps {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0.375rem;
+}
+
+.intake-step {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.intake-step-track {
+  display: block;
+  height: 0.25rem;
+  overflow: hidden;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--color-ink) 9%, transparent);
+}
+
+.intake-step-fill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--color-ink);
+  transform: scaleX(0);
+  transform-origin: left;
+}
+
+.intake-step[data-state='complete'] .intake-step-fill {
+  transform: scaleX(1);
+}
+
+/* The current segment fills on arrival, in the brand pink. */
+.intake-step[data-state='current'] .intake-step-fill {
+  background: linear-gradient(90deg, var(--color-ink), var(--color-pink-600));
+  animation: intake-fill 900ms 150ms cubic-bezier(0.32, 0.72, 0, 1) both;
+}
+
+@keyframes intake-fill {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+.intake-step-number {
+  display: flex;
+  height: 1rem;
+  align-items: center;
+  margin-top: 0.75rem;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: var(--color-ink-faint);
+}
+
+.intake-step[data-state='current'] .intake-step-number {
+  color: var(--color-pink-600);
+}
+
+.intake-step[data-state='complete'] .intake-step-number {
+  color: var(--color-ink);
+}
+
+.intake-step-label {
+  margin-top: 0.125rem;
+  font-size: 0.8125rem;
+  line-height: 1.3;
+  color: var(--color-ink-faint);
+}
+
+.intake-step[data-state='current'] .intake-step-label {
+  font-weight: 600;
+  color: var(--color-ink);
+}
+
+.intake-step[data-state='complete'] .intake-step-label {
+  color: var(--color-ink-soft);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .intake-step[data-state='current'] .intake-step-fill {
+    animation: none;
+    transform: scaleX(1);
+  }
+}
+
+/* Upload CV card: a white surface on a soft, wide shadow. */
+.cv-card {
+  border-radius: 1.75rem;
+  background: var(--color-surface);
+  padding: 1.75rem;
+  box-shadow:
+    0 1px 2px rgb(44 33 66 / 0.04),
+    0 28px 56px -36px rgb(44 33 66 / 0.28);
+}
+
+.cv-card-alt {
+  margin-top: 1.25rem;
+  font-size: 0.875rem;
+  color: var(--color-ink-soft);
+}
+
+/* Dropzone and accepted file share one frame, so the page does not shift. */
+.cv-drop {
+  display: grid;
+  min-height: 15rem;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 2.5rem;
+  border-radius: 1.25rem;
+  border: 1.5px dashed var(--color-line-strong);
+  background:
+    radial-gradient(circle at 18% 50%, rgb(232 93 138 / 0.08), transparent 55%), var(--color-canvas);
+  padding: 1.75rem 2.5rem;
+  cursor: pointer;
+  transition:
+    background-color 500ms cubic-bezier(0.32, 0.72, 0, 1),
+    border-color 500ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.cv-drop:has(:focus-visible) {
+  outline: 2px solid var(--color-blue-600);
+  outline-offset: 2px;
+}
+
+.cv-drop[data-dragging] {
+  border-color: var(--color-pink-500);
+  background-color: var(--color-pink-100);
+}
+
+.cv-drop[data-disabled] {
+  cursor: progress;
+}
+
+.cv-drop[data-done] {
+  cursor: default;
+  border-color: transparent;
+  background:
+    radial-gradient(circle at 18% 50%, rgb(29 106 76 / 0.08), transparent 55%), var(--color-canvas);
+}
+
+.cv-drop-note {
+  margin-top: 0.5rem;
+  display: block;
+  font-size: 0.8125rem;
+  color: var(--color-ink-faint);
+}
+
+.cv-drop-remove {
+  margin-top: 1rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-ink-soft);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-color: var(--color-line-strong);
+}
+
+.cv-drop-remove:focus-visible {
+  outline: 2px solid var(--color-blue-600);
+  outline-offset: 2px;
+}
+
+/* Drawn CV page: a back sheet and a front sheet, both slightly turned. */
+.cv-sheet {
+  position: relative;
+  display: block;
+  width: 8.5rem;
+  height: 10.75rem;
+}
+
+.cv-sheet-back,
+.cv-sheet-front {
+  position: absolute;
+  inset: 0;
+  border-radius: 0.75rem;
+  background: var(--color-surface);
+  transition: transform 700ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.cv-sheet-back {
+  transform: rotate(7deg) translate(0.6rem, 0.2rem);
+  box-shadow: 0 0 0 1px var(--color-line);
+  opacity: 0.8;
+}
+
+.cv-sheet-front {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  overflow: hidden;
+  padding: 0.9rem 0.85rem;
+  transform: rotate(-4deg);
+  box-shadow:
+    0 0 0 1px var(--color-line),
+    0 18px 30px -18px rgb(44 33 66 / 0.35);
+}
+
+.cv-sheet[data-state='dragging'] .cv-sheet-front {
+  transform: rotate(0deg) translateY(-0.4rem);
+}
+
+.cv-sheet[data-state='dragging'] .cv-sheet-back {
+  transform: rotate(10deg) translate(0.9rem, 0.3rem);
+}
+
+.cv-sheet-head {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin-bottom: 0.25rem;
+}
+
+.cv-sheet-avatar {
+  width: 1.4rem;
+  height: 1.4rem;
+  flex-shrink: 0;
+  border-radius: 999px;
+  background: var(--color-canvas-sunk);
+}
+
+.cv-sheet-line {
+  display: block;
+  height: 0.3rem;
+  border-radius: 999px;
+  background: var(--color-canvas-sunk);
+}
+
+.cv-sheet-line-strong {
+  height: 0.4rem;
+  background: color-mix(in srgb, var(--color-ink) 22%, white);
+}
+
+.cv-sheet-skills {
+  display: flex;
+  gap: 0.25rem;
+  padding: 0.15rem 0;
+}
+
+.cv-sheet-skill {
+  display: block;
+  height: 0.6rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--color-pink-500) 30%, white);
+}
+
+.cv-sheet[data-state='done'] .cv-sheet-skill {
+  background: color-mix(in srgb, var(--color-pink-500) 55%, white);
+}
+
+/* Reading: a soft band passes down the page and the skill chips light in turn. */
+.cv-sheet-scan {
+  position: absolute;
+  inset: 0 0 auto;
+  height: 2.5rem;
+  background: linear-gradient(180deg, transparent, rgb(232 93 138 / 0.22), transparent);
+  opacity: 0;
+  transform: translateY(-2.5rem);
+}
+
+.cv-sheet[data-state='reading'] .cv-sheet-scan {
+  opacity: 1;
+  animation: cv-scan 1.6s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+}
+
+.cv-sheet[data-state='reading'] .cv-sheet-skill {
+  animation: cv-skill 1.6s cubic-bezier(0.32, 0.72, 0, 1) infinite;
+}
+
+.cv-sheet[data-state='reading'] .cv-sheet-skill:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.cv-sheet[data-state='reading'] .cv-sheet-skill:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+@keyframes cv-scan {
+  to {
+    transform: translateY(10.75rem);
+  }
+}
+
+@keyframes cv-skill {
+  50% {
+    background: var(--color-pink-500);
+  }
+}
+
+.cv-sheet-tick {
+  position: absolute;
+  right: -0.6rem;
+  bottom: 0.6rem;
+  display: flex;
+  width: 2rem;
+  height: 2rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: var(--color-verify);
+  color: white;
+  box-shadow: 0 0 0 3px var(--color-canvas);
+  opacity: 0;
+  transform: scale(0.6);
+  transition:
+    opacity 500ms cubic-bezier(0.32, 0.72, 0, 1),
+    transform 500ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.cv-sheet[data-state='done'] .cv-sheet-tick {
+  opacity: 1;
+  transform: scale(1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cv-sheet-back,
+  .cv-sheet-front,
+  .cv-sheet-tick {
+    transition: none;
+  }
+
+  .cv-sheet[data-state='reading'] .cv-sheet-scan,
+  .cv-sheet[data-state='reading'] .cv-sheet-skill {
+    animation: none;
+  }
+}
+
 .interview-select {
   width: 100%;
   appearance: none;
@@ -867,6 +1182,10 @@
   font-size: 0.6875rem;
 }
 
+.cv-skill-learned {
+  color: var(--color-verify);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .cv-rise,
   .cv-swap {
@@ -927,12 +1246,76 @@
   box-shadow: inset 0 0 0 1.5px rgb(190 63 108 / 0.3);
 }
 
-/* Preview well at the top of each tool tile. */
+/* Preview well at the top of each tool tile: a colour field in the tile's
+   tone (`data-tone`), lit from the top left, with a faint dot grid that
+   fades out towards the bottom right. */
 .land-well {
+  --well-light: #fde3ec;
+  --well-mid: #f3a3bf;
+  --well-deep: #e1709a;
+  position: relative;
+  isolation: isolate;
   background:
-    radial-gradient(80% 90% at 0% 0%, rgb(232 93 138 / 0.07), transparent 70%),
-    radial-gradient(70% 80% at 100% 100%, rgb(142 128 184 / 0.1), transparent 70%),
-    var(--color-canvas-sunk);
+    radial-gradient(90% 110% at 0% 0%, var(--well-light) 0%, transparent 62%),
+    radial-gradient(80% 100% at 100% 100%, var(--well-deep) 0%, transparent 70%), var(--well-mid);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.45),
+    inset 0 0 0 1px rgb(255 255 255 / 0.18);
+}
+
+.land-well::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background-image: radial-gradient(rgb(255 255 255 / 0.55) 1px, transparent 1.4px);
+  background-size: 18px 18px;
+  mask-image: radial-gradient(120% 120% at 0% 0%, #000 0%, transparent 70%);
+}
+
+.land-well[data-tone='indigo'] {
+  --well-light: #e4e7fb;
+  --well-mid: #a9b2e6;
+  --well-deep: #7480c9;
+}
+
+.land-well[data-tone='amber'] {
+  --well-light: #fff1dc;
+  --well-mid: #f9c98a;
+  --well-deep: #ee9f4f;
+}
+
+.land-well[data-tone='violet'] {
+  --well-light: #efeafb;
+  --well-mid: #c7bce8;
+  --well-deep: #9d8fcf;
+}
+
+/* Tool label above each tile title, in the tile's tone. */
+.land-tag {
+  --tag-ink: var(--color-pink-600);
+  color: var(--tag-ink);
+}
+
+.land-tag[data-tone='indigo'] {
+  --tag-ink: var(--color-blue-600);
+}
+
+.land-tag[data-tone='amber'] {
+  --tag-ink: var(--color-amber-700);
+}
+
+.land-tag[data-tone='violet'] {
+  --tag-ink: #6b5c9e;
+}
+
+/* Previews lift slightly inside the well while the tile is hovered. */
+.land-lift {
+  transition: transform 700ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.group:hover .land-lift {
+  transform: translateY(-6px) scale(1.015);
 }
 
 /* Nested card: a tinted outer tray with a concentric white core. */
@@ -1986,10 +2369,12 @@ main h1[tabindex='-1']:focus,
   .iv-orb-glow,
   .iv-orb-ring,
   .iv-reveal,
-  .iv-shimmer {
+  .iv-shimmer,
+  .hera-shimmer {
     animation: none !important;
   }
-  .iv-shimmer {
+  .iv-shimmer,
+  .hera-shimmer {
     color: var(--color-ink);
   }
   .iv-orb {
@@ -2272,6 +2657,41 @@ main h1[tabindex='-1']:focus,
   translate: 2px -1px;
 }
 
+/* "Hera is thinking": a soft highlight sweeps across the words. */
+.hera-shimmer {
+  background: linear-gradient(
+      90deg,
+      rgb(44 33 66 / 0.45) 0%,
+      var(--color-pink-600) 45%,
+      rgb(44 33 66 / 0.45) 60%
+    )
+    0 0 / 220% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* Pulse on the "Drafting" tag of the profile card. */
+.hera-live-dot {
+  box-shadow: 0 0 0 0 rgb(190 63 108 / 0.45);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .hera-shimmer {
+    animation: iv-shimmer 1.8s linear infinite;
+  }
+
+  .hera-live-dot {
+    animation: hera-live 1600ms cubic-bezier(0.32, 0.72, 0, 1) infinite;
+  }
+}
+
+@keyframes hera-live {
+  to {
+    box-shadow: 0 0 0 6px rgb(190 63 108 / 0);
+  }
+}
+
 .hera-you {
   border-radius: 1.25rem 1.25rem 0.35rem 1.25rem;
   background: #ebe6f8;
@@ -2350,5 +2770,742 @@ main h1[tabindex='-1']:focus,
   .hera-rise,
   .hera-launcher-text {
     animation: none;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Learning plan: focus areas, resource status, Up next shelf and the
+   floating finish panel.
+   ------------------------------------------------------------------------ */
+
+/* Focus-area tone, matching the landing page's tool tiles. */
+.lp-tone {
+  --tone: #e85d8a;
+  --tone-soft: #fbf0f4;
+  --tone-ink: var(--color-pink-600);
+}
+
+.lp-tone[data-tone='indigo'] {
+  --tone: #6e7bc0;
+  --tone-soft: #eef0f8;
+  --tone-ink: var(--color-blue-600);
+}
+
+.lp-tone[data-tone='amber'] {
+  --tone: #ee9f4f;
+  --tone-soft: #fff4e4;
+  --tone-ink: var(--color-amber-700);
+}
+
+.lp-tone[data-tone='violet'] {
+  --tone: #9d8fcf;
+  --tone-soft: #f2eefb;
+  --tone-ink: #6b5c9e;
+}
+
+.lp-hero {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  border-radius: 2rem;
+  background:
+    radial-gradient(60% 120% at 0% 0%, #fde3ec 0%, transparent 60%),
+    radial-gradient(50% 100% at 100% 100%, #e4e7fb 0%, transparent 70%), #f6f1f9;
+}
+
+.lp-hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background-image: radial-gradient(rgb(255 255 255 / 0.9) 1px, transparent 1.4px);
+  background-size: 18px 18px;
+  mask-image: radial-gradient(90% 120% at 0% 0%, #000 0%, transparent 65%);
+}
+
+/* Featured resource inside the hero. */
+.lp-feature {
+  border-radius: 1.5rem;
+  background: white;
+  box-shadow:
+    0 1px 2px rgb(44 33 66 / 0.04),
+    0 24px 50px -30px rgb(44 33 66 / 0.35);
+}
+
+/* Focus area in the resource list: no box, separated by space. */
+.lp-area {
+  scroll-margin-top: 2rem;
+  padding-top: 2.75rem;
+}
+
+.lp-area:first-of-type {
+  padding-top: 0;
+}
+
+/* A focus area just added from Up later rises into place. */
+.lp-area[data-entering] {
+  animation: lp-area-enter 900ms cubic-bezier(0.32, 0.72, 0, 1) both;
+}
+
+@keyframes lp-area-enter {
+  from {
+    opacity: 0;
+    transform: translateY(2rem);
+  }
+}
+
+/* Label opening each part of the plan: learning now, up later, finished. */
+.lp-chapter {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.lp-chapter-rule {
+  height: 1px;
+  flex: 1;
+  background: linear-gradient(
+    to right,
+    color-mix(in srgb, var(--color-ink-faint) 35%, transparent),
+    transparent
+  );
+}
+
+.lp-chapter-label {
+  font-size: 0.875rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-ink-soft);
+}
+
+/* Gaps not yet in the plan, after the focus areas. */
+.lp-later {
+  padding-top: 4.5rem;
+}
+
+.lp-later-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  border-radius: 1.25rem;
+  padding: 1rem 1.25rem;
+  transition: background-color 500ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+/* Empty dashed ring: the same footprint as a resource's status ring. */
+.lp-later-dot {
+  width: 1.5rem;
+  height: 1.5rem;
+  flex-shrink: 0;
+  border-radius: 999px;
+  border: 1.5px dashed color-mix(in srgb, var(--color-ink-faint) 70%, white);
+}
+
+.lp-later-next {
+  display: inline-flex;
+  border-radius: 999px;
+  background: var(--color-ink);
+  padding: 0.125rem 0.5rem;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  line-height: 1.4;
+  color: white;
+}
+
+/* Folds the rest of Up later; lines up with the skill names above it. */
+.lp-later-more {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  margin-top: 0.5rem;
+  margin-left: 3.75rem;
+  border-radius: 999px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-ink-soft);
+}
+
+.lp-later-more[data-open] .lp-done-caret {
+  transform: rotate(180deg);
+}
+
+.lp-later-more:focus-visible {
+  outline: 2px solid var(--color-blue-600);
+  outline-offset: 4px;
+}
+
+/* Finished focus area: one line, opening to its resources. */
+.lp-done-area {
+  scroll-margin-top: 2rem;
+  border-radius: 1.25rem;
+  padding: 0.875rem 1.25rem;
+  transition: background-color 500ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.lp-done-area[data-open] {
+  background: color-mix(in srgb, var(--color-verify-soft) 55%, white);
+}
+
+.lp-done-tick {
+  display: flex;
+  width: 1.5rem;
+  height: 1.5rem;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: var(--color-verify);
+  color: white;
+}
+
+.lp-done-caret {
+  transition: transform 500ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.lp-done-area[data-open] .lp-done-caret {
+  transform: rotate(180deg);
+}
+
+/* Finished focus areas in the rail: one quiet line each. */
+.lp-rail-done {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 0.625rem;
+  border-radius: 0.875rem;
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--color-ink-soft);
+  transition:
+    background-color 400ms cubic-bezier(0.32, 0.72, 0, 1),
+    color 400ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.lp-rail-done:hover {
+  background: color-mix(in srgb, var(--color-verify-soft) 55%, white);
+  color: var(--color-ink);
+}
+
+.lp-rail-done:focus-visible {
+  outline: 2px solid var(--color-blue-600);
+  outline-offset: 2px;
+}
+
+.lp-rail-done .lp-done-tick {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+/* Link from the rail to Up later. */
+.lp-rail-later {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 0.75rem;
+  border-radius: 1.125rem;
+  padding: 0.75rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--color-ink-soft);
+  transition:
+    background-color 400ms cubic-bezier(0.32, 0.72, 0, 1),
+    color 400ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.lp-rail-later:hover {
+  background: var(--color-canvas-sunk);
+  color: var(--color-ink);
+}
+
+.lp-rail-later:focus-visible {
+  outline: 2px solid var(--color-blue-600);
+  outline-offset: 2px;
+}
+
+.lp-rail-later-icon {
+  display: flex;
+  width: 2rem;
+  height: 2rem;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.75rem;
+  border: 1.5px dashed color-mix(in srgb, var(--color-ink-faint) 70%, white);
+}
+
+/* Focus area in the sticky rail. */
+.lp-rail-item {
+  display: flex;
+  width: 100%;
+  align-items: flex-start;
+  gap: 0.75rem;
+  border-radius: 1.125rem;
+  padding: 0.75rem;
+  transition:
+    background-color 400ms cubic-bezier(0.32, 0.72, 0, 1),
+    box-shadow 400ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.lp-rail-item:hover {
+  background: color-mix(in srgb, var(--tone) 7%, white);
+}
+
+.lp-rail-item[aria-current='true'] {
+  background: white;
+  box-shadow: 0 14px 30px -20px rgb(44 33 66 / 0.35);
+}
+
+.lp-rail-item:focus-visible {
+  outline: 2px solid var(--color-blue-600);
+  outline-offset: 2px;
+}
+
+.lp-eyebrow {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--color-ink-faint);
+}
+
+.lp-area-icon {
+  display: flex;
+  width: 2.75rem;
+  height: 2.75rem;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.875rem;
+  background: var(--tone-soft);
+  color: var(--tone-ink);
+  transition:
+    background-color 500ms cubic-bezier(0.32, 0.72, 0, 1),
+    color 500ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.lp-area-icon-sm {
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 0.75rem;
+}
+
+[data-complete] > .lp-area-icon,
+[data-complete] .lp-area-icon {
+  background: var(--color-verify);
+  color: white;
+  box-shadow: 0 6px 16px -8px rgb(29 106 76 / 0.6);
+}
+
+.lp-area-tag {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: var(--tone-ink);
+}
+
+/* Status pill: saved, in progress, finished. */
+.lp-status {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 0.125rem 0.5rem;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.lp-status[data-status='saved'] {
+  background: var(--color-canvas-sunk);
+  color: var(--color-ink-soft);
+}
+
+.lp-status[data-status='started'] {
+  background: var(--color-amber-100);
+  color: var(--color-amber-700);
+}
+
+.lp-status[data-status='done'] {
+  background: var(--color-verify);
+  color: white;
+}
+
+/* Resource row. */
+.lp-row {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 0.75rem 1rem;
+  border-radius: 1.25rem;
+  padding: 1rem 1.25rem;
+  transition: background-color 500ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+@media (min-width: 40rem) {
+  .lp-row {
+    flex-wrap: nowrap;
+  }
+}
+
+/* Status ring. */
+.lp-ring {
+  display: flex;
+  flex-shrink: 0;
+  border-radius: 999px;
+  padding: 0.25rem;
+  margin: -0.0625rem -0.25rem 0;
+  transition: transform 300ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.lp-ring:active {
+  transform: scale(0.9);
+}
+
+.lp-ring:focus-visible {
+  outline: 2px solid var(--color-blue-600);
+  outline-offset: 2px;
+}
+
+.lp-ring-track {
+  fill: white;
+  stroke: var(--color-line-strong);
+  stroke-width: 1.5;
+  transition: stroke 300ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.lp-ring:hover .lp-ring-track {
+  stroke: var(--color-verify);
+}
+
+.lp-ring-fill {
+  fill: var(--color-verify);
+  transform: scale(0);
+  transform-origin: center;
+  transform-box: fill-box;
+  transition: transform 500ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.lp-ring-tick {
+  fill: none;
+  stroke: white;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 16;
+  stroke-dashoffset: 16;
+  transition: stroke-dashoffset 400ms cubic-bezier(0.32, 0.72, 0, 1) 150ms;
+}
+
+.lp-ring:not([data-status='done']):hover .lp-ring-tick {
+  stroke: var(--color-verify);
+  stroke-dashoffset: 0;
+  opacity: 0.45;
+}
+
+.lp-ring[data-status='done'] .lp-ring-fill {
+  transform: scale(1);
+}
+
+.lp-ring[data-status='done'] .lp-ring-tick {
+  stroke-dashoffset: 0;
+}
+
+/* Icon-only bookmark button. */
+.lp-icon-button {
+  display: flex;
+  width: 2.25rem;
+  height: 2.25rem;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  color: var(--color-ink-soft);
+  transition:
+    background-color 300ms cubic-bezier(0.32, 0.72, 0, 1),
+    color 300ms cubic-bezier(0.32, 0.72, 0, 1),
+    transform 300ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.lp-icon-button:hover {
+  background: var(--color-canvas-sunk);
+  color: var(--color-ink);
+}
+
+.lp-icon-button:active {
+  transform: scale(0.92);
+}
+
+.lp-icon-button[aria-pressed='true'],
+.lp-queue-card .lp-icon-button {
+  color: var(--color-pink-600);
+}
+
+.lp-icon-button:focus-visible,
+.lp-open:focus-visible,
+.lp-primary:focus-visible,
+.lp-ghost:focus-visible,
+.lp-close:focus-visible,
+.lp-next-tile:focus-visible,
+.lp-tile-action:focus-visible {
+  outline: 2px solid var(--color-blue-600);
+  outline-offset: 2px;
+}
+
+/* Open link with a nested arrow. */
+.lp-open {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  border-radius: 999px;
+  background: var(--color-canvas-sunk);
+  padding: 0.3rem 0.3rem 0.3rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-ink);
+  white-space: nowrap;
+  transition:
+    background-color 400ms cubic-bezier(0.32, 0.72, 0, 1),
+    transform 300ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.lp-open:hover {
+  background: #e9e5f1;
+}
+
+.lp-open:active {
+  transform: scale(0.98);
+}
+
+.lp-open-icon,
+.lp-primary-icon {
+  display: flex;
+  width: 1.75rem;
+  height: 1.75rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: white;
+  transition: transform 500ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.group:hover .lp-open-icon,
+.group:hover .lp-primary-icon {
+  transform: translate(2px, -1px) scale(1.05);
+}
+
+.lp-row[data-status='started'] .lp-open {
+  background: var(--color-ink);
+  color: white;
+}
+
+.lp-row[data-status='started'] .lp-open-icon {
+  background: rgb(255 255 255 / 0.14);
+}
+
+/* Primary and secondary pills. */
+.lp-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.7rem;
+  border-radius: 999px;
+  background: linear-gradient(120deg, #e85d8a, #be3f6c);
+  padding: 0.35rem 0.35rem 0.35rem 1.25rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: white;
+  box-shadow: var(--shadow-companion);
+  transition: transform 300ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.lp-primary:active {
+  transform: scale(0.98);
+}
+
+.lp-primary .lp-primary-icon {
+  background: rgb(255 255 255 / 0.2);
+}
+
+.lp-primary-sm {
+  padding: 0.25rem 0.25rem 0.25rem 1rem;
+  font-size: 0.8125rem;
+  box-shadow: none;
+  background: var(--color-ink);
+}
+
+.lp-primary-sm .lp-primary-icon {
+  width: 1.5rem;
+  height: 1.5rem;
+  background: rgb(255 255 255 / 0.14);
+}
+
+.lp-ghost {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  border-radius: 999px;
+  padding: 0.5rem 0.875rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--color-ink-soft);
+  transition:
+    background-color 300ms cubic-bezier(0.32, 0.72, 0, 1),
+    color 300ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.lp-ghost:hover {
+  background: var(--color-canvas-sunk);
+  color: var(--color-ink);
+}
+
+/* Segment meter. */
+.lp-meter-track {
+  position: relative;
+  display: block;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgb(44 33 66 / 0.08);
+}
+
+.lp-meter-fill {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: var(--color-verify);
+  transform-origin: left center;
+  transition: transform 600ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+/* Only finished resources fill the meter; a started resource shows no partial progress. */
+.lp-meter-fill:not([data-status='done']) {
+  transform: scaleX(0);
+}
+
+/* Up next cards. */
+.lp-queue-card {
+  border-radius: 1.25rem;
+  background: linear-gradient(160deg, var(--tone-soft) 0%, white 70%);
+  padding: 1rem 1rem 1rem 1.125rem;
+  box-shadow: 0 16px 34px -24px rgb(44 33 66 / 0.35);
+}
+
+/* Floating finish panel. Fixed, so the glass blur stays off scrolling content. */
+.lp-island {
+  border-radius: 2rem;
+  background: rgb(255 255 255 / 0.55);
+  padding: 0.375rem;
+  -webkit-backdrop-filter: blur(20px) saturate(1.4);
+  backdrop-filter: blur(20px) saturate(1.4);
+  box-shadow:
+    inset 0 0 0 1px rgb(255 255 255 / 0.7),
+    0 0 0 1px rgb(44 33 66 / 0.06),
+    0 30px 70px -24px rgb(44 33 66 / 0.4);
+}
+
+.lp-island-core {
+  border-radius: calc(2rem - 0.375rem);
+  background: white;
+  box-shadow: inset 0 1px 1px rgb(255 255 255 / 0.9);
+}
+
+.lp-close {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  display: flex;
+  width: 2rem;
+  height: 2rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: var(--color-canvas-sunk);
+  color: var(--color-ink-soft);
+  transition: background-color 300ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.lp-close:hover {
+  background: #e9e5f1;
+  color: var(--color-ink);
+}
+
+.lp-next-tile {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+  border-radius: 1.125rem;
+  background: var(--color-canvas-sunk);
+  padding: 0.875rem 1rem;
+  transition: background-color 400ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.lp-next-tile:hover {
+  background: var(--color-pink-100);
+}
+
+.lp-next-tile[data-added],
+.lp-next-tile[data-added]:hover {
+  background: var(--color-verify-soft);
+}
+
+.lp-next-tile[data-added] .lp-next-icon {
+  color: var(--color-verify);
+}
+
+/* Plus inside the add tile. */
+.lp-tile-plus {
+  display: flex;
+  width: 2rem;
+  height: 2rem;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: var(--color-ink);
+  color: white;
+}
+
+.lp-tile-action {
+  border-radius: 999px;
+  padding: 0.375rem 0.75rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--color-ink-soft);
+  transition:
+    background-color 300ms cubic-bezier(0.32, 0.72, 0, 1),
+    color 300ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.lp-tile-action:hover {
+  background: white;
+  color: var(--color-ink);
+}
+
+.lp-next-icon {
+  display: flex;
+  width: 2.5rem;
+  height: 2.5rem;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.875rem;
+  background: white;
+  color: var(--color-pink-600);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lp-ring-fill,
+  .lp-ring-tick,
+  .lp-meter-fill,
+  .lp-close {
+    transition: none;
+  }
+
+  .lp-area[data-entering] {
+    animation: none;
+  }
+
+  .lp-done-caret {
+    transition: none;
   }
 }

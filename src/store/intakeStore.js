@@ -23,7 +23,14 @@ const initialState = {
   // Latest employer matches, mirrored here so the companion can reference them.
   // Derived data; cleared when priorities change or the snapshot resets.
   employerMatches: [],
-  learningCompleted: [],
+  // Learning plan state per resource id: { status: 'saved' | 'started' | 'done', at }.
+  learningProgress: {},
+  // Focus areas whose resources are all finished ({ skill_id, skill }), offered
+  // to the CV builder as skills to add.
+  learnedSkills: [],
+  // Gaps added to the learning plan beyond the first focus areas, per role id:
+  // { [roleId]: skill_id[] }, in the order they were added.
+  addedFocusAreas: {},
   // CV drafts, one per role (see openCvBook). Saved with the journey and cleared
   // whenever upstream profile data changes.
   cvDraft: null,
@@ -35,6 +42,21 @@ const initialState = {
 };
 
 const emptyBreak = () => ({ duration_years: 0, activities: [] });
+
+/**
+ * Maps a persisted `learningCompleted` id list to `learningProgress` entries
+ * marked done.
+ */
+const withLearningProgress = (plan) => {
+  if (!plan || plan.learningProgress || !Array.isArray(plan.learningCompleted)) return plan;
+  const { learningCompleted, ...rest } = plan;
+  return {
+    ...rest,
+    learningProgress: Object.fromEntries(
+      learningCompleted.map((id) => [id, { status: 'done', at: 0 }])
+    ),
+  };
+};
 
 /**
  * Whether a plan contains user progress (a parsed CV or a snapshot), as
@@ -53,7 +75,9 @@ export const PLAN_FIELDS = [
   'cvParsed',
   'break',
   'employerPriorities',
-  'learningCompleted',
+  'learningProgress',
+  'learnedSkills',
+  'addedFocusAreas',
   'cvDraft',
   'confirmedSkills',
   'snapshot',
@@ -67,6 +91,7 @@ export const PLAN_FIELDS = [
 // feed the snapshot, so they are cleared with it.
 const resetAfterBreak = () => ({
   confirmedSkills: [],
+  addedFocusAreas: {},
   employerMatches: [],
   cvDraft: null,
   snapshot: null,
@@ -141,12 +166,34 @@ export const useIntakeStore = create(
       setEmployerPriorities: (employerPriorities) =>
         set({ employerPriorities, employerMatches: [] }),
       setEmployerMatches: (employerMatches) => set({ employerMatches: employerMatches ?? [] }),
-      toggleLearningCompleted: (resourceId) =>
-        set((state) => ({
-          learningCompleted: state.learningCompleted.includes(resourceId)
-            ? state.learningCompleted.filter((id) => id !== resourceId)
-            : [...state.learningCompleted, resourceId],
-        })),
+      /**
+       * Sets a resource's status ('saved', 'started' or 'done'); null clears it.
+       * A finished resource keeps the status it had before (`from`) so
+       * unfinishing it can restore that.
+       */
+      setLearningStatus: (resourceId, status) =>
+        set((state) => {
+          const current = state.learningProgress[resourceId];
+          const rest = Object.fromEntries(
+            Object.entries(state.learningProgress).filter(([id]) => id !== resourceId)
+          );
+          if (!status) return { learningProgress: rest };
+          const entry = { status, at: Date.now() };
+          if (status === 'done') {
+            entry.from =
+              current?.status === 'done' ? (current.from ?? null) : (current?.status ?? null);
+          }
+          return { learningProgress: { ...rest, [resourceId]: entry } };
+        }),
+      setLearnedSkills: (learnedSkills) => set({ learnedSkills: learnedSkills ?? [] }),
+      addFocusArea: (roleId, skillId) =>
+        set((state) => {
+          const added = state.addedFocusAreas?.[roleId] ?? [];
+          if (added.includes(skillId)) return state;
+          return {
+            addedFocusAreas: { ...state.addedFocusAreas, [roleId]: [...added, skillId] },
+          };
+        }),
 
       setConfirmedSkills: (confirmedSkills) => set({ confirmedSkills: confirmedSkills ?? [] }),
       addConfirmedSkills: (skills) =>
@@ -188,7 +235,8 @@ export const useIntakeStore = create(
        * Loads a plan from the account. Keys outside PLAN_FIELDS are ignored so
        * stored data cannot inject arbitrary state.
        */
-      importPlan: (plan) => {
+      importPlan: (stored) => {
+        const plan = withLearningProgress(stored);
         if (!plan) return;
         set(Object.fromEntries(PLAN_FIELDS.filter((f) => f in plan).map((f) => [f, plan[f]])));
       },
@@ -204,7 +252,17 @@ export const useIntakeStore = create(
 
       reset: () => set(initialState),
     }),
-    // v2: selectedRole is the full role object, not a role-title string.
-    { name: STORAGE_KEY, version: 2, storage: sessionBacked() }
+    {
+      name: STORAGE_KEY,
+      version: 3,
+      storage: sessionBacked(),
+      migrate: (persisted, version) => {
+        if (version < 2) return {};
+        return {
+          ...withLearningProgress(persisted),
+          previousPlan: withLearningProgress(persisted?.previousPlan ?? null),
+        };
+      },
+    }
   )
 );

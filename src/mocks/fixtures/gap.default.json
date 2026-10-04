@@ -40,6 +40,38 @@
       "importance": 0.52,
       "uplift": 3,
       "definition": "Improving how design work is handed over, documented and coordinated so design and development teams can work together smoothly."
+    },
+    {
+      "skill_id": "mock-accessibility",
+      "skill": "Accessibility Auditing (WCAG 2.2)",
+      "band": "role",
+      "importance": 0.47,
+      "uplift": 2,
+      "definition": "Checking designs against accessibility standards so people with different abilities can see, hear and use a product."
+    },
+    {
+      "skill_id": "mock-product-analytics",
+      "skill": "Product Analytics for Design Decisions",
+      "band": "role",
+      "importance": 0.41,
+      "uplift": 2,
+      "definition": "Reading product usage data to see what people actually do, and using it to decide what to design next."
+    },
+    {
+      "skill_id": "mock-motion",
+      "skill": "Motion & Micro-interaction Design",
+      "band": "role",
+      "importance": 0.35,
+      "uplift": 1,
+      "definition": "Designing small animations and responses that make an interface feel clear, calm and easy to follow."
+    },
+    {
+      "skill_id": "mock-ux-writing",
+      "skill": "UX Writing & Content Design",
+      "band": "role",
+      "importance": 0.3,
+      "uplift": 1,
+      "definition": "Writing the words in an interface, such as labels, messages and instructions, so people know what to do next."
     }
   ]
 }

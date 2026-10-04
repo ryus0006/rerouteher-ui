@@ -97,7 +97,7 @@ describe('profile', () => {
     open();
 
     const given = (await screen.findByText('CV')).closest('dl');
-    for (const label of ['CV', 'Career break', 'What filled it', 'Work priorities']) {
+    for (const label of ['CV', 'Career break', 'During your break', 'Work priorities']) {
       expect(within(given).getByText(label)).toBeVisible();
     }
     expect(screen.queryByText('Previous occupation')).toBeNull();

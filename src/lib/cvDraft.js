@@ -136,8 +136,8 @@ export function createCvDraft({
 }
 
 /**
- * Normalises a saved draft to the current schema, including converting the
- * legacy `includeCareerBreak` flag to the `careerBreak` object.
+ * Normalises a saved draft to the draft schema, mapping an
+ * `includeCareerBreak` flag to the `careerBreak` object.
  */
 export function normaliseDraft(saved, generated) {
   if (!saved) return generated;
@@ -198,10 +198,55 @@ export function openCvBook(saved) {
     gaps: {},
   };
   if (!saved) return empty;
-  // Legacy format: a single draft not keyed by role.
+  // A saved single draft, not keyed by role, becomes that role's entry.
   return {
     ...empty,
     personal: { ...EMPTY_PERSONAL, ...saved.personal },
     drafts: saved.roleId ? { [saved.roleId]: saved } : {},
+  };
+}
+
+/** Whether the draft for a role already lists a skill. */
+export function skillOnCv(storedBook, roleId, skill) {
+  const draft = openCvBook(storedBook).drafts[roleId];
+  return Boolean(draft?.skills?.some((entry) => sameSkill(entry, skill)));
+}
+
+/**
+ * Adds a skill to the target role's draft. If the CV builder has not been
+ * opened yet, the draft is first created as the builder would create it.
+ */
+export function addSkillToCv(state, skill) {
+  const book = openCvBook(state.cvDraft);
+  const roleId = state.selectedRole.role_id;
+  const draft = normaliseDraft(
+    book.drafts[roleId],
+    createCvDraft({
+      cv: state.cv,
+      careerBreak: state.break,
+      snapshot: state.snapshot,
+      selectedRole: state.selectedRole,
+      gapResult: state.gapResult,
+      confirmedSkills: state.confirmedSkills,
+    })
+  );
+  if (draft.skills.some((entry) => sameSkill(entry, skill))) return book;
+  return {
+    ...book,
+    drafts: { ...book.drafts, [roleId]: { ...draft, skills: [...draft.skills, skill] } },
+  };
+}
+
+/** Removes a skill from a role's draft. */
+export function removeSkillFromCv(storedBook, roleId, skill) {
+  const book = openCvBook(storedBook);
+  const draft = book.drafts[roleId];
+  if (!draft) return book;
+  return {
+    ...book,
+    drafts: {
+      ...book.drafts,
+      [roleId]: { ...draft, skills: draft.skills.filter((entry) => !sameSkill(entry, skill)) },
+    },
   };
 }

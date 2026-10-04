@@ -5,11 +5,11 @@ import { AnimatePresence, motion } from 'motion/react';
 import { ArrowUp, ArrowUpRight, X } from '@phosphor-icons/react';
 import { askCompanion } from '../../api/companion.js';
 import useSmoothNavigate from '../../hooks/useSmoothNavigate.js';
-import { ACTIVITY_LABELS } from '../../config/activityTaxonomy.js';
-import { PRIORITY_NAMES } from '../../config/employerPriorities.js';
 import { useIntakeStore } from '../../store/intakeStore.js';
 import { useCompanionStore } from '../../store/companionStore.js';
 import HeraBot from './HeraBot.jsx';
+import ProfileDraft from './ProfileDraft.jsx';
+import { mergeDraft } from '../../lib/mergeDraft.js';
 
 const EASE = [0.32, 0.72, 0, 1];
 
@@ -100,9 +100,8 @@ function SkillChecklist({ choices, onAdd }) {
 }
 
 /**
- * Suggested opening prompts, so the user does not have to guess what the
- * companion can answer. Build mode suggests ways to start a profile; ask mode
- * suggests questions about the user's results.
+ * Suggested questions for ask mode, so the user does not have to guess what
+ * the companion can answer about their results.
  */
 const ASK_OPENERS = [
   'What does my readiness score actually mean?',
@@ -110,11 +109,16 @@ const ASK_OPENERS = [
   'Does my career break count as experience?',
 ];
 
-const BUILD_OPENERS = [
-  'I was a teacher for six years, then home with my kids.',
-  'Help me build my profile without a CV.',
-  'Use the CV I uploaded.',
-];
+/**
+ * Build mode is a guided interview: Hera opens with a question and the user
+ * answers in their own words. Without a CV, Hera starts from the last job;
+ * with one, Hera moves on to the time away.
+ */
+const BUILD_GREETING =
+  'No CV needed. Let’s start with your last job before your break. What did you do, and for roughly how long?';
+
+const BUILD_GREETING_WITH_CV =
+  'I’ve read your CV. Now let’s add your time away. What filled your days during your break?';
 
 /** Returns a per-browser conversation id so history survives reloads. */
 function getSessionId() {
@@ -167,7 +171,7 @@ export default function Companion({ defaultMode = 'ask' }) {
 
   // An explicit mode from `openCompanion` takes precedence over the route default.
   const building = (open ? mode : defaultMode) === 'build';
-  const openers = building ? BUILD_OPENERS : ASK_OPENERS;
+  const buildGreeting = cv ? BUILD_GREETING_WITH_CV : BUILD_GREETING;
 
   useEffect(() => {
     if (!open) return undefined;
@@ -226,13 +230,18 @@ export default function Companion({ defaultMode = 'ask' }) {
     const asked = text.trim();
     if (!asked || thinking) return;
 
+    // Hera's opening question is shown only in the browser, so the first reply
+    // in build mode carries it to the backend as context for the answer.
+    const opening = building && thread.length === 0;
+    const sent = opening ? `You asked me: "${buildGreeting}"\nMy answer: ${asked}` : asked;
+
     setQuestion('');
     setThread((current) => [...current, { from: 'you', text: asked }]);
     setThinking(true);
 
     try {
       const result = await askCompanion({
-        question: asked,
+        question: sent,
         sessionId: getSessionId(),
         journey: {
           cv,
@@ -252,8 +261,11 @@ export default function Companion({ defaultMode = 'ask' }) {
       if (result.skill_choices_role_id) setRoleSkillsOfferedForRoleId(result.skill_choices_role_id);
 
       // Stage the drafted profile; it is applied only after the user confirms it.
+      // Each update merges into the draft so a reply that omits a field keeps it.
       const update = result.journey_update;
-      if (update?.cv || update?.break || update?.employerPriorities?.length) setProposed(update);
+      if (update?.cv || update?.break || update?.employerPriorities?.length) {
+        setProposed((current) => mergeDraft(current, update));
+      }
 
       setThread((current) => [
         ...current,
@@ -382,20 +394,22 @@ export default function Companion({ defaultMode = 'ask' }) {
               </header>
 
               <div className="flex-1 overflow-y-auto px-5 pt-4 pb-4">
+                {/* In build mode Hera opens the conversation with a question. */}
                 {building && (
-                  <p className="hera-rise mb-5 text-sm leading-relaxed text-ink-soft">
-                    No CV needed. Tell me about your work and your time away, and I will build your
-                    profile.
-                  </p>
+                  <div className="hera-rise mb-5 flex gap-2.5">
+                    <HeraBot className="mt-0.5 size-6 shrink-0" />
+                    <p className="min-w-0 flex-1 text-sm leading-relaxed text-ink">
+                      {buildGreeting}
+                    </p>
+                  </div>
                 )}
 
-                {thread.length === 0 && (
+                {/* Ask mode suggests questions about the results. */}
+                {!building && thread.length === 0 && (
                   <div>
-                    <p className="text-xs font-semibold text-ink-faint">
-                      {building ? 'Start with one of these' : 'Try asking'}
-                    </p>
+                    <p className="text-xs font-semibold text-ink-faint">Try asking</p>
                     <ul className="mt-3 space-y-2">
-                      {openers.map((opener, at) => (
+                      {ASK_OPENERS.map((opener, at) => (
                         <li key={opener} className="hera-rise" style={{ '--i': at + 1 }}>
                           <button
                             type="button"
@@ -473,80 +487,21 @@ export default function Companion({ defaultMode = 'ask' }) {
                 </ul>
 
                 {thinking && (
-                  <div className="mt-4 flex items-center gap-2.5" role="status">
+                  <div className="hera-rise mt-4 flex items-center gap-2.5" role="status">
                     <HeraBot className="size-6 shrink-0" thinking />
-                    <span className="iv-shimmer text-sm">
-                      {building ? 'Building your profile' : 'Reading your results'}
-                    </span>
+                    <span className="hera-shimmer text-sm font-medium">Hera is thinking</span>
                   </div>
                 )}
 
-                {/* Drafted profile for review; applied to the journey only on confirm. */}
+                {/* Drafted profile for review; applied to the journey only on confirm.
+                    "Change something" keeps the draft and returns to the message box. */}
                 {proposed && (
-                  <div className="mt-4 rounded-2xl bg-canvas-sunk p-4">
-                    <p className="text-xs font-semibold text-ink-faint">Your profile so far</p>
-
-                    {proposed.cv?.experiences?.[0]?.title && (
-                      <p className="mt-2 text-sm font-semibold text-ink">
-                        {proposed.cv.experiences[0].title}
-                        {proposed.cv.experiences[0].organisation
-                          ? ` · ${proposed.cv.experiences[0].organisation}`
-                          : ''}
-                      </p>
-                    )}
-
-                    {proposed.cv?.skill_mentions?.length > 0 && (
-                      <div className="mt-2 flex flex-wrap gap-1.5">
-                        {proposed.cv.skill_mentions.map((skill) => (
-                          <span
-                            key={skill}
-                            className="rounded-full bg-surface px-2.5 py-1 text-xs text-ink-soft"
-                          >
-                            {skill}
-                          </span>
-                        ))}
-                      </div>
-                    )}
-
-                    {proposed.break && (
-                      <p className="mt-2.5 text-xs text-ink-soft">
-                        <span className="font-medium text-ink">Career break:</span>{' '}
-                        {proposed.break.duration_years}{' '}
-                        {proposed.break.duration_years === 1 ? 'year' : 'years'}
-                        {proposed.break.activities?.length
-                          ? ` — ${proposed.break.activities
-                              .map((id) => ACTIVITY_LABELS[id] ?? id)
-                              .join(', ')}`
-                          : ''}
-                      </p>
-                    )}
-
-                    {proposed.employerPriorities?.length > 0 && (
-                      <p className="mt-2.5 text-xs text-ink-soft">
-                        <span className="font-medium text-ink">Priorities:</span>{' '}
-                        {proposed.employerPriorities
-                          .map((id) => PRIORITY_NAMES[id] ?? id)
-                          .join(', ')}
-                      </p>
-                    )}
-
-                    <div className="mt-3.5 flex flex-wrap gap-2">
-                      <button
-                        type="button"
-                        onClick={confirmProfile}
-                        className="rounded-full bg-pink-600 px-4 py-2 text-xs font-semibold text-white transition hover:bg-pink-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-pink-600"
-                      >
-                        Use this profile
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setProposed(null)}
-                        className="rounded-full border border-line-strong px-4 py-2 text-xs font-medium text-ink-soft transition hover:border-ink/30 hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
-                      >
-                        Change something
-                      </button>
-                    </div>
-                  </div>
+                  <ProfileDraft
+                    draft={proposed}
+                    confirmedSkills={confirmedSkills}
+                    onConfirm={confirmProfile}
+                    onChange={() => inputRef.current?.focus()}
+                  />
                 )}
 
                 <div ref={endRef} />

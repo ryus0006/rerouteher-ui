@@ -36,6 +36,14 @@ const GAPS = [
   },
 ];
 
+const PROMPT_GAP = {
+  skill_id: 'mock-prompt-ux',
+  skill: 'Prompt Engineering for UX Workflows',
+  band: 'ai_usage',
+  importance: 0.6,
+  uplift: 5,
+};
+
 beforeEach(() => {
   vi.spyOn(window, 'scrollTo').mockImplementation(() => {});
   vi.stubGlobal(
@@ -56,16 +64,27 @@ beforeEach(() => {
     },
     selectedRole: { role: 'Senior UX/UI Designer', role_id: 'role_ux' },
     gapResult: { readiness: 78, gaps: GAPS },
+    learningProgress: {},
+    learnedSkills: [],
+    addedFocusAreas: {},
+    cvDraft: null,
   });
 });
 
 afterEach(() => {
   cleanup();
   router?.dispose();
-  useAccountStore.setState({ user: null });
+  useAccountStore.setState({ user: null, sheet: null, sheetRedirect: null });
   vi.restoreAllMocks();
   vi.unstubAllGlobals();
 });
+
+/** The focus-area list, below the resource featured at the top. */
+const list = () => within(screen.getByRole('region', { name: 'All resources' }));
+
+function signIn() {
+  useAccountStore.setState({ user: { username: 'ccc', displayName: 'Chee Yeong' } });
+}
 
 function open(initialEntries) {
   router = createMemoryRouter(routes, { initialEntries });
@@ -83,59 +102,19 @@ describe('learning plan', () => {
     ).closest('section');
 
     expect(within(section).getByText('Variables and modes in Figma')).toBeVisible();
-    expect(within(section).getByText('+7% if learned')).toBeVisible();
+    expect(within(section).getByText('+7% readiness if learned')).toBeVisible();
     // A resource for a different gap must not appear under this heading.
     expect(within(section).queryByText('AI features in Figma')).toBeNull();
-  });
-
-  it('narrows to one format, hides emptied focus areas, and counts what is shown', async () => {
-    open(['/plan/learning']);
-
-    expect(await screen.findByText('AI features in Figma')).toBeVisible();
-    expect(screen.getByText('Midjourney for product design')).toBeVisible();
-
-    // AI Design has 2 articles + 1 video, so the count starts at the full set.
-    const aiSection = () =>
-      screen
-        .getByRole('heading', { name: 'AI Design Tools (Figma AI, Midjourney)' })
-        .closest('section');
-    expect(within(aiSection()).getByRole('button', { name: /^3 resources/ })).toBeVisible();
-
-    fireEvent.click(screen.getByRole('button', { name: 'Videos' }));
-
-    // Design Ops has only articles, so filtering by Videos hides its card entirely.
-    expect(screen.queryByRole('heading', { name: 'Design Ops & Handoff Automation' })).toBeNull();
-
-    // AI Design keeps its one video, and the count reflects the visible items.
-    expect(screen.getByText('Midjourney for product design')).toBeVisible();
-    expect(screen.queryByText('AI features in Figma')).toBeNull();
-    expect(within(aiSection()).getByRole('button', { name: /^1 resource/ })).toBeVisible();
   });
 
   it('costs her nothing, and does not offer a filter that selects everything', async () => {
     open(['/plan/learning']);
 
-    await screen.findByText('AI features in Figma');
+    await screen.findByRole('region', { name: 'All resources' });
 
     // All resources are free, so no "Free only" filter is rendered.
     expect(screen.queryByRole('button', { name: 'Free only' })).toBeNull();
     expect(screen.queryByText(/RM |USD |\/ month/)).toBeNull();
-  });
-
-  it('collapses a focus area she is not working on yet', async () => {
-    open(['/plan/learning']);
-
-    const toggle = await screen.findByRole('button', { name: /^3 resources/ });
-    expect(screen.getByText('AI features in Figma')).toBeVisible();
-
-    fireEvent.click(toggle);
-
-    expect(toggle).toHaveAttribute('aria-expanded', 'false');
-    expect(screen.queryByText('AI features in Figma')).toBeNull();
-    // The focus-area card remains, so all four focus areas are still listed.
-    expect(
-      screen.getByRole('heading', { name: 'AI Design Tools (Figma AI, Midjourney)' })
-    ).toBeVisible();
   });
 
   it('opens every resource in a new tab, safely', async () => {
@@ -147,6 +126,264 @@ describe('learning plan', () => {
       expect(link).toHaveAttribute('target', '_blank');
       expect(link).toHaveAttribute('rel', expect.stringContaining('noopener'));
     }
+  });
+
+  it('puts a saved resource at the top until she removes it', async () => {
+    signIn();
+    open(['/plan/learning']);
+
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'Save AI in UX practice for later' })
+    );
+
+    const featured = screen
+      .getByRole('heading', { name: 'From your saved list' })
+      .closest('section');
+    expect(within(featured).getByText('AI in UX practice')).toBeVisible();
+
+    fireEvent.click(
+      within(featured).getByRole('button', { name: /Remove from saved: AI in UX practice/ })
+    );
+    expect(screen.getByRole('heading', { name: 'Start here' })).toBeVisible();
+  });
+
+  it('keeps the first save at the top and adds later saves to the end', async () => {
+    signIn();
+    vi.spyOn(Date, 'now')
+      .mockReturnValueOnce(1000)
+      .mockReturnValueOnce(2000)
+      .mockReturnValueOnce(3000);
+    open(['/plan/learning']);
+
+    await screen.findByRole('region', { name: 'All resources' });
+    for (const title of [
+      'AI in UX practice',
+      'DesignOps in practice',
+      'Dev Mode and handoff in Figma',
+    ]) {
+      fireEvent.click(list().getByRole('button', { name: `Save ${title} for later` }));
+    }
+
+    const featured = screen
+      .getByRole('heading', { name: 'From your saved list' })
+      .closest('section');
+    expect(within(featured).getByText('AI in UX practice')).toBeVisible();
+    expect(within(featured).getByText('1 of 3')).toBeVisible();
+
+    const shelf = screen.getByRole('region', { name: 'Up next' });
+    expect(within(shelf).getByText(/2 resources/)).toBeVisible();
+    expect(
+      within(shelf)
+        .getAllByRole('heading', { level: 3 })
+        .map((heading) => heading.textContent)
+    ).toEqual(['DesignOps in practice', 'Dev Mode and handoff in Figma']);
+  });
+
+  it('marks an opened resource in progress and finishes it without a pop-up', async () => {
+    signIn();
+    open(['/plan/learning']);
+
+    await screen.findByRole('region', { name: 'All resources' });
+    const link = list().getByRole('link', { name: /AI features in Figma at .*new tab/ });
+    link.addEventListener('click', (event) => event.preventDefault());
+    fireEvent.click(link);
+
+    expect(
+      await screen.findByRole('heading', { name: 'Pick up where you left off' })
+    ).toBeVisible();
+
+    fireEvent.click(list().getByRole('button', { name: 'Mark AI features in Figma as finished' }));
+
+    expect(
+      list().getByRole('button', { name: 'Mark AI features in Figma as not finished' })
+    ).toBeVisible();
+    expect(screen.queryByRole('region', { name: /is done/ })).not.toBeInTheDocument();
+  });
+
+  it('puts an unfinished resource back the way it was before she ticked it', async () => {
+    signIn();
+    open(['/plan/learning']);
+
+    const ring = (title, done) =>
+      list().getByRole('button', { name: `Mark ${title} as ${done ? 'not ' : ''}finished` });
+
+    await screen.findByRole('region', { name: 'All resources' });
+    fireEvent.click(ring('AI features in Figma', false));
+    fireEvent.click(ring('AI features in Figma', true));
+    expect(screen.getByRole('heading', { name: 'Start here' })).toBeVisible();
+    expect(list().queryByText('In progress')).not.toBeInTheDocument();
+
+    fireEvent.click(list().getByRole('button', { name: 'Save AI in UX practice for later' }));
+    fireEvent.click(ring('AI in UX practice', false));
+    fireEvent.click(ring('AI in UX practice', true));
+    expect(screen.getByRole('heading', { name: 'From your saved list' })).toBeVisible();
+    expect(
+      list().getByRole('button', { name: 'Save AI in UX practice for later' })
+    ).toHaveAttribute('aria-pressed', 'true');
+  });
+
+  it('adds a finished focus area to her CV without leaving the plan', async () => {
+    signIn();
+    open(['/plan/learning']);
+
+    for (const title of ['DesignOps in practice', 'Dev Mode and handoff in Figma']) {
+      fireEvent.click(await screen.findByRole('button', { name: `Mark ${title} as finished` }));
+    }
+
+    const panel = await screen.findByRole('region', {
+      name: 'You’ve finished Design Ops & Handoff Automation.',
+    });
+    fireEvent.click(within(panel).getByRole('button', { name: /Add it to your CV/ }));
+
+    // The skill is added to the role's CV draft without leaving the plan.
+    const draft = useIntakeStore.getState().cvDraft.drafts.role_ux;
+    expect(draft.skills).toContain('Design Ops & Handoff Automation');
+    expect(await within(panel).findByText('Added to your CV')).toBeInTheDocument();
+    expect(within(panel).getByRole('link', { name: 'View CV' })).toHaveAttribute(
+      'href',
+      '/plan/cv'
+    );
+    expect(router.state.location.pathname).toBe('/plan/learning');
+
+    fireEvent.click(within(panel).getByRole('button', { name: 'Remove' }));
+    expect(useIntakeStore.getState().cvDraft.drafts.role_ux.skills).not.toContain(
+      'Design Ops & Handoff Automation'
+    );
+    expect(useIntakeStore.getState().learnedSkills).toEqual([
+      { skill_id: 'mock-design-ops', skill: 'Design Ops & Handoff Automation' },
+    ]);
+  });
+
+  it('lists the first three skills up later and folds the rest', async () => {
+    const extra = ['Accessibility Auditing', 'Product Analytics', 'Motion Design'].map(
+      (skill, index) => ({ skill_id: `extra-${index}`, skill, band: 'role', uplift: 1 })
+    );
+    useIntakeStore.setState({
+      gapResult: { readiness: 78, gaps: [...GAPS, PROMPT_GAP, ...extra] },
+    });
+    open(['/plan/learning']);
+
+    const later = (await screen.findByRole('heading', { name: 'Up later' })).closest('section');
+    expect(within(later).getByText('Product Analytics')).toBeInTheDocument();
+    expect(within(later).queryByText('Motion Design')).toBeNull();
+
+    fireEvent.click(within(later).getByRole('button', { name: 'Show 1 more skill' }));
+    expect(await within(later).findByText('Motion Design')).toBeInTheDocument();
+    expect(within(later).getByRole('button', { name: 'Show fewer' })).toHaveAttribute(
+      'aria-expanded',
+      'true'
+    );
+  });
+
+  it('keeps gaps beyond the first focus areas up later, and adds one to the plan', async () => {
+    useIntakeStore.setState({ gapResult: { readiness: 78, gaps: [...GAPS, PROMPT_GAP] } });
+    open(['/plan/learning']);
+
+    const later = (await screen.findByRole('heading', { name: 'Up later' })).closest('section');
+    expect(within(later).getByText('Prompt Engineering for UX Workflows')).toBeVisible();
+    expect(screen.getByRole('button', { name: '1 more skill up later' })).toBeVisible();
+
+    fireEvent.click(
+      within(later).getByRole('button', {
+        name: 'Add to plan: Prompt Engineering for UX Workflows',
+      })
+    );
+
+    const added = (
+      await screen.findByRole('heading', { name: 'Prompt Engineering for UX Workflows', level: 2 })
+    ).closest('section');
+    expect(within(added).getAllByRole('listitem').length).toBeGreaterThan(0);
+    expect(screen.queryByRole('heading', { name: 'Up later' })).toBeNull();
+    expect(useIntakeStore.getState().addedFocusAreas).toEqual({
+      role_ux: ['mock-prompt-ux'],
+    });
+  });
+
+  it('offers the next skill once everything in the plan is finished', async () => {
+    signIn();
+    const done = { status: 'done', at: 1 };
+    useIntakeStore.setState({
+      gapResult: { readiness: 78, gaps: [...GAPS, PROMPT_GAP] },
+      learningProgress: Object.fromEntries(
+        [
+          'ai-figma-features',
+          'ai-midjourney-product',
+          'ai-ux-practice',
+          'ds-variables-figma',
+          'ds-multibrand-video',
+          'ops-dev-mode',
+          'ops-designops-nng',
+        ].map((id) => [id, done])
+      ),
+    });
+    open(['/plan/learning']);
+
+    const hero = (
+      await screen.findByRole('heading', { name: 'Everything here is finished' })
+    ).closest('section');
+    expect(within(hero).getByText('Prompt Engineering for UX Workflows')).toBeVisible();
+
+    fireEvent.click(within(hero).getByRole('button', { name: /Add to plan/ }));
+    expect(
+      await screen
+        .findByRole('heading', { name: 'Pick up where you left off' })
+        .catch(() => screen.findByRole('heading', { name: 'Start here' }))
+    ).toBeVisible();
+  });
+
+  it('moves a finished focus area to Finished once its panel closes', async () => {
+    signIn();
+    open(['/plan/learning']);
+
+    for (const title of ['DesignOps in practice', 'Dev Mode and handoff in Figma']) {
+      fireEvent.click(await screen.findByRole('button', { name: `Mark ${title} as finished` }));
+    }
+    // Still in place while the panel is open.
+    expect(
+      list().getByRole('heading', { name: 'Design Ops & Handoff Automation', level: 2 })
+    ).toBeVisible();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Close' }));
+
+    const finished = (await screen.findByRole('heading', { name: 'Finished', level: 2 })).closest(
+      'section'
+    );
+    expect(
+      list().queryByRole('heading', { name: 'Design Ops & Handoff Automation', level: 2 })
+    ).toBeNull();
+    expect(within(finished).getByText('2 resources finished')).toBeVisible();
+    expect(within(finished).queryByText('DesignOps in practice')).toBeNull();
+
+    fireEvent.click(
+      within(finished).getByRole('button', {
+        name: 'Show resources for Design Ops & Handoff Automation',
+      })
+    );
+    expect(within(finished).getByText('DesignOps in practice')).toBeInTheDocument();
+
+    fireEvent.click(
+      within(finished).getByRole('button', { name: 'Add to CV: Design Ops & Handoff Automation' })
+    );
+    expect(useIntakeStore.getState().cvDraft.drafts.role_ux.skills).toContain(
+      'Design Ops & Handoff Automation'
+    );
+    expect(within(finished).getByText(/On your CV/)).toBeVisible();
+  });
+
+  it('asks a guest for an account before saving or ticking, and keeps nothing', async () => {
+    open(['/plan/learning']);
+
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'Save AI in UX practice for later' })
+    );
+    await screen.findByRole('heading', {
+      name: 'Create a free account to save and track resources',
+    });
+    expect(screen.getByRole('heading', { name: 'Start here' })).toBeVisible();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Create an account' }));
+    expect(useAccountStore.getState().sheet).toBe('create');
+    expect(useIntakeStore.getState().learningProgress).toEqual({});
   });
 
   it('sends someone with no gap back to work it out', async () => {
@@ -484,11 +721,7 @@ describe('companion', () => {
     expect(await screen.findByRole('button', { name: OPENERS_FIRST })).toBeVisible();
 
     fireEvent.click(screen.getByRole('button', { name: 'Build my profile without a CV' }));
-    expect(
-      await screen.findByRole('button', {
-        name: 'I was a teacher for six years, then home with my kids.',
-      })
-    ).toBeVisible();
+    expect(await screen.findByText(/start with your last job before your break/)).toBeVisible();
   });
 
   it('stays off the landing page, where there is nothing of hers to read', async () => {
