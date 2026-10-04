@@ -1,6 +1,6 @@
 import { ACTIVITY_LABELS } from '../config/activityTaxonomy.js';
 
-export const DRAFT_VERSION = 2;
+export const DRAFT_VERSION = 3;
 
 const INITIAL_SKILLS = 6;
 
@@ -139,20 +139,20 @@ export function createCvDraft({
  * Normalises a saved draft to the current schema, including converting the
  * legacy `includeCareerBreak` flag to the `careerBreak` object.
  */
-export function normaliseDraft(saved, generated) {
+export function normaliseDraft(saved, generated = null) {
   if (!saved) return generated;
-  if (saved.version === DRAFT_VERSION) return saved;
 
   return {
-    ...generated,
+    ...(generated ?? {}),
+    ...saved,
+    version: saved.version ?? DRAFT_VERSION,
     personal: { ...EMPTY_PERSONAL, ...saved.personal },
-    summary: saved.summary ?? generated.summary,
-    skills: saved.skills ?? generated.skills,
-    experiences: saved.experiences ?? generated.experiences,
-    careerBreak: generated.careerBreak && {
-      ...generated.careerBreak,
-      include: saved.includeCareerBreak ? true : null,
-    },
+    summary: saved.summary ?? generated?.summary ?? '',
+    skills: saved.skills ?? generated?.skills ?? [],
+    experiences: saved.experiences ?? generated?.experiences ?? [],
+    // Career-break content is no longer a CV section. Any legacy value is
+    // deliberately discarded when a draft enters the current UI shape.
+    careerBreak: null,
   };
 }
 

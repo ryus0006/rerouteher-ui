@@ -10,6 +10,24 @@ import { interviewHandlers } from './interview.js';
 
 const DEFAULT_ROLE_ID = 'role_ux';
 
+const cvDraftForRole = (roleId) => ({
+  version: 3,
+  roleId,
+  personal: { name: '', email: '', phone: '', location: '' },
+  summary: `Professional prepared for ${roleId}.`,
+  skills: ['User Research & Persona Synthesis', 'Active Listening'],
+  experiences: [
+    {
+      title: 'Senior Product Designer',
+      organisation: 'Wira Digital',
+      start: '2015-03',
+      end: '2019-11',
+      description: '- Owned the design system and ran usability testing.',
+    },
+  ],
+  careerBreak: null,
+});
+
 /** In-memory accounts created during the session, keyed by username. */
 const accounts = new Map();
 
@@ -27,6 +45,32 @@ export const handlers = [
     if (message) return HttpResponse.json({ error: message }, { status: 400 });
 
     return HttpResponse.json(cvParsed);
+  }),
+
+  http.post('*/api/cv/generate', async ({ request }) => {
+    const { roleId = DEFAULT_ROLE_ID } = await request.json();
+    return HttpResponse.json({
+      role_id: roleId,
+      generation_status: 'generated',
+      generated_at: '2026-10-04T00:00:00Z',
+      draft: cvDraftForRole(roleId),
+    });
+  }),
+
+  http.post('*/api/cv/improve', async ({ request }) => {
+    const { section } = await request.json();
+    return HttpResponse.json({
+      section,
+      experience_index: section === 'experience' ? 0 : null,
+      suggestion:
+        section === 'summary'
+          ? 'Professional prepared to contribute through user research and design coordination.'
+          : 'Owned the design system and ran usability testing across product teams.',
+      evidence:
+        section === 'summary'
+          ? 'Owned the design system, ran usability testing, and led information architecture for the mobile app.'
+          : 'Owned the design system, ran usability testing, and led information architecture for the mobile app.',
+    });
   }),
 
   /* Fixture definitions mirror skill_taxonomy.definition. The last reframed

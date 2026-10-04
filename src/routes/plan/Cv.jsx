@@ -1,14 +1,12 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Header from '../../components/layout/Header.jsx';
 import GradientButton from '../../components/ui/GradientButton.jsx';
 import CvRail from '../../components/cv/CvRail.jsx';
 import CvSheet from '../../components/cv/CvSheet.jsx';
 import { CaretDown } from '@phosphor-icons/react';
-import { improveCvText } from '../../api/cv.js';
-import { computeGap } from '../../api/gap.js';
+import { generateCv, improveCvText } from '../../api/cv.js';
 import useSmoothNavigate from '../../hooks/useSmoothNavigate.js';
 import {
-  createCvDraft,
   missingForCv,
   normaliseDraft,
   openCvBook,
@@ -119,6 +117,25 @@ function MissingInformation({ missing }) {
   );
 }
 
+function GenerationNotice({ role, error, onRetry }) {
+  return (
+    <Notice title={error ? 'Your CV is still available' : 'Preparing your CV'}>
+      <p
+        className="mt-3 max-w-[58ch] text-sm leading-relaxed text-ink-soft"
+        role={error ? 'alert' : 'status'}
+      >
+        {error ??
+          `We are preparing a professional CV for ${role}. Your saved journey stays unchanged while it is being prepared.`}
+      </p>
+      {error && (
+        <GradientButton className="mt-6" variant="secondary" size="sm" onClick={onRetry}>
+          Try again
+        </GradientButton>
+      )}
+    </Notice>
+  );
+}
+
 /**
  * Role selector for the CV: a styled pill over a native select, keeping native
  * keyboard and screen reader behaviour.
@@ -152,9 +169,7 @@ function RolePicker({ roles, value, targetId, disabled, onChange }) {
 
 export default function Cv() {
   const user = useAccountStore((state) => state.user);
-  const cv = useIntakeStore((state) => state.cv);
   const cvParsed = useIntakeStore((state) => state.cvParsed);
-  const careerBreak = useIntakeStore((state) => state.break);
   const snapshot = useIntakeStore((state) => state.snapshot);
   const selectedRole = useIntakeStore((state) => state.selectedRole);
   const gapResult = useIntakeStore((state) => state.gapResult);
@@ -164,11 +179,12 @@ export default function Cv() {
 
   const [suggestion, setSuggestion] = useState(null);
   const [downloadError, setDownloadError] = useState(null);
-  // Role whose gap result is being fetched before its draft is created.
-  const [tailoring, setTailoring] = useState(null);
   const [roleError, setRoleError] = useState(null);
+  const [generatingRole, setGeneratingRole] = useState(null);
+  const [generationError, setGenerationError] = useState(null);
+  const generationRequests = useRef(new Set());
 
-  const ready = Boolean(user && snapshot && selectedRole);
+  const ready = Boolean(user && cvParsed && snapshot && selectedRole);
   const book = useMemo(() => openCvBook(storedBook), [storedBook]);
 
   const roles = useMemo(() => {
@@ -181,35 +197,69 @@ export default function Cv() {
   const activeRole = roles.find((role) => role.role_id === book.activeRoleId) ?? selectedRole;
   const roleId = activeRole?.role_id;
   const roleGap = roleId === selectedRole?.role_id ? gapResult : (book.gaps[roleId] ?? null);
-
-  const generated = useMemo(
-    () =>
-      ready
-        ? createCvDraft({
-            cv,
-            careerBreak,
-            snapshot,
-            selectedRole: activeRole,
-            gapResult: roleGap,
-            confirmedSkills,
-          })
-        : null,
-    [ready, cv, careerBreak, snapshot, activeRole, roleGap, confirmedSkills]
-  );
   const saved = roleId ? book.drafts[roleId] : undefined;
-  const base = ready ? normaliseDraft(saved, generated) : null;
-  const draft = base && { ...base, personal: book.personal };
+  const draft = ready && saved ? normaliseDraft(saved) : null;
 
-  // Persist a newly generated draft immediately so it is reused on return.
+  const storeGeneratedDraft = useCallback(
+    (targetRoleId, result) => {
+      const generated = normaliseDraft(result.draft);
+      if (!generated) return;
+      const latest = openCvBook(useIntakeStore.getState().cvDraft);
+      setCvDraft({
+        ...latest,
+        activeRoleId: targetRoleId,
+        drafts: { ...latest.drafts, [targetRoleId]: generated },
+      });
+    },
+    [setCvDraft]
+  );
+
+  const requestDraft = useCallback(
+    async (targetRoleId, regenerate = false) => {
+      setGenerationError(null);
+      setGeneratingRole(targetRoleId);
+      try {
+        const result = await generateCv({ roleId: targetRoleId, regenerate });
+        storeGeneratedDraft(targetRoleId, result);
+        return true;
+      } catch (cause) {
+        setGenerationError(
+          cause.status === 503
+            ? 'The CV service is temporarily unavailable due to an internal service problem. Your current journey is safe; please try again later.'
+            : 'The CV could not be prepared from the saved journey yet. Please complete the required journey steps and try again.'
+        );
+        return false;
+      } finally {
+        setGeneratingRole((current) => (current === targetRoleId ? null : current));
+      }
+    },
+    [storeGeneratedDraft]
+  );
+
   useEffect(() => {
-    if (!base || (book === storedBook && base === saved)) return;
-    setCvDraft({ ...book, drafts: { ...book.drafts, [roleId]: base } });
-  }, [base, saved, book, storedBook, roleId, setCvDraft]);
+    if (!ready || !roleId || saved || generationRequests.current.has(roleId)) return;
+    generationRequests.current.add(roleId);
+    requestDraft(roleId).then((ok) => {
+      if (!ok) generationRequests.current.delete(roleId);
+    });
+  }, [ready, roleId, saved, requestDraft]);
 
   if (!user) return <SignInRequired />;
 
   const missing = missingForCv({ cvParsed, snapshot, selectedRole });
-  if (missing.length > 0 || !draft) return <MissingInformation missing={missing} />;
+  if (missing.length > 0) return <MissingInformation missing={missing} />;
+  if (!draft) {
+    return (
+      <GenerationNotice
+        role={activeRole?.role ?? 'your target role'}
+        error={generationError}
+        onRetry={() => {
+          generationRequests.current.delete(roleId);
+          requestDraft(roleId);
+        }}
+      />
+    );
+  }
 
   const supported = supportedSkills({ snapshot, confirmedSkills });
   const suggestedSkills = supported
@@ -243,26 +293,9 @@ export default function Cv() {
     setSuggestion(null);
     setRoleError(null);
     setDownloadError(null);
-
-    const open = (gaps) => {
-      const latest = openCvBook(useIntakeStore.getState().cvDraft);
-      setCvDraft({ ...latest, activeRoleId: nextId, gaps: gaps ?? latest.gaps });
-    };
-
-    if (nextId === selectedRole.role_id || book.drafts[nextId] || book.gaps[nextId]) {
-      open();
-      return;
-    }
-    setTailoring(role.role);
-    computeGap(snapshot, role)
-      .then((gap) => {
-        const latest = openCvBook(useIntakeStore.getState().cvDraft);
-        open({ ...latest.gaps, [nextId]: gap });
-      })
-      .catch((cause) =>
-        setRoleError(`A CV for ${role.role} could not be prepared (${cause.message}). Try again.`)
-      )
-      .finally(() => setTailoring(null));
+    setGenerationError(null);
+    const latest = openCvBook(useIntakeStore.getState().cvDraft);
+    setCvDraft({ ...latest, activeRoleId: nextId });
   }
 
   const textFor = (field) =>
@@ -295,8 +328,8 @@ export default function Cv() {
       const { suggestion: text } = await improveCvText({
         section: field === 'summary' ? 'summary' : 'experience',
         text: source,
-        role: activeRole.role,
-        skills: supported,
+        roleId,
+        experienceIndex: field === 'summary' ? undefined : Number(field.replace('experience-', '')),
         previous,
       });
       setSuggestion({ field, source, previous, text, loading: false });
@@ -305,7 +338,10 @@ export default function Cv() {
         field,
         source,
         previous,
-        error: `Wording help is unavailable right now (${cause.message}).`,
+        error:
+          cause.status === 503
+            ? 'Wording help is temporarily unavailable due to an internal service problem. Your current text is unchanged.'
+            : 'Wording help is unavailable right now. Your current text is unchanged.',
       });
     }
   }
@@ -352,12 +388,12 @@ export default function Cv() {
               roles={roles}
               value={roleId}
               targetId={selectedRole.role_id}
-              disabled={Boolean(tailoring)}
+              disabled={Boolean(generatingRole)}
               onChange={chooseRole}
             />
           </p>
           <p className="mt-3 max-w-[60ch] text-base leading-relaxed text-ink-soft">
-            Built from your CV and career break. Click any text to edit it.
+            Built from your saved experience and skills. Click any text to edit it.
             {roles.length > 1 && ' Each role keeps its own draft.'}
           </p>
           {roleError && (
@@ -368,13 +404,24 @@ export default function Cv() {
         </div>
 
         <div className="mt-12 grid items-start gap-10 lg:grid-cols-[minmax(0,1fr)_21rem]">
-          <div className="cv-stage cv-rise" style={{ '--i': 1 }} aria-busy={Boolean(tailoring)}>
-            {tailoring && (
+          <div
+            className="cv-stage cv-rise"
+            style={{ '--i': 1 }}
+            aria-busy={Boolean(generatingRole)}
+          >
+            {generatingRole && (
               <p role="status" className="cv-tailoring">
-                <span className="iv-shimmer">Writing your CV for {tailoring}</span>
+                <span className="iv-shimmer">
+                  {draft ? 'Refreshing' : 'Preparing'} your CV for{' '}
+                  {roles.find((role) => role.role_id === generatingRole)?.role ?? activeRole.role}
+                </span>
               </p>
             )}
-            <div key={roleId} className="cv-swap" data-dimmed={Boolean(tailoring) || undefined}>
+            <div
+              key={roleId}
+              className="cv-swap"
+              data-dimmed={Boolean(generatingRole) || undefined}
+            >
               <CvSheet
                 draft={draft}
                 suggestion={
@@ -410,12 +457,6 @@ export default function Cv() {
                     skills: current.skills.filter((s) => s !== skill),
                   }))
                 }
-                onCareerBreak={(change) =>
-                  update((current) => ({
-                    ...current,
-                    careerBreak: { ...current.careerBreak, ...change },
-                  }))
-                }
                 onImprove={improve}
                 onAccept={acceptSuggestion}
                 onDismiss={() => setSuggestion(null)}
@@ -427,14 +468,13 @@ export default function Cv() {
             role={activeRole.role}
             suggestedSkills={suggestedSkills}
             downloadError={downloadError}
-            disabled={Boolean(tailoring)}
+            disabled={Boolean(generatingRole)}
             onDownload={download}
-            onCareerBreakChoice={(include) =>
-              update((current) => ({
-                ...current,
-                careerBreak: { ...current.careerBreak, include },
-              }))
-            }
+            regenerating={generatingRole === roleId}
+            onRegenerate={() => {
+              generationRequests.current.add(roleId);
+              requestDraft(roleId, true);
+            }}
             onAddSkill={(skill) =>
               update((current) => ({ ...current, skills: [...current.skills, skill] }))
             }

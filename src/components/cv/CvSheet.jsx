@@ -41,7 +41,6 @@ export default function CvSheet({
   onRemoveExperience,
   onAddExperience,
   onRemoveSkill,
-  onCareerBreak,
   onImprove,
   onAccept,
   onDismiss,
@@ -199,20 +198,6 @@ export default function CvSheet({
           Add a role
         </button>
       </Section>
-
-      {draft.careerBreak?.include && (
-        <Section title="Career break">
-          <div className="cv-role">
-            <p className="cv-role-title">{draft.careerBreak.duration}</p>
-            <textarea
-              aria-label="Career break description"
-              value={draft.careerBreak.description}
-              onChange={(event) => onCareerBreak({ description: event.target.value })}
-              className="cv-edit cv-prose"
-            />
-          </div>
-        </Section>
-      )}
     </article>
   );
 }

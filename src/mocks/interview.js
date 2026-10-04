@@ -280,18 +280,4 @@ export const interviewHandlers = [
       strengths: sorted(strengths),
     });
   }),
-
-  /* CV wording endpoint: outside the interview scope but still used by the CV
-     feature, so it stays mocked here. */
-  http.post('*/api/cv/improve', async ({ request }) => {
-    const { text, previous_suggestions: previous = [] } = await request.json();
-    const parts = sentences(text);
-    const variants = [
-      `${parts.join('. ')}.`,
-      parts.map((part) => `- ${part}`).join('\n'),
-      `${parts.join('; ')}.`,
-    ];
-    const suggestion = variants.find((variant) => !previous.includes(variant)) ?? variants[0];
-    return HttpResponse.json({ suggestion });
-  }),
 ];

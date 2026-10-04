@@ -291,14 +291,6 @@ function layoutCv(draft) {
     });
   }
 
-  if (draft.careerBreak?.include) {
-    layout.heading('Career break');
-    experience(layout, {
-      title: draft.careerBreak.duration,
-      description: draft.careerBreak.description,
-    });
-  }
-
   return layout;
 }
 
