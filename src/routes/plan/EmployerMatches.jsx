@@ -191,14 +191,16 @@ function EmployerCard({ employer, featured = false }) {
                 )}
               </div>
               <p className="mt-0.5 text-sm text-ink-soft">
-                {employer.industry} · {employer.location}
+                {employer.location ? `${employer.industry} · ${employer.location}` : employer.industry}
               </p>
             </div>
           </div>
 
-          <p className="mt-5 max-w-[60ch] text-[0.9375rem] leading-relaxed text-ink-soft">
-            {employer.summary}
-          </p>
+          {employer.summary && !employer.summary.trimStart().startsWith('{') && (
+            <p className="mt-5 max-w-[60ch] text-[0.9375rem] leading-relaxed text-ink-soft">
+              {employer.summary}
+            </p>
+          )}
 
           {/* Pinned to the bottom of the column. */}
           <div className="mt-auto pt-6">
@@ -229,16 +231,20 @@ function EmployerCard({ employer, featured = false }) {
             )}
 
             <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2">
-              <a
-                href={employer.website}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="group -ml-1 inline-flex items-center gap-2 rounded-full py-0.5 pl-1 text-sm font-semibold text-ink transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
-              >
-                View company details
-                <span className="sr-only">, opens {employer.name} in a new tab</span>
-                <ArrowBadge className="size-6 bg-canvas-sunk" />
-              </a>
+              {employer.website ? (
+                <a
+                  href={employer.website}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="group -ml-1 inline-flex items-center gap-2 rounded-full py-0.5 pl-1 text-sm font-semibold text-ink transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
+                >
+                  View company details
+                  <span className="sr-only">, opens {employer.name} in a new tab</span>
+                  <ArrowBadge className="size-6 bg-canvas-sunk" />
+                </a>
+              ) : (
+                <span />
+              )}
 
               {employer.report ? (
                 <p className="text-xs text-ink-faint">
