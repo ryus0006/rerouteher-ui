@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { getAnswerFeedback, transcribeAnswer } from '../../api/interview.js';
 import useRecorder from '../../hooks/useRecorder.js';
+import AskHeraAboutInterview from '../companion/AskHeraAboutInterview.jsx';
 import { useInterviewStore } from '../../store/interviewStore.js';
 import AttemptView from './AttemptView.jsx';
 import InterviewIcon from './InterviewIcon.jsx';
@@ -10,17 +10,30 @@ import WordReveal from './WordReveal.jsx';
 
 const clock = (seconds) => `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`;
 
+/** Server error codes mapped to something a user can act on. */
+const UPLOAD_ERRORS = {
+  no_speech_detected:
+    'No speech was picked up in that recording. Check your microphone and record again.',
+  unsupported_audio_type: 'That audio format is not supported. Record again.',
+  recording_too_large:
+    'That recording is too large. Keep it under a couple of minutes and record again.',
+  recording_too_long:
+    'That recording is too long. Keep it under a couple of minutes and record again.',
+  invalid_audio: 'That recording could not be read. Record again.',
+  transcription_unavailable: 'The transcriber is busy right now. Record again in a moment.',
+};
+
 /**
- * A single question: recording, transcription, feedback and retries. The
- * parent keys it by question id so recorder state resets between questions.
+ * A single question slot from the server. Recording uploads one attempt (the
+ * backend transcribes, redacts, saves, and returns feedback in one call); a
+ * feedback failure keeps the transcript and offers a retry. All attempts come
+ * from the slot, which the store re-reads after each call.
  */
 export default function QuestionCard({
   question,
   position,
   total,
   note,
-  attempts,
-  context,
   onBusyChange,
   statuses,
   onJump,
@@ -28,17 +41,19 @@ export default function QuestionCard({
   onNext,
   onFinish,
 }) {
-  const addAttempt = useInterviewStore((state) => state.addAttempt);
-  const updateAttempt = useInterviewStore((state) => state.updateAttempt);
+  const submitAttempt = useInterviewStore((state) => state.submitAttempt);
+  const retry = useInterviewStore((state) => state.retry);
   const recorder = useRecorder();
 
-  const [phase, setPhase] = useState(null);
-  const [transcribeError, setTranscribeError] = useState(null);
-  const [feedbackError, setFeedbackError] = useState(null);
+  // The backend seeds a pending placeholder response per question; a slot counts
+  // as answered only once an attempt has been recorded (feedback ready or errored).
+  const attempts = (question.attempts ?? []).filter(
+    (a) => a.feedback_status === 'ready' || a.feedback_status === 'error'
+  );
+  const [phase, setPhase] = useState(null); // 'submitting' | 'reviewing' | null
+  const [uploadError, setUploadError] = useState(null);
   const [retrying, setRetrying] = useState(false);
   const [shown, setShown] = useState(attempts.length - 1);
-  // Recording retained after a failed transcription so it can be resent.
-  const [unsent, setUnsent] = useState(null);
 
   const voiceRef = useRef(null);
   // "Try again" is at the bottom of the card; scroll the recorder back into view.
@@ -53,79 +68,51 @@ export default function QuestionCard({
   const hasAttempts = attempts.length > 0;
   const showRecorder = !hasAttempts || retrying;
   const latest = attempts.at(-1);
-  const answeredWithFeedback = Boolean(latest?.feedback);
+  const answeredWithFeedback = latest?.feedback_status === 'ready';
   const isLast = position === total - 1;
-  const viewed = attempts[Math.min(shown, attempts.length - 1)];
+  // Clamp defensively so a stale index (e.g. carried from another session) never
+  // hides an existing attempt's feedback.
+  const viewed = attempts[Math.min(Math.max(shown, 0), attempts.length - 1)];
 
-  async function requestFeedback(attempt) {
-    setPhase('reviewing');
-    setFeedbackError(null);
+  async function submit(recording) {
+    setUploadError(null);
+    setPhase('submitting');
     try {
-      const feedback = await getAnswerFeedback({
-        question,
-        role: question.role,
-        focus: question.focus,
-        transcript: attempt.transcript,
-        context,
-      });
-      updateAttempt(question.id, attempt.id, { feedback });
+      await submitAttempt({ sequenceNo: question.sequence_no, audio: recording.blob });
+      // The store re-reads the session, so the new attempt arrives on the slot.
+      setShown(attempts.length);
+      setRetrying(false);
     } catch (cause) {
-      setFeedbackError(cause.message ? `Feedback could not be generated: ${cause.message}.` : null);
+      setUploadError(
+        UPLOAD_ERRORS[cause.message] ?? 'Your answer could not be processed. Record again.'
+      );
     } finally {
       setPhase(null);
     }
   }
 
-  async function processRecording(recording) {
-    setUnsent(recording);
-    setTranscribeError(null);
-    setPhase('transcribing');
-
-    let transcript;
-    try {
-      ({ transcript } = await transcribeAnswer(recording.blob));
-    } catch (cause) {
-      setTranscribeError(cause.message || 'The recording could not be turned into text.');
-      setPhase(null);
-      return;
-    }
-
-    if (!transcript?.trim()) {
-      setUnsent(null);
-      setTranscribeError(
-        'No speech was picked up in that recording. Check your microphone and record again.'
-      );
-      setPhase(null);
-      return;
-    }
-
-    setUnsent(null);
-    const attempt = {
-      id: `${question.id}-${Date.now()}`,
-      transcript: transcript.trim(),
-      seconds: recording.seconds,
-      feedback: null,
-      at: Date.now(),
-    };
-    addAttempt(question.id, attempt);
-    setShown(attempts.length);
-    setRetrying(false);
-    await requestFeedback(attempt);
-  }
-
   async function stopRecording() {
     const recording = await recorder.stop();
-    if (recording) await processRecording(recording);
+    if (recording) await submit(recording);
     else
-      setTranscribeError(
+      setUploadError(
         'No audio came through from your microphone. Check it is connected, then record again.'
       );
+  }
+
+  async function retryFeedbackFor(attempt) {
+    setPhase('reviewing');
+    try {
+      await retry(attempt.response_id);
+    } finally {
+      setPhase(null);
+    }
   }
 
   const recording = recorder.status === 'recording';
   const orbState = recording
     ? 'recording'
-    : phase === 'transcribing'
+    : phase === 'submitting'
       ? 'processing'
       : recorder.status === 'requesting'
         ? 'requesting'
@@ -166,16 +153,17 @@ export default function QuestionCard({
       <WordReveal
         as="h2"
         id="interview-question-text"
-        text={question.text}
+        text={question.question_text}
         className="iv-question-text"
       />
+      <AskHeraAboutInterview className="mt-4" />
 
       {showRecorder ? (
         <div ref={voiceRef} className="iv-voice">
           <VoiceOrb
             state={orbState}
             level={recorder.level}
-            disabled={recorder.status === 'requesting' || phase === 'transcribing'}
+            disabled={recorder.status === 'requesting' || phase === 'submitting'}
             onPress={recording ? stopRecording : () => recorder.start()}
           />
           <div className="min-w-0 flex-1">
@@ -184,9 +172,9 @@ export default function QuestionCard({
                 <p className="iv-voice-time tabular">{clock(recorder.seconds)}</p>
                 <p className="mt-1 text-sm text-ink-soft">Recording. Tap the circle to stop.</p>
               </>
-            ) : phase === 'transcribing' ? (
+            ) : phase === 'submitting' ? (
               <p role="status" className="iv-shimmer">
-                Turning your answer into text
+                Turning your answer into text and reviewing it
               </p>
             ) : (
               <>
@@ -198,25 +186,16 @@ export default function QuestionCard({
                       : 'Tap to answer out loud'}
                 </p>
                 <p className="mt-1 max-w-[44ch] text-sm leading-relaxed text-ink-soft">
-                  Speak as you would in the room. When you stop, your answer is turned into text and
-                  reviewed.
+                  Speak as you would in the room, and keep each answer under 5 minutes. When you
+                  stop, your answer is turned into text and reviewed.
                   {retrying && ' Your earlier answers stay saved, so you can compare them.'}
                 </p>
               </>
             )}
-            {transcribeError && !recording && phase !== 'transcribing' && (
+            {uploadError && !recording && phase !== 'submitting' && (
               <div role="alert" className="iv-alert">
                 <InterviewIcon name="alert" className="size-5 shrink-0 text-pink-600" />
-                <p className="min-w-0 flex-1">{transcribeError}</p>
-                {unsent && (
-                  <button
-                    type="button"
-                    onClick={() => processRecording(unsent)}
-                    className="iv-text-button"
-                  >
-                    Send it again
-                  </button>
-                )}
+                <p className="min-w-0 flex-1">{uploadError}</p>
               </div>
             )}
             {recorder.status === 'blocked' && (
@@ -237,15 +216,15 @@ export default function QuestionCard({
         </p>
       )}
 
-      {hasAttempts && (
+      {hasAttempts && viewed && (
         <div className="iv-response">
           {attempts.length > 1 && (
             <div className="mb-8 flex flex-wrap gap-1.5" role="group" aria-label="Your attempts">
               {attempts.map((attempt, number) => (
                 <button
-                  key={attempt.id}
+                  key={attempt.response_id}
                   type="button"
-                  aria-pressed={viewed.id === attempt.id}
+                  aria-pressed={viewed.response_id === attempt.response_id}
                   onClick={() => setShown(number)}
                   className="iv-attempt-tab"
                 >
@@ -256,11 +235,10 @@ export default function QuestionCard({
             </div>
           )}
           <AttemptView
-            key={viewed.id}
+            key={viewed.response_id}
             attempt={viewed}
-            reviewing={phase === 'reviewing' && viewed.id === latest.id}
-            feedbackError={feedbackError}
-            onRetryFeedback={() => requestFeedback(viewed)}
+            reviewing={phase === 'reviewing' && viewed.response_id === latest.response_id}
+            onRetryFeedback={() => retryFeedbackFor(viewed)}
           />
         </div>
       )}

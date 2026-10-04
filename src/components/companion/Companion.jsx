@@ -8,6 +8,8 @@ import useSmoothNavigate from '../../hooks/useSmoothNavigate.js';
 import { ACTIVITY_LABELS } from '../../config/activityTaxonomy.js';
 import { PRIORITY_NAMES } from '../../config/employerPriorities.js';
 import { useIntakeStore } from '../../store/intakeStore.js';
+import { useInterviewStore } from '../../store/interviewStore.js';
+import { buildInterviewContext } from '../../lib/interviewContext.js';
 import { useCompanionStore } from '../../store/companionStore.js';
 import HeraBot from './HeraBot.jsx';
 
@@ -116,6 +118,12 @@ const BUILD_OPENERS = [
   'Use the CV I uploaded.',
 ];
 
+const INTERVIEW_OPENERS = [
+  'How should I approach this question?',
+  'Help me understand my feedback',
+  'What would a good answer sound like?',
+];
+
 /** Returns a per-browser conversation id so history survives reloads. */
 function getSessionId() {
   const KEY = 'rerouteher.companionSession';
@@ -167,7 +175,11 @@ export default function Companion({ defaultMode = 'ask' }) {
 
   // An explicit mode from `openCompanion` takes precedence over the route default.
   const building = (open ? mode : defaultMode) === 'build';
-  const openers = building ? BUILD_OPENERS : ASK_OPENERS;
+  const openers = building
+    ? BUILD_OPENERS
+    : location.pathname === '/interview-practice'
+      ? INTERVIEW_OPENERS
+      : ASK_OPENERS;
 
   useEffect(() => {
     if (!open) return undefined;
@@ -246,6 +258,13 @@ export default function Companion({ defaultMode = 'ask' }) {
           roleSkillsOfferedForRoleId,
         },
         currentPage: location.pathname,
+        interview:
+          location.pathname === '/interview-practice'
+            ? buildInterviewContext(
+                useInterviewStore.getState().current,
+                useInterviewStore.getState().index
+              )
+            : null,
       });
 
       // Track which role the checklist was offered for so it is not offered again.

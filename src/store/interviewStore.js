@@ -1,103 +1,142 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
-import { sessionBacked } from './intakeStore.js';
-
-export const INTERVIEW_STORAGE_KEY = 'rerouteher.interviewPractice';
+import {
+  createSession,
+  deleteSession,
+  getAreas,
+  getSession,
+  listSessions,
+  refreshSession,
+  retryFeedback,
+  uploadAttempt,
+} from '../api/interview.js';
 
 /**
- * @typedef {{ id: string, text: string, kind: 'general' | 'role_specific', role: { role: string, role_id: string }, focus: string }} PracticeQuestion
- * @typedef {{ summary: string, worked_well: { area: string, detail: string }[], to_improve: { area: string, detail: string }[] }} AnswerFeedback
- * @typedef {{ id: string, transcript: string, seconds: number, feedback: AnswerFeedback | null, at: number }} Attempt
+ * @typedef {{ session_id: string, role: { role_id: string, role_title: string }, practice_focus: string, status: string, progress: number }} SessionSummary
+ * @typedef {{ session_id: string, role: { role_id: string, role_title: string }, practice_focus: string, status: string, questions: object[] }} SessionDetail
+ * @typedef {{ improvements: object[], strengths: object[] }} Areas
  */
 
 const initialState = {
-  /** @type {{ role: { role: string, role_id: string }, focus: string } | null} */
-  setup: null,
-  /** Questions in the current set. @type {PracticeQuestion[]} */
-  questions: [],
+  /** @type {SessionSummary[]} */
+  sessions: [],
+  /** @type {SessionDetail | null} */
+  current: null,
+  /** @type {Areas | null} */
+  areas: null,
+  /** Index of the question on screen within `current.questions`. */
   index: 0,
-  /** Attempts keyed by question id, oldest first. @type {Record<string, Attempt[]>} */
-  attempts: {},
-  /** Answered questions from previous sets, retained for feedback aggregation. @type {PracticeQuestion[]} */
-  earlier: [],
-  /** Whether any set has been completed; unlocks the areas-to-improve view. */
-  finishedASet: false,
+  /** @type {'practice' | 'areas' | 'complete'} */
+  view: 'practice',
+  loading: false,
+  /** @type {string | null} */
+  error: null,
 };
 
-const answered = (attempts, question) => (attempts[question.id] ?? []).length > 0;
+const clampIndex = (index, length) => Math.max(0, Math.min(index, Math.max(0, length - 1)));
 
 /**
- * Interview practice state, persisted for the tab session.
- *
- * Each question records the role and focus it was generated with, so a setup
- * change mid-set only affects subsequent questions.
+ * Interview practice state as a thin cache over the server, which owns the
+ * sessions, attempts, and feedback. Not persisted: it rehydrates by calling
+ * `loadSessions` / `openSession` on mount, so a signed-in user's work reloads
+ * from the server after relogin rather than from this tab's storage.
  */
-export const useInterviewStore = create(
-  persist(
-    (set) => ({
-      ...initialState,
+export const useInterviewStore = create((set, get) => {
+  /** Runs an async unit with shared loading/error handling. */
+  async function run(work) {
+    set({ loading: true, error: null });
+    try {
+      return await work();
+    } catch (error) {
+      set({ error: error?.message ?? 'Something went wrong.' });
+      throw error;
+    } finally {
+      set({ loading: false });
+    }
+  }
 
-      setSetup: (setup) => set({ setup }),
+  /** Re-reads the current session so the view always matches the server. */
+  async function reread() {
+    const { current } = get();
+    if (!current) return null;
+    const detail = await getSession(current.session_id);
+    set({ current: detail });
+    return detail;
+  }
 
-      /** Starts a new set; answered questions from the current set move to `earlier`. */
-      startSet: (setup, questions) =>
-        set((state) => ({
-          setup,
-          questions,
-          index: 0,
-          earlier: [
-            ...state.earlier,
-            ...state.questions.filter((q) => answered(state.attempts, q)),
-          ],
-        })),
+  return {
+    ...initialState,
 
-      /**
-       * Applies a new setup to the rest of the set: unanswered questions from the
-       * current index onward are replaced; answered questions are unchanged.
-       */
-      replaceUpcoming: (setup, replacements) =>
+    loadSessions: () =>
+      run(async () => {
+        const sessions = await listSessions();
+        set({ sessions });
+        return sessions;
+      }),
+
+    openSession: (sessionId) =>
+      run(async () => {
+        const detail = await getSession(sessionId);
+        set({ current: detail, index: 0, view: 'practice' });
+        return detail;
+      }),
+
+    startSession: ({ roleId, focus }) =>
+      run(async () => {
+        const detail = await createSession({ roleId, focus });
+        set({ current: detail, index: 0, view: 'practice' });
+        return detail;
+      }),
+
+    refreshCurrent: () =>
+      run(async () => {
+        const { current } = get();
+        if (!current) return null;
+        const detail = await refreshSession(current.session_id);
+        set({ current: detail, index: 0, view: 'practice' });
+        return detail;
+      }),
+
+    removeSession: (sessionId) =>
+      run(async () => {
+        await deleteSession(sessionId);
         set((state) => {
-          const queue = [...replacements];
-          const questions = state.questions.map((question, position) =>
-            position >= state.index && !answered(state.attempts, question) && queue.length > 0
-              ? queue.shift()
-              : question
-          );
-          return { setup, questions };
-        }),
+          const wasCurrent = state.current?.session_id === sessionId;
+          return {
+            sessions: state.sessions.filter((s) => s.session_id !== sessionId),
+            current: wasCurrent ? null : state.current,
+            view: wasCurrent ? 'practice' : state.view,
+          };
+        });
+      }),
 
-      goTo: (index) =>
-        set((state) => ({ index: Math.max(0, Math.min(index, state.questions.length - 1)) })),
+    submitAttempt: ({ sequenceNo, audio }) =>
+      run(async () => {
+        const { current } = get();
+        if (!current) return { ok: false, attempt: null };
+        const result = await uploadAttempt({ sessionId: current.session_id, sequenceNo, audio });
+        await reread();
+        return result;
+      }),
 
-      addAttempt: (questionId, attempt) =>
-        set((state) => ({
-          attempts: {
-            ...state.attempts,
-            [questionId]: [...(state.attempts[questionId] ?? []), attempt],
-          },
-        })),
+    retry: (responseId) =>
+      run(async () => {
+        const result = await retryFeedback(responseId);
+        await reread();
+        return result;
+      }),
 
-      updateAttempt: (questionId, attemptId, change) =>
-        set((state) => ({
-          attempts: {
-            ...state.attempts,
-            [questionId]: (state.attempts[questionId] ?? []).map((attempt) =>
-              attempt.id === attemptId ? { ...attempt, ...change } : attempt
-            ),
-          },
-        })),
+    loadAreas: () =>
+      run(async () => {
+        const areas = await getAreas();
+        set({ areas });
+        return areas;
+      }),
 
-      finishSet: () => set({ finishedASet: true }),
+    goTo: (index) =>
+      set((state) => ({ index: clampIndex(index, state.current?.questions.length ?? 0) })),
 
-      reset: () => set(initialState),
-    }),
-    { name: INTERVIEW_STORAGE_KEY, version: 1, storage: sessionBacked() }
-  )
-);
+    setView: (view) => set({ view }),
 
-/** Number of unanswered questions from `index` onward, i.e. those a setup change would replace. */
-export function upcomingCount({ questions, attempts, index }) {
-  return questions.filter(
-    (question, position) => position >= index && !answered(attempts, question)
-  ).length;
-}
+    reset: () => set({ ...initialState }),
+  };
+});

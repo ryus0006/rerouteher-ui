@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, MotionConfig, motion } from 'motion/react';
 import Header from '../components/layout/Header.jsx';
 import GradientButton from '../components/ui/GradientButton.jsx';
@@ -8,17 +8,10 @@ import QuestionCard from '../components/interview/QuestionCard.jsx';
 import SessionSteps from '../components/interview/SessionSteps.jsx';
 import SetComplete from '../components/interview/SetComplete.jsx';
 import SetupPanel from '../components/interview/SetupPanel.jsx';
-import {
-  QUESTIONS_PER_SET,
-  focusLabel,
-  generateQuestions,
-  interviewContext,
-} from '../api/interview.js';
-import { ACTIVITY_LABELS } from '../config/activityTaxonomy.js';
+import { focusLabel } from '../api/interview.js';
 import useSmoothNavigate from '../hooks/useSmoothNavigate.js';
-import { summariseFeedback } from '../lib/interviewAreas.js';
 import { journeyProgress } from '../lib/journeyProgress.js';
-import { upcomingCount, useInterviewStore } from '../store/interviewStore.js';
+import { useInterviewStore } from '../store/interviewStore.js';
 import { useAccountStore } from '../store/accountStore.js';
 import { useIntakeStore } from '../store/intakeStore.js';
 
@@ -28,7 +21,7 @@ const SLIDE = {
   exit: (direction) => ({ opacity: 0, x: direction * -48 }),
 };
 
-/** Shown when no target role exists yet; practice requires one. */
+/** Shown when no target role exists yet, or the server says the journey is incomplete. */
 function NotReady() {
   const navigate = useSmoothNavigate();
   const cvParsed = useIntakeStore((state) => state.cvParsed);
@@ -103,46 +96,42 @@ function SignInRequired() {
   );
 }
 
-/**
- * Optional note above a question: its kind in a mixed set, or the setup it was
- * generated under if the setup has since changed.
- */
-function questionNote(question, setup) {
-  if (question.role.role_id !== setup.role.role_id || question.focus !== setup.focus) {
-    return `Asked when practising for ${question.role.role}, ${focusLabel(question.focus).toLowerCase()} focus`;
-  }
-  if (setup.focus === 'mixed') {
-    return question.kind === 'role_specific' ? 'Role-specific question' : 'General question';
+/** In a mixed set, labels each question as general or role-specific. */
+function questionNote(slot, focus) {
+  if (focus === 'mixed') {
+    return slot.kind === 'role_specific' ? 'Role-specific question' : 'General question';
   }
   return null;
 }
 
 export default function InterviewPractice() {
   const user = useAccountStore((state) => state.user);
-  const cv = useIntakeStore((state) => state.cv);
-  const careerBreak = useIntakeStore((state) => state.break);
   const snapshot = useIntakeStore((state) => state.snapshot);
   const selectedRole = useIntakeStore((state) => state.selectedRole);
   const gapResult = useIntakeStore((state) => state.gapResult);
 
-  const storedSetup = useInterviewStore((state) => state.setup);
-  const questions = useInterviewStore((state) => state.questions);
+  const sessions = useInterviewStore((state) => state.sessions);
+  const current = useInterviewStore((state) => state.current);
+  const areas = useInterviewStore((state) => state.areas);
   const index = useInterviewStore((state) => state.index);
-  const attempts = useInterviewStore((state) => state.attempts);
-  const earlier = useInterviewStore((state) => state.earlier);
-  const finishedASet = useInterviewStore((state) => state.finishedASet);
-  const finishSet = useInterviewStore((state) => state.finishSet);
-  const startSet = useInterviewStore((state) => state.startSet);
-  const replaceUpcoming = useInterviewStore((state) => state.replaceUpcoming);
+  const view = useInterviewStore((state) => state.view);
+  const loading = useInterviewStore((state) => state.loading);
+  const storeError = useInterviewStore((state) => state.error);
+  const loadSessions = useInterviewStore((state) => state.loadSessions);
+  const openSession = useInterviewStore((state) => state.openSession);
+  const startSession = useInterviewStore((state) => state.startSession);
+  const refreshCurrent = useInterviewStore((state) => state.refreshCurrent);
+  const loadAreas = useInterviewStore((state) => state.loadAreas);
   const goTo = useInterviewStore((state) => state.goTo);
+  const setView = useInterviewStore((state) => state.setView);
 
-  // null when closed; 'change' edits the current set, 'new' starts a new set.
-  const [setupMode, setSetupMode] = useState(null);
-  const [view, setView] = useState('practice');
-  const [busy, setBusy] = useState(false);
-  const [direction, setDirection] = useState(1);
-  const [pending, setPending] = useState(false);
+  const [activeRoleId, setActiveRoleId] = useState(null);
+  const [manualSetup, setManualSetup] = useState(false);
   const [setupError, setSetupError] = useState(null);
+  const [notReady, setNotReady] = useState(false);
+  const [listLoaded, setListLoaded] = useState(false);
+  const [direction, setDirection] = useState(1);
+  const [busy, setBusy] = useState(false);
 
   const roles = useMemo(() => {
     const matched = snapshot?.recommended_roles ?? [];
@@ -151,86 +140,85 @@ export default function InterviewPractice() {
     return [selectedRole, ...matched];
   }, [snapshot, selectedRole]);
 
-  const context = useMemo(
-    () =>
-      interviewContext({
-        cv,
-        careerBreak: careerBreak && {
-          duration_years: careerBreak.duration_years,
-          activities: careerBreak.activities.map((id) => ACTIVITY_LABELS[id] ?? id),
-        },
-        snapshot,
-        gapResult,
-      }),
-    [cv, careerBreak, snapshot, gapResult]
-  );
+  // The active role: the user's choice, else the journey's selected role, else
+  // the first available. Derived so no effect needs to seed it.
+  const activeRoleIdValue = activeRoleId ?? selectedRole?.role_id ?? roles[0]?.role_id ?? null;
+  const sessionForActive = sessions.find((s) => s.role.role_id === activeRoleIdValue);
+  const currentMatchesActive = current?.role?.role_id === activeRoleIdValue;
 
-  const summary = useMemo(
-    () => summariseFeedback([...earlier, ...questions], attempts),
-    [earlier, questions, attempts]
-  );
+  // Load the user's sessions once, when signed in with a completed journey.
+  useEffect(() => {
+    if (user && snapshot && gapResult) {
+      loadSessions().finally(() => setListLoaded(true));
+    }
+  }, [user, snapshot, gapResult, loadSessions]);
+
+  // Open the active role's existing session when it is not the loaded one. This
+  // effect only triggers the server read; setup visibility is derived in render.
+  useEffect(() => {
+    if (!listLoaded || !activeRoleIdValue || currentMatchesActive) return;
+    if (sessionForActive && current?.session_id !== sessionForActive.session_id) {
+      openSession(sessionForActive.session_id).catch(() => {});
+    }
+  }, [listLoaded, activeRoleIdValue, currentMatchesActive, sessionForActive, current, openSession]);
 
   if (!user) return <SignInRequired />;
   if (!snapshot || !gapResult || roles.length === 0) return <NotReady />;
+  if (notReady) return <NotReady />;
 
-  // Fall back to the journey's selected role if the saved role is no longer available.
-  const setup =
-    storedSetup && roles.some((role) => role.role_id === storedSetup.role.role_id)
-      ? storedSetup
-      : { role: selectedRole ?? roles[0], focus: 'mixed' };
-
-  const started = questions.length > 0;
-  const upcoming = upcomingCount({ questions, attempts, index });
-  const answeredInSet = questions.filter((q) => attempts[q.id]?.length).length;
-  const statuses = questions.map((q, position) =>
-    position === index ? 'current' : attempts[q.id]?.length ? 'done' : 'todo'
+  const activeRole =
+    roles.find((role) => role.role_id === activeRoleIdValue) ?? selectedRole ?? roles[0];
+  // Setup shows when the user opened it, or when the active role has no session
+  // yet (once the list has loaded, so it does not flash during the initial read).
+  const setupShowing = manualSetup || (listLoaded && !currentMatchesActive && !sessionForActive);
+  const started = Boolean(current && current.questions.length > 0) && !setupShowing;
+  const slots = current?.questions ?? [];
+  const slot = slots[index];
+  // The backend seeds a pending placeholder per question; a slot is answered only
+  // once it has a recorded attempt (feedback ready or errored), not the placeholder.
+  const isAnswered = (q) =>
+    q.attempts.some((a) => a.feedback_status === 'ready' || a.feedback_status === 'error');
+  const answeredInSet = slots.filter(isAnswered).length;
+  const hasReadyAttempt = slots.some((q) => q.attempts.some((a) => a.feedback_status === 'ready'));
+  const statuses = slots.map((q, position) =>
+    position === index ? 'current' : isAnswered(q) ? 'done' : 'todo'
   );
-  const question = questions[index];
-  const setupOpen = setupMode !== null;
-  const showSetup = !started || setupOpen;
 
   function move(to) {
     setDirection(to >= index ? 1 : -1);
     goTo(to);
   }
 
-  async function confirmSetup(next) {
-    const asked = [...earlier, ...questions].map((q) => q.text);
-    const replacing = started && setupMode === 'change' && upcoming > 0;
-    const count = replacing ? upcoming : QUESTIONS_PER_SET;
+  function changeRole(roleId) {
+    setSetupError(null);
+    setManualSetup(false);
+    setActiveRoleId(roleId);
+  }
 
-    setPending(true);
+  async function confirmSetup({ roleId, focus }) {
     setSetupError(null);
     try {
-      const { questions: generated } = await generateQuestions({
-        role: next.role,
-        focus: next.focus,
-        count,
-        exclude: asked,
-        context,
-      });
-      const stamp = Date.now();
-      const fresh = generated
-        .filter((q) => !asked.includes(q.text))
-        .slice(0, count)
-        .map((q, position) => ({
-          id: `${stamp}-${position}`,
-          text: q.text,
-          kind: q.kind,
-          role: { role: next.role.role, role_id: next.role.role_id },
-          focus: next.focus,
-        }));
-      if (fresh.length === 0) throw new Error('No new questions came back');
-
-      if (replacing) replaceUpcoming(next, fresh);
-      else startSet(next, fresh);
-      setSetupMode(null);
-      setView('practice');
+      await startSession({ roleId, focus });
+      await loadSessions();
+      setActiveRoleId(roleId);
+      setManualSetup(false);
     } catch (cause) {
-      setSetupError(`Questions could not be prepared (${cause.message}). Try again.`);
-    } finally {
-      setPending(false);
+      if (cause?.status === 409 || cause?.status === 422) {
+        setNotReady(true);
+        return;
+      }
+      setSetupError(`Your practice could not be started (${cause.message}). Try again.`);
     }
+  }
+
+  async function showAreas() {
+    await loadAreas();
+    setView('areas');
+  }
+
+  async function newSet() {
+    await refreshCurrent();
+    setView('practice');
   }
 
   return (
@@ -240,7 +228,6 @@ export default function InterviewPractice() {
         <main className="page-shell max-w-[1200px] flex-1 pt-14 pb-20">
           <div className={`flex justify-between gap-8 ${started ? 'items-center' : 'items-end'}`}>
             <div className="min-w-0 flex-1">
-              {/* Visually hidden once practice starts; the question acts as the headline. */}
               <h1
                 className={
                   started
@@ -251,10 +238,27 @@ export default function InterviewPractice() {
                 Interview practice
               </h1>
               {started ? (
-                <p className="text-base text-ink-soft">
-                  Practising for <span className="font-semibold text-ink">{setup.role.role}</span>,{' '}
-                  {focusLabel(setup.focus).toLowerCase()} focus
-                </p>
+                <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-base text-ink-soft">
+                  <span>Practising for</span>
+                  <label className="sr-only" htmlFor="interview-role-switch">
+                    Change role
+                  </label>
+                  <select
+                    id="interview-role-switch"
+                    aria-label="Change role"
+                    value={activeRole.role_id}
+                    disabled={busy}
+                    onChange={(event) => changeRole(event.target.value)}
+                    className="interview-select-inline font-semibold text-ink"
+                  >
+                    {roles.map((role) => (
+                      <option key={role.role_id} value={role.role_id}>
+                        {role.role}
+                      </option>
+                    ))}
+                  </select>
+                  <span>{focusLabel(current.practice_focus).toLowerCase()} focus</span>
+                </div>
               ) : (
                 <p className="mt-2 max-w-[60ch] text-base leading-relaxed text-ink-soft">
                   Practise answering out loud, get feedback on each answer, and try any question
@@ -263,25 +267,23 @@ export default function InterviewPractice() {
               )}
             </div>
 
-            {started && !setupOpen && (
+            {started && (
               <div className="flex shrink-0 items-center gap-3 pb-0.5">
-                {finishedASet && summary.answered > 0 && view !== 'areas' && (
-                  <PillButton
-                    icon="chart"
-                    iconSide="start"
-                    disabled={busy}
-                    onClick={() => setView('areas')}
-                  >
+                {hasReadyAttempt && view !== 'areas' && (
+                  <PillButton icon="chart" iconSide="start" disabled={busy} onClick={showAreas}>
                     See areas to improve
                   </PillButton>
                 )}
+                <PillButton icon="retry" iconSide="start" disabled={busy} onClick={newSet}>
+                  New questions
+                </PillButton>
                 <PillButton
                   icon="pencil"
                   iconSide="start"
                   disabled={busy}
                   onClick={() => {
                     setSetupError(null);
-                    setSetupMode('change');
+                    setManualSetup(true);
                   }}
                 >
                   Change setup
@@ -290,8 +292,14 @@ export default function InterviewPractice() {
             )}
           </div>
 
+          {storeError && !setupShowing && (
+            <p role="alert" className="mt-6 text-sm text-pink-600">
+              {storeError}
+            </p>
+          )}
+
           <AnimatePresence initial={false}>
-            {showSetup && (
+            {setupShowing && activeRole && (
               <motion.div
                 key="setup"
                 initial={{ height: 0, opacity: 0 }}
@@ -300,21 +308,18 @@ export default function InterviewPractice() {
                 transition={{ duration: 0.55, ease: [0.32, 0.72, 0, 1] }}
                 className="overflow-hidden"
               >
-                <div
-                  className={`grid items-start gap-6 pt-8 ${started ? 'pb-2' : 'lg:grid-cols-[minmax(0,1fr)_19rem]'}`}
-                >
+                <div className="grid items-start gap-6 pt-8 lg:grid-cols-[minmax(0,1fr)_19rem]">
                   <SetupPanel
-                    key={`${setup.role.role_id}-${setup.focus}-${setupMode}`}
+                    key={activeRole.role_id}
                     roles={roles}
-                    setup={setup}
-                    midSet={started}
-                    upcoming={setupMode === 'new' ? 0 : upcoming}
-                    pending={pending}
+                    setup={{ role: activeRole, focus: 'mixed' }}
+                    pending={loading}
                     error={setupError}
                     onConfirm={confirmSetup}
-                    onCancel={() => setSetupMode(null)}
+                    canCancel={currentMatchesActive}
+                    onCancel={() => setManualSetup(false)}
                   />
-                  {!started && <SessionSteps />}
+                  <SessionSteps />
                 </div>
               </motion.div>
             )}
@@ -322,31 +327,27 @@ export default function InterviewPractice() {
 
           {started && view === 'areas' && (
             <div className="mt-8">
-              <AreasView summary={summary} onBack={() => setView('practice')} />
+              <AreasView areas={areas} onBack={() => setView('practice')} />
             </div>
           )}
 
-          {started && view === 'complete' && !setupOpen && (
+          {started && view === 'complete' && (
             <div className="mt-8">
               <SetComplete
                 answered={answeredInSet}
-                total={questions.length}
-                onNewSet={() => {
-                  setSetupError(null);
-                  setSetupMode('new');
-                }}
-                onSeeAreas={() => setView('areas')}
+                total={slots.length}
+                onNewSet={newSet}
+                onSeeAreas={showAreas}
                 onReview={() => setView('practice')}
               />
             </div>
           )}
 
-          {started && view === 'practice' && question && (
+          {started && view === 'practice' && slot && (
             <div className="mt-12 max-w-[56rem]">
-              {/* Slide direction follows navigation direction (next/previous). */}
               <AnimatePresence mode="wait" initial={false} custom={direction}>
                 <motion.div
-                  key={question.id}
+                  key={`${current.session_id}-${slot.sequence_no}`}
                   custom={direction}
                   variants={SLIDE}
                   initial="enter"
@@ -356,21 +357,16 @@ export default function InterviewPractice() {
                   className="min-w-0"
                 >
                   <QuestionCard
-                    question={question}
+                    question={slot}
                     position={index}
-                    total={questions.length}
-                    note={questionNote(question, setup)}
-                    attempts={attempts[question.id] ?? []}
-                    context={context}
+                    total={slots.length}
+                    note={questionNote(slot, current.practice_focus)}
                     onBusyChange={setBusy}
                     onPrevious={() => move(index - 1)}
                     onNext={() => move(index + 1)}
                     statuses={statuses}
                     onJump={move}
-                    onFinish={() => {
-                      finishSet();
-                      setView('complete');
-                    }}
+                    onFinish={() => setView('complete')}
                   />
                 </motion.div>
               </AnimatePresence>
