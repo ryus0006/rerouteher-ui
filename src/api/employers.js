@@ -7,7 +7,7 @@ import { postJson } from './client.js';
  * an employer discloses (`met`) and which it does not (`unmet`).
  *
  * @param {{ priorities: string[], targetRoleId: string }} request
- * @returns {Promise<{ employers: import('../types/api.js').EmployerMatch[] }>}
+ * @returns {Promise<import('../types/api.js').EmployerMatchResponse>}
  */
 export function matchEmployers({ priorities, targetRoleId }) {
   return postJson('/api/employers/match', {

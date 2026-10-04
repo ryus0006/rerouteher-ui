@@ -57,19 +57,36 @@ export const handlers = [
   http.post('*/api/employers/match', async ({ request }) => {
     const { priorities = [], target_role_id: targetRoleId } = await request.json();
 
+    if (targetRoleId === 'role_unavailable') {
+      return HttpResponse.json({
+        job_search: { status: 'temporarily_unavailable', searched_at: null },
+        employers: [],
+      });
+    }
+
     const employers = employersDefault.employers
-      /* Return only the job opening for the target role. */
-      .map(({ jobs, ...employer }) => ({
+      .map(({ job, ...employer }) => ({
         ...employer,
-        job: jobs?.[targetRoleId] ?? null,
+        job: job ?? null,
         met: priorities.filter((id) => employer.discloses.includes(id)),
         unmet: priorities.filter((id) => !employer.discloses.includes(id)),
       }))
       /* Exclude employers that meet none of the requested priorities. */
       .filter((employer) => employer.met.length > 0)
-      .sort((a, b) => b.met.length - a.met.length);
+      .sort(
+        (a, b) =>
+          Number(Boolean(b.job)) - Number(Boolean(a.job)) ||
+          b.met.length - a.met.length ||
+          a.name.localeCompare(b.name)
+      );
 
-    return HttpResponse.json({ employers });
+    return HttpResponse.json({
+      job_search: {
+        status: employers.some((employer) => employer.job) ? 'ready' : 'empty',
+        searched_at: '2026-10-04T00:00:00Z',
+      },
+      employers,
+    });
   }),
 
   /* Companion endpoint. Without a snapshot it acts as the profile builder and

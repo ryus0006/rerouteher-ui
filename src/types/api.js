@@ -98,6 +98,23 @@
  */
 
 /**
+ * @typedef {'ready' | 'empty' | 'temporarily_unavailable'} JobSearchStatus
+ */
+
+/**
+ * @typedef {Object} JobSearch
+ * @property {JobSearchStatus} status
+ * @property {string | null} searched_at
+ */
+
+/**
+ * @typedef {Object} JobOpening
+ * @property {string} title
+ * @property {string} url
+ * @property {string} found_at
+ */
+
+/**
  * @typedef {Object} EmployerMatch
  * @property {string} id
  * @property {string} name
@@ -110,6 +127,13 @@
  * @property {{ label: string, url: string } | null} [report]
  * @property {string[]} met
  * @property {string[]} unmet
+ * @property {JobOpening | null} job
+ */
+
+/**
+ * @typedef {Object} EmployerMatchResponse
+ * @property {JobSearch} job_search
+ * @property {EmployerMatch[]} employers
  */
 
 export {};
