@@ -15,40 +15,6 @@ import Avatar from '../account/Avatar.jsx';
  * the bar does not reflow on sign-in. When signed in, the name and avatar link
  * to the profile.
  */
-const RING_RADIUS = 7;
-const RING_CIRCUMFERENCE = 2 * Math.PI * RING_RADIUS;
-
-/** Compact progress ring showing diagnostic completion, sized for a nav link. */
-function ProgressRing({ percent }) {
-  return (
-    <span className="relative flex size-4 shrink-0">
-      <svg viewBox="0 0 18 18" className="size-4 -rotate-90" aria-hidden="true">
-        <circle
-          cx="9"
-          cy="9"
-          r={RING_RADIUS}
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2.5"
-          opacity="0.2"
-        />
-        <circle
-          cx="9"
-          cy="9"
-          r={RING_RADIUS}
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2.5"
-          strokeLinecap="round"
-          strokeDasharray={RING_CIRCUMFERENCE}
-          strokeDashoffset={RING_CIRCUMFERENCE * (1 - percent / 100)}
-        />
-      </svg>
-      <span className="sr-only">{percent}% complete</span>
-    </span>
-  );
-}
-
 export default function Header() {
   const user = useAccountStore((state) => state.user);
   const openSheet = useAccountStore((state) => state.openSheet);
@@ -73,20 +39,22 @@ export default function Header() {
   // Resolve via the helper: some stored accounts have no `displayName`.
   const name = user ? resolveDisplayName(user) : null;
 
-  /* The progress ring is hidden once the diagnostic is complete. */
-  const showProgress = progress.percent < 100;
+  /* While the diagnostic is incomplete, its screens carry their own stepper,
+     so "My journey" is left out of the header there. Once complete, it stays
+     so a user revisiting a step can return to the journey page. */
+  const inDiagnostic = pathname.startsWith('/diagnostic/') && progress.percent < 100;
 
   /* "My journey" is shown only to signed-in users. The remaining tools depend
      on the target role, so they appear once a gap result exists. The active
      item is marked as current rather than removed. */
   const unlocked = Boolean(gapResult);
   const links = [
-    user && {
-      to: '/journey',
-      label: 'My journey',
-      current: pathname === '/journey',
-      ring: showProgress,
-    },
+    user &&
+      !inDiagnostic && {
+        to: '/journey',
+        label: 'My journey',
+        current: pathname === '/journey',
+      },
     unlocked && {
       to: '/plan/learning',
       label: 'Learning plan',
@@ -138,7 +106,6 @@ export default function Header() {
                   : 'text-ink-soft hover:bg-canvas-sunk hover:text-ink',
               ].join(' ')}
             >
-              {link.ring && <ProgressRing percent={progress.percent} />}
               {link.label}
             </Link>
           ))}

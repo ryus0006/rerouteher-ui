@@ -23,8 +23,7 @@ function PriorityCard({ priority, checked, tracksChanges, change, onToggle }) {
   return (
     <label
       className={[
-        'flex h-full cursor-pointer flex-col rounded-2xl border transition duration-200 ease-spring active:scale-[0.98]',
-        tracksChanges ? 'p-5' : 'p-4',
+        'flex h-full cursor-pointer flex-col rounded-2xl border p-5 transition duration-200 ease-spring active:scale-[0.98]',
         'has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-blue-600',
         checked
           ? 'border-pink-600 bg-pink-100'
@@ -65,15 +64,7 @@ function PriorityCard({ priority, checked, tracksChanges, change, onToggle }) {
         </span>
       </span>
 
-      <span
-        className={
-          tracksChanges
-            ? 'mt-2 text-[0.9375rem] leading-relaxed text-ink-soft'
-            : 'mt-1.5 text-sm leading-snug text-ink-soft'
-        }
-      >
-        {priority.blurb}
-      </span>
+      <span className="mt-2 text-[0.9375rem] leading-relaxed text-ink-soft">{priority.blurb}</span>
 
       {/* Placed below the blurb so long titles stay on one line. The row is
           always reserved when tracking changes, so toggling a card does not
@@ -101,14 +92,11 @@ function PriorityCard({ priority, checked, tracksChanges, change, onToggle }) {
  * viewport, not the container width.
  *
  * `baseline` is the selection used for the last search. When provided, cards
- * whose state differs show an Added/Removed badge, and cards use the larger
- * layout.
+ * whose state differs show an Added/Removed badge.
  */
 export default function PriorityPicker({ chosen, baseline, columns = 3, onToggle }) {
   return (
-    <ul
-      className={`grid sm:grid-cols-2 ${baseline ? 'gap-4' : 'gap-3'} ${columns === 3 ? 'lg:grid-cols-3' : ''}`}
-    >
+    <ul className={`grid gap-4 sm:grid-cols-2 ${columns === 3 ? 'lg:grid-cols-3' : ''}`}>
       {EMPLOYER_PRIORITIES.map((priority, index) => {
         const checked = chosen.includes(priority.id);
         const before = baseline ? baseline.includes(priority.id) : checked;

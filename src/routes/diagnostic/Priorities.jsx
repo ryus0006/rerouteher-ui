@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import useSmoothNavigate from '../../hooks/useSmoothNavigate.js';
+import { ArrowRight } from '@phosphor-icons/react';
 import GradientButton from '../../components/ui/GradientButton.jsx';
 import IntakeLayout from '../../components/intake/IntakeLayout.jsx';
 import BackLink from '../../components/intake/BackLink.jsx';
@@ -49,14 +50,14 @@ export default function Priorities() {
   return (
     <IntakeLayout
       stageIndex={2}
-      back={<BackLink to="/diagnostic/break">Back to career break</BackLink>}
       title="What matters most for your return?"
-      intro={`Pick as many as matter to you. We come back to these at the end, to find employers whose published reports match.`}
+      intro="Select all the priorities that matter to you."
+      wide
     >
-      <PriorityPicker chosen={chosen} columns={2} onToggle={toggle} />
+      <PriorityPicker chosen={chosen} onToggle={toggle} />
 
       <div className="mt-6">
-        <HowItWorks />
+        <HowItWorks compact />
       </div>
 
       {error && (
@@ -65,13 +66,14 @@ export default function Priorities() {
         </p>
       )}
 
-      <div className="mt-6 flex justify-end">
+      <div className="mt-6 flex items-center justify-between">
+        <BackLink to="/diagnostic/break">Back to career break</BackLink>
         <GradientButton
           disabled={!canGenerate || chosen.length === 0 || generating}
           onClick={handleGenerate}
         >
           {generating ? 'Building your snapshot…' : 'Continue to Skill Snapshot'}
-          {!generating && <span aria-hidden="true">→</span>}
+          {!generating && <ArrowRight weight="bold" className="size-4" aria-hidden="true" />}
         </GradientButton>
       </div>
     </IntakeLayout>

@@ -37,7 +37,12 @@ const TONES = {
  *
  * @param {{ value: number, label?: string, tone?: 'plane' | 'light', markers?: { at: number, skill: string }[] }} props
  */
-export default function ReadinessGauge({ value, label = 'Ready today', tone = 'plane', markers = [] }) {
+export default function ReadinessGauge({
+  value,
+  label = 'Ready today',
+  tone = 'plane',
+  markers = [],
+}) {
   const palette = TONES[tone];
   const clamped = Math.min(100, Math.max(0, value));
   const arc = `M ${STROKE} ${CENTER} A ${RADIUS} ${RADIUS} 0 0 1 ${CENTER * 2 - STROKE} ${CENTER}`;

@@ -5,12 +5,12 @@ import PreviousPlanBar from './PreviousPlanBar.jsx';
 /**
  * Shared frame for every intake screen: stepper, heading, and body.
  */
-export default function IntakeLayout({ stageIndex, back, title, intro, children }) {
+export default function IntakeLayout({ stageIndex, back, title, intro, wide = false, children }) {
   return (
     <div className="flex min-h-screen flex-col">
       <Header />
 
-      <main className="page-shell max-w-[720px] flex-1 py-8 sm:py-10">
+      <main className={`page-shell ${wide ? 'max-w-[900px]' : 'max-w-[720px]'} flex-1 py-8`}>
         {/* Rendered on every intake step so the restore option stays available
             throughout a redo. */}
         <PreviousPlanBar />

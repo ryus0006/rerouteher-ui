@@ -206,7 +206,6 @@ export default function Landing() {
   });
   const closingScale = useTransform(closingIn, [0, 0.55], [0.86, 1]);
   const closingY = useTransform(closingIn, [0, 0.55], [120, 0]);
-  const arcOffset = useTransform(closingIn, [0.35, 1], [78, 0]);
 
   const motionStyle = (style) => (reduce ? undefined : style);
 
@@ -286,10 +285,6 @@ export default function Landing() {
                 words. She drafts your profile as you chat, and nothing is used until you confirm
                 it.
               </p>
-              <p className="mt-4 max-w-[44ch] text-[0.9375rem] leading-relaxed text-ink-faint">
-                Once you confirm it, it takes the place of a CV in your readiness check. Later, with
-                a target role and an account, the CV builder can turn it into a CV.
-              </p>
               <div className="mt-9">
                 <HeraButton onClick={chatWithHera} />
               </div>
@@ -337,8 +332,8 @@ export default function Landing() {
                 Then everything works from your result.
               </h2>
               <p className="max-w-[44ch] text-lg leading-relaxed text-ink-soft lg:justify-self-end">
-                Your readiness score and focus areas carry into four tools, so each one already
-                knows your skills and the role you are aiming for.
+                Your target role and the skills to build carry into four tools, so each one already
+                knows what you have and where you are heading.
               </p>
             </Reveal>
             <ToolTiles />
@@ -350,36 +345,6 @@ export default function Landing() {
             className="land-closing relative mx-auto max-w-[1440px] origin-bottom overflow-hidden rounded-[2.5rem]"
             style={motionStyle({ scale: closingScale, y: closingY })}
           >
-            {/* Decorative readiness arc in the brand gradient. */}
-            <svg
-              aria-hidden="true"
-              viewBox="0 0 400 220"
-              className="absolute right-[6%] bottom-0 hidden w-[30rem] lg:block"
-            >
-              <defs>
-                <linearGradient id="closing-arc" x1="0" y1="0" x2="1" y2="0">
-                  <stop offset="0%" stopColor="#f2a0be" />
-                  <stop offset="52%" stopColor="#c3b1e4" />
-                  <stop offset="100%" stopColor="#93a0dd" />
-                </linearGradient>
-              </defs>
-              <path
-                d="M 30 220 A 170 170 0 0 1 370 220"
-                fill="none"
-                stroke="rgb(44 33 66 / 0.07)"
-                strokeWidth="34"
-              />
-              <motion.path
-                d="M 30 220 A 170 170 0 0 1 370 220"
-                fill="none"
-                stroke="url(#closing-arc)"
-                strokeWidth="34"
-                strokeLinecap="round"
-                pathLength="100"
-                strokeDasharray="78 100"
-                style={motionStyle({ strokeDashoffset: arcOffset })}
-              />
-            </svg>
             <div className="relative mx-auto max-w-[1200px] px-8 py-28">
               <h2
                 id="closing-title"

@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-// Full-stack only: matches come from the real API + DB and the deterministic E9 fixture.
+// Full-stack only: matches come from the real API + DB and the deterministic employer fixture.
 test.skip(!process.env.E2E_FULLSTACK, 'full-stack employer e2e (set E2E_FULLSTACK=1)');
 
 // The fixture supplies a ready R03 opening for CIMB Group Holdings Berhad.

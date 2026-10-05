@@ -191,7 +191,9 @@ function EmployerCard({ employer, featured = false }) {
                 )}
               </div>
               <p className="mt-0.5 text-sm text-ink-soft">
-                {employer.location ? `${employer.industry} · ${employer.location}` : employer.industry}
+                {employer.location
+                  ? `${employer.industry} · ${employer.location}`
+                  : employer.industry}
               </p>
             </div>
           </div>
@@ -364,6 +366,9 @@ function QueryBar({ chosen, count, onAdjust }) {
   );
 }
 
+/** Number of employer cards shown at first, and added by each "Show more". */
+const PAGE_SIZE = 10;
+
 /**
  * Employer matches page: employers whose sustainability disclosures cover the
  * selected priorities.
@@ -380,6 +385,7 @@ export default function EmployerMatches() {
   const [employers, setEmployers] = useState(null);
   const [jobSearch, setJobSearch] = useState(null);
   const [error, setError] = useState(null);
+  const [limit, setLimit] = useState(PAGE_SIZE);
 
   const chosen = priorities ?? [];
   const key = chosen.join('|');
@@ -410,9 +416,12 @@ export default function EmployerMatches() {
   // No priorities selected: redirect to the adjust page.
   if (chosen.length === 0) return <Navigate to="/plan/employers" replace />;
 
+  const all = employers ?? [];
+  const shown = all.slice(0, limit);
+
   // Results arrive with hiring employers first; the first is featured and the rest
   // are grouped by whether they are hiring.
-  const [featured, ...rest] = employers ?? [];
+  const [featured, ...rest] = shown;
   const hiring = rest.filter((employer) => employer.job);
   const others = rest.filter((employer) => !employer.job);
   const anyJob = Boolean(employers?.some((employer) => employer.job));
@@ -494,6 +503,21 @@ export default function EmployerMatches() {
             employers={others}
             start={3 + hiring.length}
           />
+        )}
+
+        {all.length > shown.length && (
+          <div className="mt-10 flex justify-center">
+            <button
+              type="button"
+              onClick={() => setLimit((current) => current + PAGE_SIZE)}
+              className="rounded-full bg-surface px-6 py-3 text-sm font-semibold text-ink shadow-card transition duration-300 ease-spring hover:shadow-card-hover active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
+            >
+              Show {Math.min(PAGE_SIZE, all.length - shown.length)} more
+              <span className="ml-1.5 font-normal text-ink-faint">
+                · {all.length - shown.length} left
+              </span>
+            </button>
+          </div>
         )}
 
         {employers?.length > 0 && (

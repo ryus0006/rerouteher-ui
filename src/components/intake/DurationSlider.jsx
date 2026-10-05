@@ -14,10 +14,10 @@ export default function DurationSlider({ value, onChange }) {
   return (
     <div>
       <div className="flex items-baseline justify-between gap-4">
-        <label htmlFor={inputId} className="text-sm font-semibold text-ink">
+        <label htmlFor={inputId} className="text-base font-semibold text-ink">
           1. Roughly how long was your career break?
         </label>
-        <output htmlFor={inputId} className="text-sm font-semibold text-pink-600">
+        <output htmlFor={inputId} className="text-base font-semibold text-pink-600">
           {formatYears(value)}
         </output>
       </div>
@@ -39,7 +39,7 @@ export default function DurationSlider({ value, onChange }) {
         style={{
           background: `linear-gradient(to right, var(--color-pink-500), var(--color-violet-600) ${filled}%, rgb(44 33 66 / 0.12) ${filled}%)`,
         }}
-        className={`mt-3 h-1.5 w-full cursor-pointer appearance-none rounded-full ${THUMB}`}
+        className={`mt-4 h-1.5 w-full cursor-pointer appearance-none rounded-full ${THUMB}`}
       />
     </div>
   );

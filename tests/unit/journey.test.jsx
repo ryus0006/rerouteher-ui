@@ -58,17 +58,19 @@ describe('journey', () => {
     expect(screen.queryByRole('button', { name: 'Create a free account' })).toBeNull();
   });
 
-  it('reads her own answers back rather than linking to the steps', async () => {
+  it('summarises her results and points to the next step', async () => {
     useAccountStore.setState({ user: { username: 'ccc', displayName: 'Chee Yeong' } });
     open();
 
     expect(await screen.findByRole('heading', { name: 'Welcome back, Chee Yeong' })).toBeVisible();
 
-    // Skills and focus areas are rendered on the page.
-    expect(screen.getByText('User Research')).toBeVisible();
-    expect(screen.getByText('Time Management')).toBeVisible();
-    expect(screen.getByText('2 roles matched your snapshot')).toBeVisible();
-    expect(screen.getByText('A')).toBeVisible();
+    // The match in the gap page's terms, and the path with its current step;
+    // the full skill and gap lists stay on their own pages.
+    expect(screen.getByText('requirements you already have')).toBeVisible();
+    expect(screen.getByRole('heading', { name: 'Build your top skills' })).toBeVisible();
+    expect(screen.getByText(/Start with: A\./)).toBeVisible();
+    expect(screen.getByRole('link', { name: /View full breakdown/ })).toBeVisible();
+    expect(screen.queryByText('User Research')).toBeNull();
 
     // Read-only: no controls back into the diagnostic, and no intake answers
     // (those are shown on the profile).
@@ -134,14 +136,14 @@ describe('journey', () => {
     expect(screen.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '0');
   });
 
-  it('shows fixed placeholders for chapters not yet finished', async () => {
+  it('locks the path until a target role is chosen', async () => {
     useAccountStore.setState({ user: { username: 'ccc', displayName: 'Chee Yeong' } });
     useIntakeStore.setState({ snapshot: null, gapResult: null });
     open();
 
     expect(await screen.findByText('Pick what matters most to you in a workplace.')).toBeVisible();
-    expect(screen.getByText('Your skills will appear here.')).toBeVisible();
-    expect(screen.getByText('Your target role and focus areas will appear here.')).toBeVisible();
+    expect(screen.getAllByText('Built around your target role')).toHaveLength(4);
+    expect(screen.queryByRole('link', { name: /Build your top skills/ })).toBeNull();
   });
 
   it('resumes the screen she stopped on, counting the ones behind it', async () => {

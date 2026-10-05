@@ -35,7 +35,9 @@ export default function MetRequirements({ skills, total, onPlane = false }) {
       >
         <span aria-hidden="true">✓</span>
         <span className="flex-1">
-          You meet {skills.length} of {total} requirements
+          {/* `total` is the role's requirement count, read out for screen readers. */}
+          See the {skills.length} you already have
+          <span className="sr-only"> out of {total} requirements</span>
         </span>
         <svg
           aria-hidden="true"

@@ -1,14 +1,32 @@
 import { motion, useReducedMotion, useTransform } from 'motion/react';
-import ReadinessGauge from '../gap/ReadinessGauge.jsx';
 
 /* Example data from the mock fixtures. */
 const BREAK_SKILLS = ['Active Listening', 'Time Management', 'Coordination'];
 
-const GAUGE_MARKERS = [
-  { skill: 'AI Design Tools', at: 87 },
-  { skill: 'Scalable Design Systems', at: 94 },
-  { skill: 'Prompt Engineering for UX', at: 99 },
-];
+/* Requirement dots on the match card, matching the gap page: filled for
+   those already met, faint for the rest. */
+const MATCH = { have: 7, total: 15 };
+
+const EASE = [0.32, 0.72, 0, 1];
+
+/** Requirement dots, popping in one by one after the card lands. */
+function MatchDots({ reduce }) {
+  const dots = Array.from({ length: MATCH.total }, (_, index) => index < MATCH.have);
+
+  return (
+    <ul aria-hidden="true" className="flex flex-wrap gap-1.5">
+      {dots.map((met, index) => (
+        <motion.li
+          key={index}
+          className={`size-3.5 rounded-full ${met ? 'bg-grad-readiness' : 'bg-ink/[0.08]'}`}
+          initial={reduce ? false : { opacity: 0, scale: 0.4 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.5, delay: 1.55 + index * 0.045, ease: EASE }}
+        />
+      ))}
+    </ul>
+  );
+}
 
 /** Grey placeholder line standing in for body text on the CV sheet. */
 function Line({ width }) {
@@ -17,12 +35,12 @@ function Line({ width }) {
 
 /**
  * Hero visual: an example CV whose career-break row is annotated with the
- * skills it is read as, and a readiness card resting on top. Built entirely in
+ * skills it is read as, and a match card resting on top. Built entirely in
  * markup so it stays sharp at any size.
  *
  * `progress` is the hero's 0–1 scroll-out position. The layers drift apart at
  * different depths as it advances: the sheet sinks back, the chips fan out and
- * the readiness card lifts towards the reader.
+ * the match card lifts towards the reader.
  */
 export default function HeroVisual({ progress }) {
   const reduce = useReducedMotion();
@@ -136,24 +154,32 @@ export default function HeroVisual({ progress }) {
         ))}
       </motion.ul>
 
-      {/* Readiness card resting over the sheet. */}
+      {/* Match card resting over the sheet: counts, never a score. */}
       <motion.div
         className="absolute right-0 bottom-0 w-[17.5rem]"
         style={depth({ y: cardY, rotate: cardRotate, scale: cardScale })}
       >
         <div className="land-step land-shell" style={{ '--d': '1250ms' }}>
           <div className="land-core p-5">
-            <ReadinessGauge value={78} tone="light" markers={GAUGE_MARKERS} />
-            <p className="mt-3 text-center text-sm text-ink-soft">
-              Ready for <span className="font-semibold text-ink">Senior UX/UI Designer</span>
+            <p className="text-[0.75rem] text-ink-faint">
+              For <span className="font-semibold text-ink">Senior UX/UI Designer</span>
             </p>
+
+            <p className="mt-3 font-display text-[2.25rem] leading-none font-bold tracking-[-0.03em] text-ink tabular">
+              {MATCH.have} <span className="text-ink/35">of {MATCH.total}</span>
+            </p>
+            <p className="mt-1.5 text-[0.8125rem] text-ink-soft">requirements you already have</p>
+
+            <div className="mt-4">
+              <MatchDots reduce={reduce} />
+            </div>
           </div>
         </div>
       </motion.div>
 
       <figcaption className="sr-only">
         Example: a CV whose seven-year career break is read as Active Listening, Time Management and
-        Coordination, giving 78% readiness for a Senior UX/UI Designer role.
+        Coordination, counting towards 7 of the 15 requirements for a Senior UX/UI Designer role.
       </figcaption>
     </figure>
   );

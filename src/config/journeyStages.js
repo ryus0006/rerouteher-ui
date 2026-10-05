@@ -16,7 +16,7 @@ export const JOURNEY_STAGES = [
   {
     id: 'gap',
     label: 'Know your next move',
-    blurb: 'A readiness score and three focus areas.',
+    blurb: 'The skills you already have, and three to build first.',
   },
 ];
 

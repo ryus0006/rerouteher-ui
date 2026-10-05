@@ -150,8 +150,7 @@ export function normaliseDraft(saved, generated = null) {
     summary: saved.summary ?? generated?.summary ?? '',
     skills: saved.skills ?? generated?.skills ?? [],
     experiences: saved.experiences ?? generated?.experiences ?? [],
-    // Career-break content is no longer a CV section. Any legacy value is
-    // deliberately discarded when a draft enters the current UI shape.
+    // Career-break content is not a CV section; any saved value is discarded.
     careerBreak: null,
   };
 }

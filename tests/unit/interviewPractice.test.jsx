@@ -8,8 +8,7 @@ import { useAccountStore } from '../../src/store/accountStore.js';
 import { useIntakeStore } from '../../src/store/intakeStore.js';
 import { useInterviewStore } from '../../src/store/interviewStore.js';
 
-// QuestionCard is rewritten in a later task and still imports removed stateless
-// APIs; a light stub isolates the route's orchestration from its internals.
+// A light QuestionCard stub isolates the route's orchestration from the card's internals.
 vi.mock('../../src/components/interview/QuestionCard.jsx', () => ({
   default: ({ question, onFinish }) => (
     <div>

@@ -34,12 +34,16 @@ export default function SkillChip({ skill }) {
 
   return (
     <li className="inline-flex">
-      <SkillDefinitionPopover definition={definition} label={skill.skill}>
+      <SkillDefinitionPopover
+        definition={definition}
+        label={skill.skill}
+        tone={fromBreak ? 'verify' : 'pink'}
+      >
         {(triggerProps) => (
           <button
             type="button"
             {...triggerProps}
-            className={`${pill} cursor-help ${
+            className={`${pill} cursor-default ${
               fromBreak ? 'hover:border-verify/50' : 'hover:border-line-strong hover:bg-surface'
             }`}
           >

@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { BookOpenText } from '@phosphor-icons/react';
 
 const OPEN_DELAY_MS = 90;
 const GAP = 10;
 const EDGE = 12;
-const WIDTH = 272;
+const WIDTH = 296;
 
 /**
  * Floating skill-definition popover, shown on hover or keyboard focus. Placed
@@ -15,8 +16,11 @@ const WIDTH = 272;
  * also rendered as visually hidden text referenced by the trigger for screen
  * readers. Escape dismisses it. Renders only the trigger when no definition is
  * provided.
+ *
+ * `tone` matches the card to its trigger: 'pink' (default) or 'verify' for
+ * career-break skills.
  */
-export default function SkillDefinitionPopover({ definition, label, children }) {
+export default function SkillDefinitionPopover({ definition, label, tone = 'pink', children }) {
   const [hovered, setHovered] = useState(false);
   const [focused, setFocused] = useState(false);
   const [position, setPosition] = useState(null);
@@ -71,7 +75,8 @@ export default function SkillDefinitionPopover({ definition, label, children }) 
       setHovered(false);
       if (!focused) setPosition(null);
     },
-    onFocus: () => setFocused(true),
+    // Only keyboard focus keeps the card open; focus from a mouse click does not.
+    onFocus: (event) => setFocused(event.currentTarget.matches(':focus-visible')),
     onBlur: () => {
       setFocused(false);
       if (!hovered) setPosition(null);
@@ -95,9 +100,9 @@ export default function SkillDefinitionPopover({ definition, label, children }) 
           <div
             ref={card}
             aria-hidden="true"
-            className={`skill-popover ${position ? 'skill-popover-shown' : ''} ${
-              position?.above === false ? 'skill-popover-below' : ''
-            }`}
+            className={`skill-popover ${tone === 'verify' ? 'skill-popover-verify' : ''} ${
+              position ? 'skill-popover-shown' : ''
+            } ${position?.above === false ? 'skill-popover-below' : ''}`}
             style={{
               width: WIDTH,
               left: position?.left ?? -9999,
@@ -105,8 +110,13 @@ export default function SkillDefinitionPopover({ definition, label, children }) 
               '--arrow-x': `${position?.arrow ?? WIDTH / 2}px`,
             }}
           >
-            <p className="font-display text-[0.8125rem] font-bold text-ink">{label}</p>
-            <p className="mt-1 text-xs leading-relaxed text-ink-soft">{definition}</p>
+            <div className="flex items-center gap-2.5">
+              <span className="skill-popover-icon">
+                <BookOpenText className="size-4" aria-hidden="true" />
+              </span>
+              <p className="font-display text-sm font-bold leading-snug text-ink">{label}</p>
+            </div>
+            <p className="mt-2.5 text-[0.8125rem] leading-relaxed text-ink-soft">{definition}</p>
           </div>,
           document.body
         )}

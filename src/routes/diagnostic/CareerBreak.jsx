@@ -1,11 +1,14 @@
 import useSmoothNavigate from '../../hooks/useSmoothNavigate.js';
-import GlassCard from '../../components/ui/GlassCard.jsx';
+import { motion } from 'motion/react';
+import { ArrowRight } from '@phosphor-icons/react';
 import GradientButton from '../../components/ui/GradientButton.jsx';
 import IntakeLayout from '../../components/intake/IntakeLayout.jsx';
 import BackLink from '../../components/intake/BackLink.jsx';
 import DurationSlider from '../../components/intake/DurationSlider.jsx';
 import ActivityPicker from '../../components/intake/ActivityPicker.jsx';
 import { useIntakeStore } from '../../store/intakeStore.js';
+
+const EASE = [0.32, 0.72, 0, 1];
 
 export default function CareerBreak() {
   const navigate = useSmoothNavigate();
@@ -17,21 +20,33 @@ export default function CareerBreak() {
   return (
     <IntakeLayout
       stageIndex={1}
-      back={<BackLink to="/diagnostic/background">Back to CV</BackLink>}
       title="Tell us about your career break"
-      intro="Your time out counts as real experience — just two simple questions."
+      intro="Your career break counts as real experience — just two simple questions."
     >
-      <GlassCard className="space-y-8 p-6">
+      <motion.div
+        className="cv-card"
+        initial={{ opacity: 0, y: 24 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.8, ease: EASE }}
+      >
         <DurationSlider value={careerBreak.duration_years} onChange={setBreakDuration} />
-        <ActivityPicker selected={careerBreak.activities} onToggle={toggleActivity} />
-      </GlassCard>
+        <div className="mt-8">
+          <ActivityPicker selected={careerBreak.activities} onToggle={toggleActivity} />
+        </div>
+      </motion.div>
 
-      <div className="mt-6 flex justify-end">
+      <motion.div
+        className="mt-6 flex items-center justify-between"
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.8, delay: 0.12, ease: EASE }}
+      >
+        <BackLink to="/diagnostic/background">Back to CV</BackLink>
         <GradientButton disabled={!canGenerate} onClick={() => navigate('/diagnostic/priorities')}>
           Continue to Work Priorities
-          <span aria-hidden="true">→</span>
+          <ArrowRight weight="bold" className="size-4" aria-hidden="true" />
         </GradientButton>
-      </div>
+      </motion.div>
     </IntakeLayout>
   );
 }

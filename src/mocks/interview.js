@@ -1,6 +1,6 @@
 import { http, HttpResponse } from 'msw';
 
-/* In-memory, stateful mocks for the E7 interview endpoints. They mirror the real
+/* In-memory, stateful mocks for the interview endpoints. They mirror the real
    stateful contract: one session per role and focus, attempts saved to their
    question slot, grounded feedback, and server-side areas aggregation. Like the
    real services they never add facts not present in the input. */

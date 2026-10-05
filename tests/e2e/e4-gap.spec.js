@@ -21,7 +21,7 @@ async function reachGap(page) {
 }
 
 const focusAreas = (page) =>
-  page.getByRole('listitem').filter({ has: page.getByText(/% if learned/) });
+  page.getByRole('list', { name: 'Your top skills to build' }).getByRole('listitem');
 
 /* Focus-area names also appear in the closing panel, so gap assertions are
    scoped to the ranked list. */
@@ -59,13 +59,15 @@ test.describe('E4 — Role Readiness & Skill Gap', () => {
     await expect(page.getByRole('heading', { name: 'Senior UX/UI Designer' })).toBeVisible();
   });
 
-  test('AC 4.1.4 — readiness renders as a "Ready today" percentage on a gauge @smoke', async ({
+  test('AC 4.1.4 — readiness renders as met-requirement counts, without a percentage or level @smoke', async ({
     page,
   }) => {
     await mockApi(page);
     await reachGap(page);
 
-    await expect(page.getByRole('img', { name: '78% Ready today' })).toBeVisible();
+    await expect(page.getByText('requirements you already have')).toBeVisible();
+    await expect(page.getByRole('main').getByText(/\d+\s?%/)).toHaveCount(0);
+    await expect(page.getByText(/strong match|good match/i)).toHaveCount(0);
   });
 
   test('AC 4.1.4 — a readiness result is available when the gap is opened from the snapshot', async ({
@@ -86,17 +88,20 @@ test.describe('E4 — Role Readiness & Skill Gap', () => {
     await expect(page).toHaveURL(/\/diagnostic\/gap$/);
   });
 
-  test('AC 4.1.5 — an explanation of what the score represents is shown', async ({ page }) => {
+  test('AC 4.1.5 — an explanation of how the result is worked out is available', async ({
+    page,
+  }) => {
     await mockApi(page);
     await reachGap(page);
 
-    await expect(page.getByText(/weighs each required skill/i)).toBeVisible();
+    await page.getByText('How this result is worked out').click();
+    await expect(page.getByText(/skills this role asks for/i)).toBeVisible();
   });
 
   test('AC 4.1.6 — switching role updates readiness without a full reload', async ({ page }) => {
     await mockApi(page);
     await reachGap(page);
-    await expect(page.getByRole('img', { name: '78% Ready today' })).toBeVisible();
+    await expect(page.getByText('requirements you already have')).toBeVisible();
 
     let navigated = false;
     page.on('load', () => {
@@ -105,7 +110,10 @@ test.describe('E4 — Role Readiness & Skill Gap', () => {
 
     await selectRole(page, 'Digital Marketing');
 
-    await expect(page.getByRole('img', { name: '54% Ready today' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Digital Marketing' })).toBeVisible();
+    await expect(
+      page.getByRole('button', { name: /See the 3 you already have out of 6 requirements/ })
+    ).toBeVisible();
     expect(navigated).toBe(false);
   });
 
@@ -114,7 +122,7 @@ test.describe('E4 — Role Readiness & Skill Gap', () => {
   }) => {
     await mockApi(page);
     await reachGap(page);
-    await expect(page.getByRole('img', { name: '78% Ready today' })).toBeVisible();
+    await expect(page.getByText('requirements you already have')).toBeVisible();
 
     let recomputed = false;
     await page.route('**/api/gap/compute', (route) => {
@@ -124,7 +132,7 @@ test.describe('E4 — Role Readiness & Skill Gap', () => {
 
     await page.reload();
 
-    await expect(page.getByRole('img', { name: '78% Ready today' })).toBeVisible();
+    await expect(page.getByText('requirements you already have')).toBeVisible();
     await expect(page.getByRole('radio', { checked: true })).toHaveValue('role_ux');
     expect(recomputed).toBe(false);
   });
@@ -143,7 +151,9 @@ test.describe('E4 — Role Readiness & Skill Gap', () => {
     await mockApi(page);
     await reachGap(page);
 
-    const met = page.getByRole('button', { name: /You meet 7 of 15 requirements/ });
+    const met = page.getByRole('button', {
+      name: /See the 7 you already have out of 15 requirements/,
+    });
     await expect(met).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Missing for this role' })).toBeVisible();
 
@@ -190,31 +200,30 @@ test.describe('E4 — Role Readiness & Skill Gap', () => {
     await expect(page.getByText('AI Design Tools (Figma AI, Midjourney)')).toHaveCount(0);
   });
 
-  test('AC 4.3.1 — each gap shows the readiness improvement returned by the backend', async ({
-    page,
-  }) => {
+  test('AC 4.3.1 — focus areas carry no percentages or impact tags', async ({ page }) => {
     await mockApi(page);
     await reachGap(page);
 
-    await expect(page.getByText('+9% if learned')).toBeVisible();
-    await expect(page.getByText('+7% if learned')).toBeVisible();
-    await expect(page.getByText('+3% if learned')).toBeVisible();
+    await expect(page.getByText(/% if learned/)).toHaveCount(0);
+    await expect(page.getByText('Biggest difference')).toHaveCount(0);
   });
 
   test('AC 4.3.2 — the highest-improvement gap appears first', async ({ page }) => {
     await mockApi(page);
     await reachGap(page);
 
-    await expect(focusAreas(page).first()).toContainText('+9% if learned');
+    await expect(focusAreas(page).first()).toContainText('1');
+    await expect(focusAreas(page).first()).toContainText('AI Design Tools (Figma AI, Midjourney)');
   });
 
-  test('AC 4.3.3 — the readiness summary shows the current and projected percentages', async ({
-    page,
-  }) => {
+  test('AC 4.3.3 — the match panel counts met requirements against the total', async ({ page }) => {
     await mockApi(page);
     await reachGap(page);
 
-    await expect(page.getByText(/\d+% today → \d+% after your focus areas/)).toBeVisible();
+    await expect(page.getByText('Your next steps are the 3 skills on the right.')).toBeVisible();
+    await expect(
+      page.getByRole('button', { name: /See the 7 you already have out of 15 requirements/ })
+    ).toBeVisible();
   });
 
   test('AC 4.3.4 — the estimate-not-a-guarantee note is shown', async ({ page }) => {
@@ -224,15 +233,14 @@ test.describe('E4 — Role Readiness & Skill Gap', () => {
     await expect(page.getByText(/not a guarantee of employment/i)).toBeVisible();
   });
 
-  test('AC 4.3.5 — switching role updates each gap uplift', async ({ page }) => {
+  test('AC 4.3.5 — switching role reorders the top skills', async ({ page }) => {
     await mockApi(page);
     await reachGap(page);
-    await expect(page.getByText('+9% if learned')).toBeVisible();
+    await expect(focusAreas(page).first()).toContainText('AI Design Tools (Figma AI, Midjourney)');
 
     await selectRole(page, 'Digital Marketing');
 
-    await expect(page.getByText('+14% if learned')).toBeVisible();
-    await expect(page.getByText('+9% if learned')).toHaveCount(0);
+    await expect(focusAreas(page).first()).toContainText('Campaign Analytics & Attribution');
   });
 
   test('@regression — gaps beyond the top three are still named, without a ranking', async ({
@@ -242,7 +250,9 @@ test.describe('E4 — Role Readiness & Skill Gap', () => {
     await reachGap(page);
 
     // 7 met + 3 focus areas + 5 also-missing must reconcile with "7 of 15".
-    await expect(page.getByRole('button', { name: /You meet 7 of 15 requirements/ })).toBeVisible();
+    await expect(
+      page.getByRole('button', { name: /See the 7 you already have out of 15 requirements/ })
+    ).toBeVisible();
     await expect(page.getByText('Prompt Engineering for UX Workflows')).toBeVisible();
   });
 

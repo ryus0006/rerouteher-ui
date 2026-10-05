@@ -198,10 +198,22 @@ export const useIntakeStore = create(
       setConfirmedSkills: (confirmedSkills) => set({ confirmedSkills: confirmedSkills ?? [] }),
       addConfirmedSkills: (skills) =>
         set((state) => {
-          const byId = new Map(state.confirmedSkills.map((s) => [s.skill_id, s]));
+          // Skills added from the gap list have no id and are keyed by name.
+          const key = (s) => s.skill_id ?? s.skill_name;
+          const byId = new Map(state.confirmedSkills.map((s) => [key(s), s]));
           for (const s of skills ?? []) if (s?.skill_id) byId.set(s.skill_id, s);
           return { confirmedSkills: [...byId.values()] };
         }),
+
+      /** Removes one confirmed skill (by id, or by name for skills without one). The gap
+          is cleared so it is recomputed without the skill. */
+      removeConfirmedSkill: (skill) =>
+        set((state) => ({
+          confirmedSkills: state.confirmedSkills.filter((s) =>
+            skill.skill_id ? s.skill_id !== skill.skill_id : s.skill_name !== skill.skill_name
+          ),
+          gapResult: null,
+        })),
 
       setSnapshot: (snapshot) =>
         set({

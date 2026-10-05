@@ -5,8 +5,8 @@ const CHIP =
   'cursor-pointer rounded-full border px-3.5 py-1.5 text-sm transition duration-200 ease-spring has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-blue-600';
 
 const CHIP_STATE = {
-  on: 'border-blue-600 bg-blue-600 font-medium text-white shadow-card',
-  off: 'border-line-strong bg-surface text-ink-soft hover:border-blue-600/45 hover:text-ink',
+  on: 'border-pink-600 bg-pink-600 font-medium text-white shadow-card',
+  off: 'border-line-strong bg-surface text-ink-soft hover:border-pink-600/45 hover:text-ink',
 };
 
 export default function ActivityPicker({ selected, onToggle }) {
@@ -14,33 +14,25 @@ export default function ActivityPicker({ selected, onToggle }) {
 
   return (
     <div>
-      <p id={labelId} className="text-sm font-semibold text-ink">
+      <p id={labelId} className="text-base font-semibold text-ink">
         2. What did you do during this time? <span className="text-pink-600">*</span>
       </p>
 
-      <p className="mt-1 text-xs text-ink-soft">
-        Pick everything that applies — caregiving, household management, volunteering, side
-        projects.
-      </p>
+      <p className="mt-1 text-xs text-ink-soft">Pick everything that applies.</p>
 
-      <div className="mt-5 space-y-4" role="group" aria-labelledby={labelId}>
+      <div className="mt-6 space-y-5" role="group" aria-labelledby={labelId}>
         {ACTIVITY_TAXONOMY.map((category) => {
           const headingId = `${labelId}-${category.id}`;
 
           return (
-            /* Fixed-width label column so chips use the remaining width and the
-               category labels align. */
-            <div
-              key={category.id}
-              role="group"
-              aria-labelledby={headingId}
-              className="sm:grid sm:grid-cols-[7.5rem_1fr] sm:items-start sm:gap-x-5"
-            >
-              <p id={headingId} className="eyebrow leading-4 sm:pt-2 sm:text-right">
+            /* Each category is its own block, name above its chips, so wrapped
+               chips stay visibly inside their category. */
+            <div key={category.id} role="group" aria-labelledby={headingId}>
+              <p id={headingId} className="eyebrow">
                 {category.label}
               </p>
 
-              <div className="mt-2 flex flex-wrap gap-2 sm:mt-0">
+              <div className="mt-2.5 flex flex-wrap gap-2">
                 {category.activities.map((activity) => {
                   const checked = selected.includes(activity.id);
 

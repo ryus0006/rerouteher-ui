@@ -26,7 +26,7 @@ test('@journey — a guest goes from landing to readiness without signing up @sm
   await expect(page.getByText(/based on your CV as a/i)).toBeVisible();
 
   await page.getByRole('button', { name: 'See my readiness & gaps' }).click();
-  await expect(page.getByRole('img', { name: '78% Ready today' })).toBeVisible();
+  await expect(page.getByText('requirements you already have')).toBeVisible();
 
   // No sign-up or sign-in prompt appears during the guest journey.
   await expect(page.getByText(/sign ?up|log ?in|create an account/i)).toHaveCount(0);

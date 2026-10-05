@@ -14,6 +14,6 @@ export function generateSnapshot(cv, careerBreak, confirmedSkills = []) {
   return postJson('/api/snapshot/generate', {
     cv: structuredCv,
     break: careerBreak,
-    confirmed_skills: confirmedSkills.map((s) => s.skill_id),
+    confirmed_skills: confirmedSkills.map((s) => s.skill_id).filter(Boolean),
   });
 }

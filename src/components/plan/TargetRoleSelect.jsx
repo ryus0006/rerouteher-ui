@@ -47,7 +47,7 @@ export default function TargetRoleSelect({ bare = false }) {
 
     setSwitching(true);
 
-    computeGap(snapshot, role)
+    computeGap(snapshot, role, useIntakeStore.getState().confirmedSkills)
       .then((result) => {
         /* Single write: `setSelectedRole` alone clears the gap result, which would
            empty the page while the request is in flight. */
