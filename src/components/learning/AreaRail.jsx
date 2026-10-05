@@ -67,7 +67,7 @@ export default function AreaRail({
       )}
       {finished.length > 0 && (
         <>
-          <p className={`lp-eyebrow px-3 ${areas.length || laterCount ? 'mt-7' : ''}`}>Finished</p>
+          <p className={`lp-eyebrow px-3 ${areas.length || laterCount ? 'mt-7' : ''}`}>Owned</p>
           <ul className="mt-2 space-y-0.5">
             {finished.map((area) => (
               <li key={area.skill_id}>

@@ -48,6 +48,26 @@ export async function postJson(path, payload) {
   return response.json();
 }
 
+export async function putJson(path, payload) {
+  const response = await fetch(`${BASE_URL}${path}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify(payload),
+  });
+  if (!response.ok) throw await toError(response);
+  return response.json();
+}
+
+export async function deleteJson(path) {
+  const response = await fetch(`${BASE_URL}${path}`, {
+    method: 'DELETE',
+    credentials: 'include',
+  });
+  if (!response.ok) throw await toError(response);
+  return response.json();
+}
+
 export async function postFile(path, file, field = 'file') {
   const body = new FormData();
   body.append(field, file);

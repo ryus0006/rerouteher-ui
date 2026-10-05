@@ -52,7 +52,7 @@ export default function LearningHero({
           <span className="text-ink/25"> / {total}</span>
         </p>
         <p className="mt-2 text-sm text-ink-soft">
-          resources finished towards {role ?? 'your target role'}
+          skills ready for {role ?? 'your target role'}
         </p>
 
         <div className="mt-8 flex flex-wrap gap-x-10 gap-y-4">

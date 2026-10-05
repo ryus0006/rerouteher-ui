@@ -139,7 +139,15 @@ function AccountPrompt({ onAccount }) {
   );
 }
 
-function AreaFinished({ area, total, onCv, onAddToCv, onRemoveFromCv }) {
+function AreaFinished({
+  area,
+  total,
+  onCv,
+  onAddToCv,
+  onRemoveFromCv,
+  profileSync,
+  onRetry,
+}) {
   return (
     <>
       <p className="lp-eyebrow text-verify">Focus area finished</p>
@@ -155,6 +163,31 @@ function AreaFinished({ area, total, onCv, onAddToCv, onRemoveFromCv }) {
       </p>
       <div className="mt-5 grid gap-2">
         <CvTile skill={area.skill} added={onCv} onAdd={onAddToCv} onRemove={onRemoveFromCv} />
+        {profileSync?.status === 'syncing' && (
+          <p role="status" className="text-xs text-ink-faint">
+            Adding this skill to your professional profile…
+          </p>
+        )}
+        {profileSync?.status === 'success' && (
+          <p role="status" className="text-xs text-verify">
+            Added to your professional skills.
+          </p>
+        )}
+        {profileSync?.status === 'error' && (
+          <div className="flex items-center justify-between gap-3 rounded-xl bg-pink-50 px-3 py-2">
+            <p role="alert" className="text-xs text-pink-700">
+              Profile synchronization is temporarily unavailable. Your learning progress is kept.
+            </p>
+            <button
+              type="button"
+              onClick={onRetry}
+              className="lp-tile-action shrink-0"
+              aria-label="Retry profile synchronization"
+            >
+              Retry
+            </button>
+          </div>
+        )}
       </div>
     </>
   );
@@ -177,6 +210,8 @@ export default function FinishPanel({
   onYes,
   onNotYet,
   onClose,
+  profileSync,
+  onRetry,
 }) {
   const show = Boolean(moment && resource && area);
 
@@ -228,6 +263,8 @@ export default function FinishPanel({
                     onCv={onCv}
                     onAddToCv={onAddToCv}
                     onRemoveFromCv={onRemoveFromCv}
+                    profileSync={profileSync}
+                    onRetry={onRetry}
                   />
                 )}
               </motion.div>

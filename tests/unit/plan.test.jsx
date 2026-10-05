@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { createMemoryRouter, RouterProvider } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { http, HttpResponse } from 'msw';
@@ -105,6 +105,18 @@ describe('learning plan', () => {
     expect(within(section).getByText('+7% readiness if learned')).toBeVisible();
     // A resource for a different gap must not appear under this heading.
     expect(within(section).queryByText('AI features in Figma')).toBeNull();
+  });
+
+  it('shows each focus-area resource as an ordered step', async () => {
+    open(['/plan/learning']);
+
+    const section = (
+      await screen.findByRole('heading', { name: 'AI Design Tools (Figma AI, Midjourney)' })
+    ).closest('section');
+
+    expect(within(section).getByText('Step 1 of 3')).toBeVisible();
+    expect(within(section).getByText('Step 2 of 3')).toBeVisible();
+    expect(within(section).getByText('Step 3 of 3')).toBeVisible();
   });
 
   it('costs her nothing, and does not offer a filter that selects everything', async () => {
@@ -250,7 +262,14 @@ describe('learning plan', () => {
       'Design Ops & Handoff Automation'
     );
     expect(useIntakeStore.getState().learnedSkills).toEqual([
-      { skill_id: 'mock-design-ops', skill: 'Design Ops & Handoff Automation' },
+      {
+        skill_id: 'mock-design-ops',
+        skill: 'Design Ops & Handoff Automation',
+        uplift: 3,
+        importance: 0.52,
+        definition: undefined,
+        roleId: 'role_ux',
+      },
     ]);
   });
 
@@ -331,8 +350,24 @@ describe('learning plan', () => {
     ).toBeVisible();
   });
 
-  it('moves a finished focus area to Finished once its panel closes', async () => {
+  it('moves a finished focus area to Owned once its panel closes', async () => {
     signIn();
+    // Finishing the area syncs it as an owned skill; the server returns it in skills_have.
+    server.use(
+      http.put('*/api/account/professional-skills/mock-design-ops', () =>
+        HttpResponse.json({
+          status: 'added',
+          skill_id: 'mock-design-ops',
+          snapshot: useIntakeStore.getState().snapshot,
+          gap_result: {
+            readiness: 81,
+            skills_have: ['Design Ops & Handoff Automation'],
+            gaps: [],
+          },
+          learned_skills: [],
+        })
+      )
+    );
     open(['/plan/learning']);
 
     for (const title of ['DesignOps in practice', 'Dev Mode and handoff in Figma']) {
@@ -345,7 +380,7 @@ describe('learning plan', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Close' }));
 
-    const finished = (await screen.findByRole('heading', { name: 'Finished', level: 2 })).closest(
+    const finished = (await screen.findByRole('heading', { name: 'Owned', level: 2 })).closest(
       'section'
     );
     expect(
@@ -368,6 +403,64 @@ describe('learning plan', () => {
       'Design Ops & Handoff Automation'
     );
     expect(within(finished).getByText(/On your CV/)).toBeVisible();
+  });
+
+  it('syncs a newly completed focus skill and applies the returned profile state', async () => {
+    signIn();
+    server.use(
+      http.put('*/api/account/professional-skills/mock-design-ops', () =>
+        HttpResponse.json({
+          status: 'added',
+          skill_id: 'mock-design-ops',
+          snapshot: {
+            ...useIntakeStore.getState().snapshot,
+            professional_skills: [
+              { skill_id: 'mock-design-ops', skill: 'Design Ops & Handoff Automation' },
+            ],
+          },
+          gap_result: { readiness: 81, skills_have: [], gaps: [] },
+          learned_skills: [
+            { skill_id: 'mock-design-ops', skill: 'Design Ops & Handoff Automation', uplift: 3 },
+          ],
+        })
+      )
+    );
+    open(['/plan/learning']);
+
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'Mark DesignOps in practice as finished' })
+    );
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Mark Dev Mode and handoff in Figma as finished' })
+    );
+
+    await waitFor(() => expect(useIntakeStore.getState().gapResult.readiness).toBe(81));
+    expect(useIntakeStore.getState().snapshot.professional_skills[0].skill).toBe(
+      'Design Ops & Handoff Automation'
+    );
+  });
+
+  it('keeps learning completion and offers retry when profile sync fails', async () => {
+    signIn();
+    server.use(
+      http.put('*/api/account/professional-skills/mock-design-ops', () =>
+        HttpResponse.json({ error: 'Profile skill is temporarily unavailable.' }, { status: 500 })
+      )
+    );
+    open(['/plan/learning']);
+
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'Mark DesignOps in practice as finished' })
+    );
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Mark Dev Mode and handoff in Figma as finished' })
+    );
+
+    const retry = await screen.findByRole('button', {
+      name: 'Retry profile synchronization',
+    });
+    await waitFor(() => expect(retry).toBeVisible());
+    expect(useIntakeStore.getState().learningProgress['ops-dev-mode'].status).toBe('done');
   });
 
   it('asks a guest for an account before saving or ticking, and keeps nothing', async () => {
@@ -491,6 +584,56 @@ describe('employer fit finder', () => {
 });
 
 describe('companion', () => {
+  it('sends learning context and applies Hera profile mutations immediately', async () => {
+    let requestBody;
+    server.use(
+      http.post('*/api/companion/ask', async ({ request }) => {
+        requestBody = await request.json();
+        return HttpResponse.json({
+          answer: 'SQL was added to your professional skills.',
+          sources: [],
+          profile_skill_update: {
+            action: 'add',
+            status: 'added',
+            skill_id: 's1',
+            skill: 'SQL',
+            snapshot: {
+              ...useIntakeStore.getState().snapshot,
+              professional_skills: [{ skill_id: 's1', skill: 'SQL' }],
+            },
+            gap_result: { readiness: 79, skills_have: ['SQL'], gaps: [] },
+            learned_skills: [{ skill_id: 's1', skill: 'SQL', uplift: 9 }],
+          },
+        });
+      })
+    );
+    useAccountStore.setState({ user: { username: 'ccc', displayName: 'Chee Yeong' } });
+    useIntakeStore.setState({
+      learningProgress: { r1: { status: 'done', at: 1 } },
+      learnedSkills: [{ skill_id: 'old', skill: 'Existing skill' }],
+    });
+    open(['/journey']);
+
+    fireEvent.click(await screen.findByRole('button', { name: /Ask Hera/ }));
+    fireEvent.change(screen.getByRole('textbox'), { target: { value: 'Add SQL' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Ask' }));
+
+    expect(await screen.findByText(/SQL was added/)).toBeVisible();
+    expect(requestBody.journey.learningProgress).toEqual({
+      r1: { status: 'done', at: 1 },
+    });
+    expect(requestBody.journey.learnedSkills).toEqual([
+      { skill_id: 'old', skill: 'Existing skill' },
+    ]);
+    expect(useIntakeStore.getState().snapshot.professional_skills[0].skill).toBe('SQL');
+    expect(useIntakeStore.getState().gapResult.readiness).toBe(79);
+    // A Hera add updates the snapshot and gap, but not the client-owned learnedSkills.
+    expect(useIntakeStore.getState().learnedSkills).toEqual([
+      { skill_id: 'old', skill: 'Existing skill' },
+    ]);
+    expect(screen.queryByText('Use this profile')).toBeNull();
+  });
+
   it('answers from her own gap, and cites what it read', async () => {
     useAccountStore.setState({ user: { username: 'ccc', displayName: 'Chee Yeong' } });
     open(['/journey']);

@@ -216,6 +216,17 @@ export const useIntakeStore = create(
       setSelectedRole: (role) => set({ selectedRole: role, gapResult: null }),
       // A new gap result completes any redo, so the stashed previous plan is discarded.
       setGapResult: (gapResult) => set({ gapResult, previousPlan: null }),
+      // Applies the server-owned snapshot and gap result. learnedSkills is client
+      // owned (seeded when a focus area is finished); the server no longer writes it,
+      // so this must not overwrite it or a finished skill would be dropped.
+      applyProfileSkillUpdate: (update) =>
+        set((state) => ({
+          snapshot: update?.snapshot ?? state.snapshot,
+          gapResult:
+            Object.prototype.hasOwnProperty.call(update ?? {}, 'gap_result')
+              ? update.gap_result
+              : state.gapResult,
+        })),
       setCvDraft: (cvDraft) => set({ cvDraft }),
       setCurrentStepIndex: (currentStepIndex) => set({ currentStepIndex }),
 

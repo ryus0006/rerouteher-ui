@@ -238,12 +238,37 @@ describe('plan sync', () => {
     await createAccount({ username: 'syncer', password: 'password1', plan: { cvParsed: false } });
     useAccountStore.setState({ user: { username: 'syncer', displayName: 'syncer' } });
 
-    useIntakeStore.setState({ cvParsed: true, snapshot: SNAPSHOT });
+    useIntakeStore.setState({
+      cvParsed: true,
+      snapshot: SNAPSHOT,
+      gapResult: { readiness: 78, gaps: [] },
+      learningProgress: {
+        resource_1: { status: 'done', at: 123 },
+      },
+      learnedSkills: [
+        { skill_id: 'skill_time_management', skill: 'Time Management' },
+      ],
+    });
 
     await waitFor(
       async () => {
         const result = await signIn({ username: 'syncer', password: 'password1' });
         expect(result.plan.snapshot).toEqual(SNAPSHOT);
+        expect(result.plan.learningProgress).toEqual({
+          resource_1: { status: 'done', at: 123 },
+        });
+        expect(result.plan.learnedSkills).toEqual([
+          { skill_id: 'skill_time_management', skill: 'Time Management' },
+        ]);
+
+        useIntakeStore.getState().reset();
+        useIntakeStore.getState().importPlan(result.plan);
+        expect(useIntakeStore.getState().learningProgress).toEqual({
+          resource_1: { status: 'done', at: 123 },
+        });
+        expect(useIntakeStore.getState().learnedSkills).toEqual([
+          { skill_id: 'skill_time_management', skill: 'Time Management' },
+        ]);
       },
       { timeout: 3000 }
     );

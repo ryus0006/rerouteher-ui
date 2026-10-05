@@ -136,4 +136,16 @@
  * @property {EmployerMatch[]} employers
  */
 
+/**
+ * @typedef {Object} ProfileSkillUpdate
+ * @property {'add' | 'remove'} action
+ * @property {string} status
+ * @property {string} skill_id
+ * @property {string | null} [skill]
+ * @property {string | null} [definition]
+ * @property {Object} snapshot
+ * @property {Object | null} [gap_result]
+ * @property {Object[]} learned_skills
+ */
+
 export {};

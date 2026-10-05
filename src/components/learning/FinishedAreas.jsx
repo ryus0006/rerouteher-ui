@@ -21,11 +21,11 @@ export default function FinishedAreas({
   return (
     <section id="finished" aria-labelledby="finished-title" className="lp-area lp-later">
       <ChapterLabel as="h2" id="finished-title">
-        Finished
+        Owned
       </ChapterLabel>
       <p className="mt-3 text-sm text-ink-soft">
-        Everything picked for {areas.length === 1 ? 'this skill' : 'these skills'} is done. Open one
-        to revisit its resources.
+        {areas.length === 1 ? 'A skill' : 'Skills'} you already have for this role, from your CV or
+        finished learning. Open one with resources to revisit them.
       </p>
 
       <ul className="mt-4 space-y-1">
@@ -54,8 +54,11 @@ export default function FinishedAreas({
                       {area.skill}
                     </h3>
                     <p className="mt-1.5 flex flex-wrap items-center gap-x-2 text-xs text-ink-faint">
-                      {area.resources.length}{' '}
-                      {area.resources.length === 1 ? 'resource' : 'resources'} finished
+                      {area.resources.length > 0
+                        ? `${area.resources.length} ${
+                            area.resources.length === 1 ? 'resource' : 'resources'
+                          } finished`
+                        : 'Already in your skills'}
                       {signedIn && onCv(area) && (
                         <span className="font-semibold text-verify">· On your CV</span>
                       )}
@@ -72,21 +75,23 @@ export default function FinishedAreas({
                       <span className="sr-only">: {area.skill}</span>
                     </button>
                   )}
-                  <button
-                    type="button"
-                    onClick={() => onToggle(area.skill_id)}
-                    aria-label={`${expanded ? 'Hide' : 'Show'} resources for ${area.skill}`}
-                    aria-expanded={expanded}
-                    aria-controls={panelId}
-                    className="lp-tile-action inline-flex items-center gap-1"
-                  >
-                    {expanded ? 'Hide' : 'Show'}
-                    <CaretDown weight="bold" className="lp-done-caret size-3" aria-hidden="true" />
-                  </button>
+                  {area.resources.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => onToggle(area.skill_id)}
+                      aria-label={`${expanded ? 'Hide' : 'Show'} resources for ${area.skill}`}
+                      aria-expanded={expanded}
+                      aria-controls={panelId}
+                      className="lp-tile-action inline-flex items-center gap-1"
+                    >
+                      {expanded ? 'Hide' : 'Show'}
+                      <CaretDown weight="bold" className="lp-done-caret size-3" aria-hidden="true" />
+                    </button>
+                  )}
                 </div>
 
                 <AnimatePresence initial={false}>
-                  {expanded && (
+                  {expanded && area.resources.length > 0 && (
                     <motion.ul
                       key="resources"
                       id={panelId}

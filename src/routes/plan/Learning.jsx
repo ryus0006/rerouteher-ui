@@ -23,6 +23,7 @@ import {
   upNext,
 } from '../../lib/learningProgress.js';
 import { addSkillToCv, removeSkillFromCv, skillOnCv } from '../../lib/cvDraft.js';
+import { addProfessionalSkill } from '../../api/account.js';
 import { recommendLearning } from '../../api/learning.js';
 import { useAccountStore } from '../../store/accountStore.js';
 import { useIntakeStore } from '../../store/intakeStore.js';
@@ -74,7 +75,7 @@ function StatusRing({ status, title, onClick }) {
  * Learning resource row: title, `why` (how it addresses the gap), provider,
  * format, duration and cost, with its status and a bookmark for later.
  */
-function Resource({ resource, status, onFinish, onUnfinish, onSave, onOpen }) {
+function Resource({ resource, status, step, total, onFinish, onUnfinish, onSave, onOpen }) {
   const saved = status === 'saved' || status === 'started';
   const done = status === 'done';
 
@@ -88,6 +89,9 @@ function Resource({ resource, status, onFinish, onUnfinish, onSave, onOpen }) {
       <ProviderMark logo={resource.logo} provider={resource.provider} />
 
       <div className="min-w-0 flex-1">
+        <p className="mb-1 text-xs font-semibold text-ink-faint">
+          Step {step} of {total}
+        </p>
         <h3 className="flex flex-wrap items-center gap-x-2 gap-y-1 font-semibold text-ink">
           {resource.title}
           {status && (
@@ -155,6 +159,7 @@ export default function Learning() {
   const openSheet = useAccountStore((state) => state.openSheet);
   const learnedSkills = useIntakeStore((state) => state.learnedSkills);
   const setLearnedSkills = useIntakeStore((state) => state.setLearnedSkills);
+  const applyProfileSkillUpdate = useIntakeStore((state) => state.applyProfileSkillUpdate);
   const addedFocusAreas = useIntakeStore((state) => state.addedFocusAreas);
   const addFocusArea = useIntakeStore((state) => state.addFocusArea);
   const cvDraft = useIntakeStore((state) => state.cvDraft);
@@ -173,18 +178,29 @@ export default function Learning() {
   const scrolledTo = useRef(null);
   // Finished focus areas opened to show their resources.
   const [openFinished, setOpenFinished] = useState([]);
+  const [profileSync, setProfileSync] = useState(null);
 
   const roleId = selectedRole?.role_id;
   const added = addedFocusAreas?.[roleId];
-  // The first focus areas from the gap result, then any added from Up later.
+  // Active focus areas are the role's current gaps. Skills already learned that are
+  // requirements of this role (covered, so in skills_have) are finished - shown at the
+  // end, never taking an active slot, whether or not they have fetched material.
   const focusAreas = useMemo(() => {
     if (!gapResult) return [];
+    const currentIds = new Set(gapResult.gaps.map((gap) => gap.skill_id));
+    const covered = new Set(gapResult.skills_have ?? []);
+    const finishedLearned = learnedSkills
+      .filter(
+        (entry) =>
+          entry?.skill_id && !currentIds.has(entry.skill_id) && covered.has(entry.skill)
+      )
+      .map((entry) => ({ band: 'role', importance: 0, uplift: entry.uplift ?? 0, ...entry, learned: true }));
     const picked = pickFocusAreas(gapResult.gaps, MAX_FOCUS_AREAS);
     const extra = (added ?? [])
       .map((skillId) => gapResult.gaps.find((gap) => gap.skill_id === skillId))
       .filter((gap) => gap && !picked.includes(gap));
-    return [...picked, ...extra];
-  }, [gapResult, added]);
+    return [...picked, ...extra, ...finishedLearned];
+  }, [gapResult, added, learnedSkills]);
   const laterGaps = gapResult ? gapResult.gaps.filter((gap) => !focusAreas.includes(gap)) : [];
   const skillKey = focusAreas.map((gap) => gap.skill_id).join('|');
 
@@ -270,6 +286,37 @@ export default function Learning() {
     setEntering(gap.skill_id);
   };
 
+  // Record a finished focus area as a learned skill right away. Finishing also
+  // removes the skill from gapResult.gaps, and focusAreas is built from gaps plus
+  // learnedSkills; seeding it here keeps the skill visible instead of falling
+  // through the gap between the two.
+  const recordLearnedArea = (area) => {
+    const current = useIntakeStore.getState().learnedSkills;
+    if (current.some((entry) => entry.skill_id === area.skill_id)) return;
+    setLearnedSkills([
+      ...current,
+      {
+        skill_id: area.skill_id,
+        skill: area.skill,
+        uplift: area.uplift,
+        importance: area.importance,
+        definition: area.definition,
+        roleId,
+      },
+    ]);
+  };
+
+  const syncProfileSkill = async (area) => {
+    setProfileSync({ area, status: 'syncing' });
+    try {
+      const update = await addProfessionalSkill(area.skill_id);
+      applyProfileSkillUpdate(update);
+      setProfileSync({ area, status: 'success' });
+    } catch (cause) {
+      setProfileSync({ area, status: 'error', message: cause.message });
+    }
+  };
+
   const open = (resource) => {
     if (!user) return;
     if (statusOf(progress, resource.id) !== 'done') setStatus(resource.id, 'started');
@@ -284,7 +331,12 @@ export default function Learning() {
     const completesArea = resources
       .filter((other) => other.skill_id === resource.skill_id && other.id !== resource.id)
       .every((other) => statusOf(progress, other.id) === 'done');
+    const area = areaOf(resource.skill_id);
     setMoment(completesArea ? { kind: 'area', id: resource.id } : null);
+    if (completesArea && area) {
+      recordLearnedArea(area);
+      void syncProfileSkill(area);
+    }
   };
 
   // Restores the status held before it was finished; entries without `from`
@@ -343,9 +395,10 @@ export default function Learning() {
       .find((resource) => statusOf(progress, resource.id) !== 'done');
   const shelf = queue.filter((resource) => resource.id !== featured?.id);
 
-  const finishedCount = resources.filter(
-    (resource) => statusOf(progress, resource.id) === 'done'
-  ).length;
+  // Progress is skill-based: skills the user owns for this role (from their CV or
+  // finished learning, i.e. covered requirements) out of the role's total skills.
+  const skillsOwned = gapResult?.skills_have?.length ?? 0;
+  const totalRoleSkills = skillsOwned + (gapResult?.gaps?.length ?? 0);
   const timeLeft = totalTime(
     resources.filter((resource) => statusOf(progress, resource.id) !== 'done')
   );
@@ -363,11 +416,43 @@ export default function Learning() {
   const momentResource = moment && resources.find((resource) => resource.id === moment.id);
   const momentArea = momentResource && areaOf(momentResource.skill_id);
 
-  // A finished area moves to Finished, except the one just finished: it stays
-  // in place while its panel is open.
+  // A skill moves to Owned once finished, except the one just finished: it stays in
+  // place while its panel is open.
   const holding = moment?.kind === 'area' ? momentArea?.skill_id : null;
-  const activeAreas = withResources.filter((area) => !area.complete || area.skill_id === holding);
-  const finishedAreas = withResources.filter((area) => area.complete && area.skill_id !== holding);
+  // Active: gaps with material still to finish (plus the one whose panel is open).
+  const activeAreas = areas.filter(
+    (area) =>
+      area.skill_id === holding ||
+      (!area.learned && !area.complete && area.resources.length > 0)
+  );
+
+  // Owned: every skill the user has for this role (the covered requirements), so the
+  // Owned list matches the progress count. Resolve an id + resources where we know
+  // them (learned in a plan or in the profile); a skill with no fetched material just
+  // shows as owned, with no learning resources to reveal.
+  const idByName = new Map();
+  for (const entry of [
+    ...(snapshot?.professional_skills ?? []),
+    ...(snapshot?.reframed_skills ?? []),
+    ...learnedSkills,
+    ...(gapResult?.gaps ?? []),
+  ]) {
+    if (entry?.skill && entry?.skill_id && !idByName.has(entry.skill)) {
+      idByName.set(entry.skill, entry.skill_id);
+    }
+  }
+  const ownedAreas = (gapResult?.skills_have ?? [])
+    .map((name, index) => {
+      const skillId = idByName.get(name) ?? name;
+      return {
+        skill_id: skillId,
+        skill: name,
+        tone: TONES[index % TONES.length],
+        icon: plan?.groups?.find((entry) => entry.skill_id === skillId)?.icon,
+        resources: resources.filter((resource) => resource.skill_id === skillId),
+      };
+    })
+    .filter((area) => area.skill_id !== holding);
 
   const showFinished = (skillId) => {
     setOpenFinished((ids) => (ids.includes(skillId) ? ids : [...ids, skillId]));
@@ -377,11 +462,13 @@ export default function Learning() {
   };
 
   const resourceRows = (area) =>
-    area.resources.map((resource) => (
+    area.resources.map((resource, index) => (
       <Resource
         key={resource.id}
         resource={resource}
         status={statusOf(progress, resource.id)}
+        step={index + 1}
+        total={area.resources.length}
         onFinish={(item) => finish(item)}
         onUnfinish={unfinish}
         onSave={toggleSave}
@@ -428,8 +515,8 @@ export default function Learning() {
         {plan && resources.length > 0 && (
           <LearningHero
             progress={progress}
-            done={finishedCount}
-            total={resources.length}
+            done={skillsOwned}
+            total={totalRoleSkills}
             timeLeft={timeLeft}
             upliftLeft={upliftLeft}
             role={selectedRole?.role}
@@ -469,7 +556,7 @@ export default function Learning() {
                     .getElementById('up-later')
                     ?.scrollIntoView({ behavior: 'smooth', block: 'start' })
                 }
-                finished={finishedAreas}
+                finished={ownedAreas}
                 onSelectFinished={showFinished}
               />
             </aside>
@@ -517,9 +604,9 @@ export default function Learning() {
                 <UpLater gaps={laterGaps} role={selectedRole?.role} onAdd={addToPlan} />
               )}
 
-              {finishedAreas.length > 0 && (
+              {ownedAreas.length > 0 && (
                 <FinishedAreas
-                  areas={finishedAreas}
+                  areas={ownedAreas}
                   open={openFinished}
                   onToggle={(skillId) =>
                     setOpenFinished((ids) =>
@@ -561,6 +648,10 @@ export default function Learning() {
         onAddToCv={() => setCvDraft(addSkillToCv(useIntakeStore.getState(), momentArea.skill))}
         onRemoveFromCv={() => setCvDraft(removeSkillFromCv(cvDraft, roleId, momentArea.skill))}
         onClose={closePanel}
+        profileSync={
+          profileSync?.area?.skill_id === momentArea?.skill_id ? profileSync : null
+        }
+        onRetry={() => profileSync?.area && syncProfileSkill(profileSync.area)}
       />
     </div>
   );

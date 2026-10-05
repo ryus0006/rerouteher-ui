@@ -1,4 +1,4 @@
-import { postJson } from './client.js';
+import { deleteJson, postJson, putJson } from './client.js';
 
 export const MIN_PASSWORD_LENGTH = 8;
 
@@ -78,6 +78,14 @@ export function signIn({ username, password }) {
  */
 export function savePlan({ plan }) {
   return postJson('/api/account/plan', { plan });
+}
+
+export function addProfessionalSkill(skillId) {
+  return putJson(`/api/account/professional-skills/${encodeURIComponent(skillId)}`, {});
+}
+
+export function removeProfessionalSkill(skillId) {
+  return deleteJson(`/api/account/professional-skills/${encodeURIComponent(skillId)}`);
 }
 
 /** Clears the server session cookie. */

@@ -147,6 +147,8 @@ export default function Companion({ defaultMode = 'ask' }) {
   const snapshot = useIntakeStore((state) => state.snapshot);
   const selectedRole = useIntakeStore((state) => state.selectedRole);
   const gapResult = useIntakeStore((state) => state.gapResult);
+  const learningProgress = useIntakeStore((state) => state.learningProgress);
+  const learnedSkills = useIntakeStore((state) => state.learnedSkills);
   const employerPriorities = useIntakeStore((state) => state.employerPriorities);
   const employerMatches = useIntakeStore((state) => state.employerMatches);
   const confirmedSkills = useIntakeStore((state) => state.confirmedSkills);
@@ -155,6 +157,7 @@ export default function Companion({ defaultMode = 'ask' }) {
   const setEmployerPriorities = useIntakeStore((state) => state.setEmployerPriorities);
   const addConfirmedSkills = useIntakeStore((state) => state.addConfirmedSkills);
   const setConfirmedSkills = useIntakeStore((state) => state.setConfirmedSkills);
+  const applyProfileSkillUpdate = useIntakeStore((state) => state.applyProfileSkillUpdate);
 
   const open = useCompanionStore((state) => state.open);
   const mode = useCompanionStore((state) => state.mode);
@@ -262,6 +265,8 @@ export default function Companion({ defaultMode = 'ask' }) {
           employerMatches,
           confirmedSkills,
           roleSkillsOfferedForRoleId,
+          learningProgress,
+          learnedSkills,
         },
         currentPage: location.pathname,
         interview:
@@ -275,6 +280,13 @@ export default function Companion({ defaultMode = 'ask' }) {
 
       // Track which role the checklist was offered for so it is not offered again.
       if (result.skill_choices_role_id) setRoleSkillsOfferedForRoleId(result.skill_choices_role_id);
+
+      // Hera has already received explicit confirmation before calling this tool.
+      // Apply the authoritative server fragment directly; do not ask for a second
+      // confirmation card.
+      if (result.profile_skill_update) {
+        applyProfileSkillUpdate(result.profile_skill_update);
+      }
 
       // Stage the drafted profile; it is applied only after the user confirms it.
       // Each update merges into the draft so a reply that omits a field keeps it.

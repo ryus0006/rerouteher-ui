@@ -83,6 +83,28 @@ describe('intake store', () => {
     expect(store().gapResult).toBeNull();
   });
 
+  it('applies an authoritative profile-skill update without changing the role or learned skills', () => {
+    store().setSnapshot(snapshot);
+    const role = store().selectedRole;
+    store().setGapResult({ readiness: 70, skills_have: [], gaps: [] });
+    store().setLearnedSkills([{ skill_id: 'existing', skill: 'Existing skill' }]);
+
+    store().applyProfileSkillUpdate({
+      snapshot: {
+        ...snapshot,
+        professional_skills: [{ skill_id: 's1', skill: 'SQL' }],
+      },
+      gap_result: { readiness: 79, skills_have: ['SQL'], gaps: [] },
+      learned_skills: [{ skill_id: 's1', skill: 'SQL', uplift: 9 }],
+    });
+
+    expect(store().selectedRole).toEqual(role);
+    expect(store().snapshot.professional_skills[0].skill).toBe('SQL');
+    expect(store().gapResult.readiness).toBe(79);
+    // learnedSkills is client-owned: the server fragment must not overwrite it.
+    expect(store().learnedSkills).toEqual([{ skill_id: 'existing', skill: 'Existing skill' }]);
+  });
+
   it('persists the session for the tab, not for the browser', () => {
     store().setBreakDuration(5);
 
