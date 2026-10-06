@@ -68,21 +68,14 @@ function SignInRequired() {
             CV builder
           </h1>
           <p className="mt-3 max-w-[50ch] text-base leading-relaxed text-ink-soft">
-            Sign in to use the CV builder. It writes a first draft from your journey and saves every
-            edit to your account, so it needs an account to keep it in.
+            Create a free account to use the CV builder. It writes a first draft from your journey
+            and saves every edit you make.
           </p>
           <p className="mt-2 max-w-[50ch] text-sm leading-relaxed text-ink-soft">
-            New here? Creating an account keeps the journey you have done as a guest.
+            Everything you have done so far as a guest comes with you.
           </p>
           <div className="mt-7 flex flex-wrap gap-3">
-            <GradientButton size="md" onClick={() => openSheet('signIn', '/plan/cv')}>
-              Sign in
-            </GradientButton>
-            <GradientButton
-              variant="secondary"
-              size="md"
-              onClick={() => openSheet('create', '/plan/cv')}
-            >
+            <GradientButton size="md" onClick={() => openSheet('create', '/plan/cv')}>
               Create an account
             </GradientButton>
           </div>

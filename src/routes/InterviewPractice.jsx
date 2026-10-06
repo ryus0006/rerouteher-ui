@@ -71,21 +71,14 @@ function SignInRequired() {
             Interview practice
           </h1>
           <p className="mt-3 max-w-[54ch] text-base leading-relaxed text-ink-soft">
-            Sign in to practise. You answer questions for your target role out loud, get feedback on
-            each answer, and see which areas come up most across your practice.
+            Create a free account to practise. You answer questions for your target role out loud,
+            get feedback on each answer, and see which areas come up most across your practice.
           </p>
           <p className="mt-2 max-w-[54ch] text-sm leading-relaxed text-ink-soft">
-            New here? Creating an account keeps the journey you have done as a guest.
+            Everything you have done so far as a guest comes with you.
           </p>
           <div className="mt-7 flex flex-wrap gap-3">
-            <GradientButton size="md" onClick={() => openSheet('signIn', '/interview-practice')}>
-              Sign in
-            </GradientButton>
-            <GradientButton
-              variant="secondary"
-              size="md"
-              onClick={() => openSheet('create', '/interview-practice')}
-            >
+            <GradientButton size="md" onClick={() => openSheet('create', '/interview-practice')}>
               Create an account
             </GradientButton>
           </div>

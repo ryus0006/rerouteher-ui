@@ -154,21 +154,14 @@ function SignInRequired() {
           Your learning plan
         </h1>
         <p className="mt-3 max-w-[54ch] text-base leading-relaxed text-ink-soft">
-          Sign in to open your learning plan. It tracks the resources you finish and keeps your
-          progress for each focus area, so it needs an account to keep it in.
+          Create a free account to open your learning plan. It saves the resources you finish and
+          your progress on each focus area.
         </p>
         <p className="mt-2 max-w-[54ch] text-sm leading-relaxed text-ink-soft">
-          New here? Creating an account keeps the journey you have done as a guest.
+          Everything you have done so far as a guest comes with you.
         </p>
         <div className="mt-7 flex flex-wrap gap-3">
-          <GradientButton size="md" onClick={() => openSheet('signIn', '/plan/learning')}>
-            Sign in
-          </GradientButton>
-          <GradientButton
-            variant="secondary"
-            size="md"
-            onClick={() => openSheet('create', '/plan/learning')}
-          >
+          <GradientButton size="md" onClick={() => openSheet('create', '/plan/learning')}>
             Create an account
           </GradientButton>
         </div>
