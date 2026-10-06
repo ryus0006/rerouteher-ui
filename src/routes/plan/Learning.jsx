@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import { ArrowUpRight, BookmarkSimple } from '@phosphor-icons/react';
 import Header from '../../components/layout/Header.jsx';
+import GradientButton from '../../components/ui/GradientButton.jsx';
 import BackLink from '../../components/intake/BackLink.jsx';
 import TargetRoleSelect from '../../components/plan/TargetRoleSelect.jsx';
 import ProviderMark from '../../components/learning/ProviderMark.jsx';
@@ -139,6 +140,40 @@ function Resource({ resource, status, onFinish, onUnfinish, onSave, onOpen }) {
         </a>
       </div>
     </li>
+  );
+}
+
+/** Sign-in gate: the learning plan and its progress are saved per account. */
+function SignInRequired() {
+  const openSheet = useAccountStore((state) => state.openSheet);
+  return (
+    <div className="flex min-h-screen flex-col">
+      <Header />
+      <main className="page-shell max-w-[760px] flex-1 py-16">
+        <h1 className="font-display text-4xl font-bold tracking-[-0.03em] text-ink">
+          Your learning plan
+        </h1>
+        <p className="mt-3 max-w-[54ch] text-base leading-relaxed text-ink-soft">
+          Sign in to open your learning plan. It tracks the resources you finish and keeps your
+          progress for each focus area, so it needs an account to keep it in.
+        </p>
+        <p className="mt-2 max-w-[54ch] text-sm leading-relaxed text-ink-soft">
+          New here? Creating an account keeps the journey you have done as a guest.
+        </p>
+        <div className="mt-7 flex flex-wrap gap-3">
+          <GradientButton size="md" onClick={() => openSheet('signIn', '/plan/learning')}>
+            Sign in
+          </GradientButton>
+          <GradientButton
+            variant="secondary"
+            size="md"
+            onClick={() => openSheet('create', '/plan/learning')}
+          >
+            Create an account
+          </GradientButton>
+        </div>
+      </main>
+    </div>
   );
 }
 
@@ -314,6 +349,9 @@ export default function Learning() {
   };
 
   const closePanel = useCallback(() => setMoment(null), []);
+
+  // The learning plan tracks finished resources per account, so it requires sign in.
+  if (!user) return <SignInRequired />;
 
   // Requires a gap result.
   if (!snapshot || !gapResult) return <Navigate to="/diagnostic/gap" replace />;
