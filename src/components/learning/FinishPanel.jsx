@@ -148,6 +148,25 @@ function AreaFinished({
   profileSync,
   onRetry,
 }) {
+  // A refresher is a skill the user already has, so there is nothing to add.
+  if (area.refresher) {
+    return (
+      <>
+        <p className="lp-eyebrow text-verify">Refresher finished</p>
+        <h2
+          id="lp-panel-title"
+          className="mt-2 font-display text-2xl font-bold leading-tight text-ink"
+        >
+          You’ve refreshed {area.skill}.
+        </h2>
+        <AreaMeter done={total} total={total} />
+        <p className="mt-3 text-sm leading-relaxed text-ink-soft">
+          It was already one of your skills, so your CV stays as it is.
+        </p>
+      </>
+    );
+  }
+
   return (
     <>
       <p className="lp-eyebrow text-verify">Focus area finished</p>
@@ -196,7 +215,8 @@ function AreaFinished({
 /**
  * Floating panel at the bottom of the learning plan. It asks whether a
  * resource opened earlier was finished, offers to add a completed focus area
- * to the CV, and asks guests to create an account before tracking progress.
+ * to the CV (a finished refresher only confirms it), and asks guests to create
+ * an account before tracking progress.
  */
 export default function FinishPanel({
   moment,

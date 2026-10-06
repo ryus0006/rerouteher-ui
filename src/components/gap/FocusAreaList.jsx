@@ -78,16 +78,22 @@ function FocusAreaRow({ gap, index, delay, reviewing, picked, onToggle }) {
 
   let row;
   if (reviewing) {
+    // The definition stays on hover while editing, to help decide what to tick.
     row = (
-      <button
-        type="button"
-        aria-pressed={picked}
-        onClick={onToggle}
-        className={`${ROW_CLASS} ${picked ? 'bg-verify-soft' : 'bg-surface hover:-translate-y-0.5 hover:shadow-card-hover'} active:scale-[0.99]`}
-      >
-        {content}
-        <PickMark picked={picked} />
-      </button>
+      <SkillDefinitionPopover definition={definition} label={gap.skill}>
+        {(triggerProps) => (
+          <button
+            type="button"
+            {...triggerProps}
+            aria-pressed={picked}
+            onClick={onToggle}
+            className={`${ROW_CLASS} ${picked ? 'bg-verify-soft' : 'bg-surface hover:-translate-y-0.5 hover:shadow-card-hover'} active:scale-[0.99]`}
+          >
+            {content}
+            <PickMark picked={picked} />
+          </button>
+        )}
+      </SkillDefinitionPopover>
     );
   } else if (!definition) {
     row = <div className={`${ROW_CLASS} bg-surface`}>{content}</div>;
@@ -117,15 +123,20 @@ function LaterSkill({ gap, reviewing, picked, onToggle }) {
   if (reviewing) {
     return (
       <li>
-        <button
-          type="button"
-          aria-pressed={picked}
-          onClick={onToggle}
-          className={`${CHIP_CLASS} ${picked ? 'bg-verify-soft font-medium text-verify' : 'bg-surface text-ink-soft hover:text-ink'}`}
-        >
-          {picked && <Check aria-hidden="true" size={12} weight="bold" />}
-          {gap.skill}
-        </button>
+        <SkillDefinitionPopover definition={definition} label={gap.skill}>
+          {(triggerProps) => (
+            <button
+              type="button"
+              {...triggerProps}
+              aria-pressed={picked}
+              onClick={onToggle}
+              className={`${CHIP_CLASS} ${picked ? 'bg-verify-soft font-medium text-verify' : 'bg-surface text-ink-soft hover:text-ink'}`}
+            >
+              {picked && <Check aria-hidden="true" size={12} weight="bold" />}
+              {gap.skill}
+            </button>
+          )}
+        </SkillDefinitionPopover>
       </li>
     );
   }

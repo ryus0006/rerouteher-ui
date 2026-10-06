@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Navigate } from 'react-router-dom';
+import { BookmarkSimple } from '@phosphor-icons/react';
 import useSmoothNavigate from '../../hooks/useSmoothNavigate.js';
 import Header from '../../components/layout/Header.jsx';
 import BackLink from '../../components/intake/BackLink.jsx';
@@ -102,7 +103,7 @@ function LogoTile({ logo, logoUrl, name }) {
           onError={() => setImageFailed(true)}
         />
       ) : (
-        logo?.text ?? name
+        (logo?.text ?? name)
       )}
     </span>
   );
@@ -177,16 +178,40 @@ function PriorityLedger({ met, unmet }) {
 }
 
 /**
- * Employer result card. Left column: company details, job opening and links.
- * Right column: per-priority results. The accent colour is used only for the
+ * Saves the employer to the shortlist, or removes it. The filled bookmark and
+ * the label both show the saved state.
+ */
+function SaveButton({ name, saved, onToggle }) {
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      aria-pressed={saved}
+      className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-3.5 py-2 text-sm font-semibold transition duration-300 ease-spring active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 ${
+        saved ? 'bg-ink text-on-plane' : 'bg-canvas-sunk text-ink hover:bg-ink/[0.08]'
+      }`}
+    >
+      <BookmarkSimple weight={saved ? 'fill' : 'light'} className="size-4" aria-hidden="true" />
+      {saved ? 'Saved' : 'Save'}
+      <span className="sr-only">
+        {saved ? `: ${name} is on your shortlist` : `${name} to your shortlist`}
+      </span>
+    </button>
+  );
+}
+
+/**
+ * Employer result card. Left column: company details with a save button, job
+ * opening and links. Right column: per-priority results. The accent colour is used only for the
  * job opening action.
  *
  * All disclosures come from a single report, so it is linked once rather than
  * per priority.
  *
- * `featured` adds a label and stronger border for the top result.
+ * `featured` adds a label and stronger border for the top result. The save
+ * button shows only when `onToggleSave` is given.
  */
-function EmployerCard({ employer, featured = false }) {
+function EmployerCard({ employer, featured = false, saved = false, onToggleSave }) {
   const total = employer.met.length + employer.unmet.length;
   const label = matchLabel(employer.met.length, total);
 
@@ -198,7 +223,7 @@ function EmployerCard({ employer, featured = false }) {
         <div className="flex flex-col p-5">
           <div className="flex items-center gap-4">
             <LogoTile logo={employer.logo} logoUrl={employer.logo_url} name={employer.name} />
-            <div className="min-w-0">
+            <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
                 <h2 className="font-display text-xl font-bold tracking-[-0.015em] text-ink">
                   {employer.name}
@@ -215,6 +240,9 @@ function EmployerCard({ employer, featured = false }) {
                   : employer.industry}
               </p>
             </div>
+            {onToggleSave && (
+              <SaveButton name={employer.name} saved={saved} onToggle={onToggleSave} />
+            )}
           </div>
 
           {employer.summary && !employer.summary.trimStart().startsWith('{') && (
@@ -314,7 +342,7 @@ function riseDelay(index) {
 /**
  * Labelled group of employer cards (e.g. hiring vs. other matches).
  */
-function MatchGroup({ label, employers, start }) {
+function MatchGroup({ label, employers, start, cardProps }) {
   return (
     <section aria-label={label} className="mt-14">
       <div className="flex items-center gap-4">
@@ -326,7 +354,7 @@ function MatchGroup({ label, employers, start }) {
       <ul className="mt-5 flex flex-col gap-5">
         {employers.map((employer, index) => (
           <li key={employer.id} className="rise-in" style={riseDelay(start + index)}>
-            <EmployerCard employer={employer} />
+            <EmployerCard employer={employer} {...cardProps(employer)} />
           </li>
         ))}
       </ul>
@@ -385,6 +413,40 @@ function QueryBar({ chosen, count, onAdjust }) {
   );
 }
 
+/**
+ * Switch between every match and the employers the user saved, each with its
+ * count.
+ */
+function ViewSwitch({ view, onChange, allCount, savedCount }) {
+  const options = [
+    { id: 'all', label: 'All matches', count: allCount },
+    { id: 'shortlist', label: 'Your shortlist', count: savedCount },
+  ];
+  return (
+    <div
+      role="tablist"
+      aria-label="Employers shown"
+      className="inline-flex rounded-full bg-ink/[0.04] p-1"
+    >
+      {options.map((option) => (
+        <button
+          key={option.id}
+          type="button"
+          role="tab"
+          aria-selected={view === option.id}
+          onClick={() => onChange(option.id)}
+          className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold transition duration-300 ease-spring focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 ${
+            view === option.id ? 'bg-surface text-ink shadow-card' : 'text-ink-soft hover:text-ink'
+          }`}
+        >
+          {option.label}
+          <span className="tabular text-xs font-medium text-ink-faint">{option.count}</span>
+        </button>
+      ))}
+    </div>
+  );
+}
+
 /** Number of employer cards shown at first, and added by each "Show more". */
 const PAGE_SIZE = 10;
 
@@ -399,12 +461,16 @@ export default function EmployerMatches() {
   const gapResult = useIntakeStore((state) => state.gapResult);
   const priorities = useIntakeStore((state) => state.employerPriorities);
   const setEmployerMatches = useIntakeStore((state) => state.setEmployerMatches);
+  const shortlists = useIntakeStore((state) => state.employerShortlist);
+  const toggleShortlist = useIntakeStore((state) => state.toggleShortlist);
   const user = useAccountStore((state) => state.user);
+  const openSheet = useAccountStore((state) => state.openSheet);
 
   const [employers, setEmployers] = useState(null);
   const [jobSearch, setJobSearch] = useState(null);
   const [error, setError] = useState(null);
   const [limit, setLimit] = useState(PAGE_SIZE);
+  const [view, setView] = useState('all');
 
   const chosen = priorities ?? [];
   const key = chosen.join('|');
@@ -445,17 +511,27 @@ export default function EmployerMatches() {
   const others = rest.filter((employer) => !employer.job);
   const anyJob = Boolean(employers?.some((employer) => employer.job));
 
+  // Saved employers for this role, shown with their latest match where it is in
+  // the current results. Saving needs an account, as saving resources does.
+  const roleId = selectedRole?.role_id;
+  const saved = (shortlists?.[roleId] ?? []).map(
+    (entry) => all.find((employer) => employer.id === entry.id) ?? entry
+  );
+  const isSaved = (employer) => saved.some((entry) => entry.id === employer.id);
+  const cardProps = (employer) => ({
+    saved: Boolean(user) && isSaved(employer),
+    onToggleSave: () =>
+      user ? toggleShortlist(roleId, employer) : openSheet('create', '/plan/employers/matches'),
+  });
+  const showSaved = view === 'shortlist' && Boolean(user);
+
   return (
     <div className="flex min-h-screen flex-col">
       <Header />
 
       <main className="page-shell max-w-[1200px] flex-1 pt-14 pb-28">
-        {/* Back target: the journey for signed-in users, the gap screen for guests. */}
-        {user ? (
-          <BackLink to="/journey">Back to your journey</BackLink>
-        ) : (
-          <BackLink to="/diagnostic/gap">Back to your readiness</BackLink>
-        )}
+        {/* Guests have no journey, so they get a way back to the gap screen. */}
+        {!user && <BackLink to="/diagnostic/gap">Back to your readiness</BackLink>}
 
         {/* Page header: title, matching explanation and companion entry point. */}
         <div className="rise-in mt-4">
@@ -464,7 +540,7 @@ export default function EmployerMatches() {
           </h1>
           <p className="mt-3 max-w-[62ch] text-[0.9375rem] leading-relaxed text-ink-soft">
             We read the published ESG and sustainability reports of Malaysian listed companies and
-            check them for the priorities you chose. A tick means the report mentions it.
+            check them for the priorities you chose.
           </p>
           <AskHeraAboutResults className="mt-4" />
         </div>
@@ -477,6 +553,27 @@ export default function EmployerMatches() {
           />
         </div>
 
+        {user && employers?.length > 0 && (
+          <div className="mt-8">
+            <ViewSwitch
+              view={view}
+              onChange={setView}
+              allCount={all.length}
+              savedCount={saved.length}
+            />
+          </div>
+        )}
+
+        {showSaved &&
+          (saved.length > 0 ? (
+            <MatchGroup label="Your shortlist" employers={saved} start={0} cardProps={cardProps} />
+          ) : (
+            <p className="mt-12 max-w-[56ch] text-sm leading-relaxed text-ink-soft">
+              Nothing saved yet. Press Save on any employer you’d like to follow up on, and it waits
+              here.
+            </p>
+          ))}
+
         {error && (
           <p role="alert" className="mt-12 text-sm font-medium text-pink-600">
             {error} Reload the page to try again.
@@ -487,56 +584,68 @@ export default function EmployerMatches() {
           <p className="mt-12 text-sm text-ink-soft">Reading company disclosures…</p>
         )}
 
-        {employers?.length === 0 && (
-          <p className="mt-12 max-w-[56ch] text-sm leading-relaxed text-ink-soft">
-            No company in our set has published anything about what you chose. That is a finding
-            about the disclosures, not about you. Try a different priority.
-          </p>
-        )}
+        {!showSaved && (
+          <>
+            {employers?.length === 0 && (
+              <p className="mt-12 max-w-[56ch] text-sm leading-relaxed text-ink-soft">
+                No company in our set has published anything about what you chose. That is a finding
+                about the disclosures, not about you. Try a different priority.
+              </p>
+            )}
 
-        {employers?.length > 0 && !anyJob && jobSearch?.status === 'empty' && (
-          <p className="mt-12 rounded-2xl bg-ink/[0.03] px-5 py-3.5 text-sm text-ink-soft ring-1 ring-ink/[0.06]">
-            No current openings were found for this target role among these employer matches. Your
-            employer-fit results are still shown below.
-          </p>
-        )}
+            {employers?.length > 0 && !anyJob && jobSearch?.status === 'empty' && (
+              <p className="mt-12 rounded-2xl bg-ink/[0.03] px-5 py-3.5 text-sm text-ink-soft ring-1 ring-ink/[0.06]">
+                No current openings were found for this target role among these employer matches.
+                Your employer-fit results are still shown below.
+              </p>
+            )}
 
-        {jobSearch?.status === 'temporarily_unavailable' && (
-          <p className="mt-12 rounded-2xl bg-ink/[0.03] px-5 py-3.5 text-sm text-ink-soft ring-1 ring-ink/[0.06]">
-            Job openings are temporarily unavailable. Your employer-fit results are still shown
-            below.
-          </p>
-        )}
+            {jobSearch?.status === 'temporarily_unavailable' && (
+              <p className="mt-12 rounded-2xl bg-ink/[0.03] px-5 py-3.5 text-sm text-ink-soft ring-1 ring-ink/[0.06]">
+                Job openings are temporarily unavailable. Your employer-fit results are still shown
+                below.
+              </p>
+            )}
 
-        {featured && (
-          <div className={`rise-in ${anyJob ? 'mt-12' : 'mt-6'}`} style={riseDelay(2)}>
-            <EmployerCard employer={featured} featured />
-          </div>
-        )}
+            {featured && (
+              <div className={`rise-in ${anyJob ? 'mt-12' : 'mt-6'}`} style={riseDelay(2)}>
+                <EmployerCard employer={featured} featured {...cardProps(featured)} />
+              </div>
+            )}
 
-        {hiring.length > 0 && <MatchGroup label="Also hiring now" employers={hiring} start={3} />}
+            {hiring.length > 0 && (
+              <MatchGroup
+                label="Also hiring now"
+                employers={hiring}
+                start={3}
+                cardProps={cardProps}
+              />
+            )}
 
-        {others.length > 0 && (
-          <MatchGroup
-            label={anyJob ? 'Also matches your priorities' : 'More matches'}
-            employers={others}
-            start={3 + hiring.length}
-          />
-        )}
+            {others.length > 0 && (
+              <MatchGroup
+                label={anyJob ? 'Also matches your priorities' : 'More matches'}
+                employers={others}
+                start={3 + hiring.length}
+                cardProps={cardProps}
+              />
+            )}
 
-        {all.length > shown.length && (
-          <div className="mt-10 flex justify-center">
-            <button
-              type="button"
-              onClick={() => setLimit((current) => current + PAGE_SIZE)}
-              className="rounded-full bg-surface px-6 py-3 text-sm font-semibold text-ink shadow-card transition duration-300 ease-spring hover:shadow-card-hover active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
-            >
-              Show {Math.min(PAGE_SIZE, all.length - shown.length)} more
-              <span className="ml-1.5 font-normal text-ink-faint">
-                · {all.length - shown.length} left
-              </span>
-            </button>
-          </div>
+            {all.length > shown.length && (
+              <div className="mt-10 flex justify-center">
+                <button
+                  type="button"
+                  onClick={() => setLimit((current) => current + PAGE_SIZE)}
+                  className="rounded-full bg-surface px-6 py-3 text-sm font-semibold text-ink shadow-card transition duration-300 ease-spring hover:shadow-card-hover active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
+                >
+                  Show {Math.min(PAGE_SIZE, all.length - shown.length)} more
+                  <span className="ml-1.5 font-normal text-ink-faint">
+                    · {all.length - shown.length} left
+                  </span>
+                </button>
+              </div>
+            )}
+          </>
         )}
 
         {employers?.length > 0 && (

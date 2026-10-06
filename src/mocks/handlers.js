@@ -1,4 +1,4 @@
-import { http, HttpResponse } from 'msw';
+import { delay, http, HttpResponse } from 'msw';
 import cvParsed from './fixtures/cv-parse.200.json';
 import snapshotHighConfidence from './fixtures/snapshot.high-confidence.json';
 import gapDefault from './fixtures/gap.default.json';
@@ -9,6 +9,53 @@ import { validateCvFile } from '../api/cv.js';
 import { interviewHandlers } from './interview.js';
 
 const DEFAULT_ROLE_ID = 'role_ux';
+
+/* Owned skills have no fixture resources; they arrive by name (no ESCO id), so
+   the mock builds a short refresher for each. One skill has none, to show the
+   empty state. */
+const NO_REFRESHER = 'Time & Multi-project Prioritisation';
+
+const refresherFor = (skill) => {
+  const query = encodeURIComponent(skill);
+  return {
+    group: {
+      skill_id: skill,
+      skill,
+      icon: 'spark',
+      blurb: 'A quick catch-up on what has changed since your break.',
+    },
+    resources: [
+      {
+        skill_id: skill,
+        id: `refresh-${query}-article`,
+        skill,
+        title: `What's new in ${skill}`,
+        provider: 'Nielsen Norman Group',
+        logo: 'nngroup',
+        format: 'Article',
+        minutes: 20,
+        cost: 'Free',
+        free: true,
+        url: `https://www.nngroup.com/search/?q=${query}`,
+        why: 'A short read on current practice, so you can see what still holds and what has moved on.',
+      },
+      {
+        skill_id: skill,
+        id: `refresh-${query}-video`,
+        skill,
+        title: `${skill}: a refresher`,
+        provider: 'YouTube',
+        logo: 'youtube',
+        format: 'Video',
+        minutes: 45,
+        cost: 'Free',
+        free: true,
+        url: `https://www.youtube.com/results?search_query=${query}`,
+        why: 'Watching someone work through it brings back the steps faster than reading about them.',
+      },
+    ],
+  };
+};
 
 const cvDraftForRole = (roleId) => ({
   version: 3,
@@ -135,7 +182,16 @@ export const handlers = [
     );
     const groups = learningDefault.groups.filter((group) => skillIds.includes(group.skill_id));
 
-    return HttpResponse.json({ groups, resources });
+    const known = new Set(learningDefault.groups.map((group) => group.skill_id));
+    const refreshers = skillIds
+      .filter((skillId) => !known.has(skillId) && skillId !== NO_REFRESHER)
+      .map(refresherFor);
+    if (refreshers.length > 0) await delay(900);
+
+    return HttpResponse.json({
+      groups: [...groups, ...refreshers.map((entry) => entry.group)],
+      resources: [...resources, ...refreshers.flatMap((entry) => entry.resources)],
+    });
   }),
 
   /* Employers ranked against the requested priorities. Each fixture employer

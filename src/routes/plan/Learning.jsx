@@ -11,6 +11,8 @@ import LearningHero from '../../components/learning/LearningHero.jsx';
 import AreaRail from '../../components/learning/AreaRail.jsx';
 import UpLater from '../../components/learning/UpLater.jsx';
 import FinishedAreas from '../../components/learning/FinishedAreas.jsx';
+import RefreshSkills from '../../components/learning/RefreshSkills.jsx';
+import MoreSkills from '../../components/learning/MoreSkills.jsx';
 import ChapterLabel from '../../components/learning/ChapterLabel.jsx';
 import { MAX_FOCUS_AREAS } from '../../components/gap/FocusAreaList.jsx';
 import { pickFocusAreas } from '../../lib/focusAreas.js';
@@ -75,7 +77,7 @@ function StatusRing({ status, title, onClick }) {
  * Learning resource row: title, `why` (how it addresses the gap), provider,
  * format, duration and cost, with its status and a bookmark for later.
  */
-function Resource({ resource, status, step, total, onFinish, onUnfinish, onSave, onOpen }) {
+function Resource({ resource, status, onFinish, onUnfinish, onSave, onOpen }) {
   const saved = status === 'saved' || status === 'started';
   const done = status === 'done';
 
@@ -89,9 +91,6 @@ function Resource({ resource, status, step, total, onFinish, onUnfinish, onSave,
       <ProviderMark logo={resource.logo} provider={resource.provider} />
 
       <div className="min-w-0 flex-1">
-        <p className="mb-1 text-xs font-semibold text-ink-faint">
-          Step {step} of {total}
-        </p>
         <h3 className="flex flex-wrap items-center gap-x-2 gap-y-1 font-semibold text-ink">
           {resource.title}
           {status && (
@@ -146,7 +145,8 @@ function Resource({ resource, status, step, total, onFinish, onUnfinish, onSave,
 
 /**
  * Learning plan page. Resources are grouped by focus area, in the gap
- * result's ranking order. Each can be saved for later, is marked started when
+ * result's ranking order, and one focus area is shown at a time, picked from
+ * the rail. Each resource can be saved for later, is marked started when
  * opened, and on return the user is asked whether it was finished.
  */
 export default function Learning() {
@@ -162,18 +162,26 @@ export default function Learning() {
   const applyProfileSkillUpdate = useIntakeStore((state) => state.applyProfileSkillUpdate);
   const addedFocusAreas = useIntakeStore((state) => state.addedFocusAreas);
   const addFocusArea = useIntakeStore((state) => state.addFocusArea);
+  const refreshAreas = useIntakeStore((state) => state.refreshAreas);
+  const addRefreshArea = useIntakeStore((state) => state.addRefreshArea);
   const cvDraft = useIntakeStore((state) => state.cvDraft);
   const setCvDraft = useIntakeStore((state) => state.setCvDraft);
 
   const [plan, setPlan] = useState(null);
+  // The skill ids the current plan was fetched for.
+  const [planKey, setPlanKey] = useState(null);
   const [error, setError] = useState(null);
   // The floating panel: { kind: 'check' | 'area' | 'account', id }.
   const [moment, setMoment] = useState(null);
   // Resource opened in another tab, awaiting the user's return: { id, at }.
   const awaiting = useRef(null);
-  // Focus area in view, highlighted in the rail.
-  const [active, setActive] = useState(null);
-  // Gap just added from Up later; scrolled to and animated once its resources load.
+  // Focus area shown beside the rail; the first active one when unset.
+  const [picked, setPicked] = useState(null);
+  // Open More skills tab: 'later' | 'refresh' | 'finished'.
+  const [moreTab, setMoreTab] = useState(null);
+  const learningNow = useRef(null);
+  // Area just added from Up later or Refresh; scrolled to and animated once its
+  // resources load.
   const [entering, setEntering] = useState(null);
   const scrolledTo = useRef(null);
   // Finished focus areas opened to show their resources.
@@ -182,25 +190,18 @@ export default function Learning() {
 
   const roleId = selectedRole?.role_id;
   const added = addedFocusAreas?.[roleId];
-  // Active focus areas are the role's current gaps. Skills already learned that are
-  // requirements of this role (covered, so in skills_have) are finished - shown at the
-  // end, never taking an active slot, whether or not they have fetched material.
+  const refreshed = refreshAreas?.[roleId];
+  // The first focus areas from the gap result, then any added from Up later,
+  // then owned skills added back as refreshers.
   const focusAreas = useMemo(() => {
     if (!gapResult) return [];
-    const currentIds = new Set(gapResult.gaps.map((gap) => gap.skill_id));
-    const covered = new Set(gapResult.skills_have ?? []);
-    const finishedLearned = learnedSkills
-      .filter(
-        (entry) =>
-          entry?.skill_id && !currentIds.has(entry.skill_id) && covered.has(entry.skill)
-      )
-      .map((entry) => ({ band: 'role', importance: 0, uplift: entry.uplift ?? 0, ...entry, learned: true }));
     const picked = pickFocusAreas(gapResult.gaps, MAX_FOCUS_AREAS);
     const extra = (added ?? [])
       .map((skillId) => gapResult.gaps.find((gap) => gap.skill_id === skillId))
       .filter((gap) => gap && !picked.includes(gap));
-    return [...picked, ...extra, ...finishedLearned];
-  }, [gapResult, added, learnedSkills]);
+    const refreshers = (refreshed ?? []).map((entry) => ({ ...entry, refresher: true }));
+    return [...picked, ...extra, ...refreshers];
+  }, [gapResult, added, refreshed]);
   const laterGaps = gapResult ? gapResult.gaps.filter((gap) => !focusAreas.includes(gap)) : [];
   const skillKey = focusAreas.map((gap) => gap.skill_id).join('|');
 
@@ -218,6 +219,7 @@ export default function Learning() {
       .then((result) => {
         if (!live) return;
         setPlan(result);
+        setPlanKey(skillKey);
         setError(null);
       })
       .catch((cause) => live && setError(cause.message));
@@ -232,7 +234,9 @@ export default function Learning() {
   // Keep the CV builder's learned skills in step with finished focus areas.
   useEffect(() => {
     if (!plan) return;
-    const next = learnedSkillsFor(focusAreas, resources, progress, learnedSkills);
+    // Refreshers are skills the user already has, so they never count as learned.
+    const gaps = focusAreas.filter((area) => !area.refresher);
+    const next = learnedSkillsFor(gaps, resources, progress, learnedSkills);
     if (!sameLearned(next, learnedSkills)) setLearnedSkills(next);
   }, [plan, focusAreas, resources, progress, learnedSkills, setLearnedSkills]);
 
@@ -254,24 +258,10 @@ export default function Learning() {
     };
   }, []);
 
-  // Highlight the focus area whose resources are in the middle of the viewport.
-  useEffect(() => {
-    if (!plan || typeof IntersectionObserver === 'undefined') return undefined;
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const visible = entries.find((entry) => entry.isIntersecting);
-        if (visible) setActive(visible.target.dataset.area);
-      },
-      { rootMargin: '-35% 0px -55% 0px' }
-    );
-    document.querySelectorAll('[data-area]').forEach((node) => observer.observe(node));
-    return () => observer.disconnect();
-  }, [plan]);
-
   // Guest progress would be lost with the session, so tracking asks for an account.
   const askToSignIn = (resource) => setMoment({ kind: 'account', id: resource.id });
 
-  // Once an added gap's resources arrive, bring its section into view.
+  // Once an added area's resources arrive, bring its section into view.
   useEffect(() => {
     if (!entering || scrolledTo.current === entering) return;
     if (!plan?.resources.some((resource) => resource.skill_id === entering)) return;
@@ -284,26 +274,13 @@ export default function Learning() {
   const addToPlan = (gap) => {
     addFocusArea(roleId, gap.skill_id);
     setEntering(gap.skill_id);
+    setPicked(gap.skill_id);
   };
 
-  // Record a finished focus area as a learned skill right away. Finishing also
-  // removes the skill from gapResult.gaps, and focusAreas is built from gaps plus
-  // learnedSkills; seeding it here keeps the skill visible instead of falling
-  // through the gap between the two.
-  const recordLearnedArea = (area) => {
-    const current = useIntakeStore.getState().learnedSkills;
-    if (current.some((entry) => entry.skill_id === area.skill_id)) return;
-    setLearnedSkills([
-      ...current,
-      {
-        skill_id: area.skill_id,
-        skill: area.skill,
-        uplift: area.uplift,
-        importance: area.importance,
-        definition: area.definition,
-        roleId,
-      },
-    ]);
+  const addRefresher = (entry) => {
+    addRefreshArea(roleId, entry);
+    setEntering(entry.skill_id);
+    setPicked(entry.skill_id);
   };
 
   const syncProfileSkill = async (area) => {
@@ -333,10 +310,7 @@ export default function Learning() {
       .every((other) => statusOf(progress, other.id) === 'done');
     const area = areaOf(resource.skill_id);
     setMoment(completesArea ? { kind: 'area', id: resource.id } : null);
-    if (completesArea && area) {
-      recordLearnedArea(area);
-      void syncProfileSkill(area);
-    }
+    if (completesArea && area && !area.refresher) void syncProfileSkill(area);
   };
 
   // Restores the status held before it was finished; entries without `from`
@@ -358,13 +332,12 @@ export default function Learning() {
   // Requires a gap result.
   if (!snapshot || !gapResult) return <Navigate to="/diagnostic/gap" replace />;
 
-  const toneOf = (skillId) =>
-    TONES[
-      Math.max(
-        0,
-        focusAreas.findIndex((gap) => gap.skill_id === skillId)
-      ) % TONES.length
-    ];
+  // Refreshers share one green tone; gaps cycle through the palette.
+  const toneOf = (skillId) => {
+    const index = focusAreas.findIndex((gap) => gap.skill_id === skillId);
+    if (focusAreas[index]?.refresher) return 'refresh';
+    return TONES[Math.max(0, index) % TONES.length];
+  };
 
   // Every focus area with its resources and progress, in ranking order.
   const areas = focusAreas.map((gap) => {
@@ -395,77 +368,77 @@ export default function Learning() {
       .find((resource) => statusOf(progress, resource.id) !== 'done');
   const shelf = queue.filter((resource) => resource.id !== featured?.id);
 
-  // Progress is skill-based: skills the user owns for this role (from their CV or
-  // finished learning, i.e. covered requirements) out of the role's total skills.
-  const skillsOwned = gapResult?.skills_have?.length ?? 0;
-  const totalRoleSkills = skillsOwned + (gapResult?.gaps?.length ?? 0);
-  const timeLeft = totalTime(
-    resources.filter((resource) => statusOf(progress, resource.id) !== 'done')
-  );
+  // Progress counts gap resources only; refreshers brush up on skills already held.
+  const gapResources = resources.filter((resource) => !areaOf(resource.skill_id)?.refresher);
+  const finishedCount = gapResources.filter(
+    (resource) => statusOf(progress, resource.id) === 'done'
+  ).length;
+  // Refreshers are counted on their own, and time left is split the same way.
+  const refreshResources = resources.filter((resource) => areaOf(resource.skill_id)?.refresher);
+  const unfinished = (list) =>
+    list.filter((resource) => statusOf(progress, resource.id) !== 'done');
+  const timeLeft = totalTime(unfinished(gapResources));
 
-  const jumpTo = (skillId) => {
-    document
-      .getElementById(`area-${skillId}`)
-      ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  // Shows a focus area in place of the current one, bringing the top of the
+  // list back into view when it has scrolled past.
+  const showArea = (skillId) => {
+    setPicked(skillId);
+    const top = learningNow.current?.getBoundingClientRect().top ?? 0;
+    if (top < 0) learningNow.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
+
+  const scrollToMore = (scrollId = 'more-skills') =>
+    requestAnimationFrame(() =>
+      document.getElementById(scrollId)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    );
 
   // Data for the floating panel.
   const momentResource = moment && resources.find((resource) => resource.id === moment.id);
   const momentArea = momentResource && areaOf(momentResource.skill_id);
 
-  // A skill moves to Owned once finished, except the one just finished: it stays in
-  // place while its panel is open.
+  // A finished area moves to the Finished tab, except the one just finished: it
+  // stays in place while its panel is open.
   const holding = moment?.kind === 'area' ? momentArea?.skill_id : null;
-  // Active: gaps with material still to finish (plus the one whose panel is open).
-  const activeAreas = areas.filter(
-    (area) =>
-      area.skill_id === holding ||
-      (!area.learned && !area.complete && area.resources.length > 0)
-  );
+  const activeAreas = withResources.filter((area) => !area.complete || area.skill_id === holding);
+  const finishedAreas = withResources.filter((area) => area.complete && area.skill_id !== holding);
+  const shownArea = activeAreas.find((area) => area.skill_id === picked) ?? activeAreas[0];
 
-  // Owned: every skill the user has for this role (the covered requirements), so the
-  // Owned list matches the progress count. Resolve an id + resources where we know
-  // them (learned in a plan or in the profile); a skill with no fetched material just
-  // shows as owned, with no learning resources to reveal.
+  // Owned skills for this role, with an id where the profile or learning plan
+  // knows one; the name stands in otherwise. Refreshers with resources are in the
+  // plan above, so they leave this list.
   const idByName = new Map();
   for (const entry of [
     ...(snapshot?.professional_skills ?? []),
     ...(snapshot?.reframed_skills ?? []),
     ...learnedSkills,
-    ...(gapResult?.gaps ?? []),
   ]) {
     if (entry?.skill && entry?.skill_id && !idByName.has(entry.skill)) {
       idByName.set(entry.skill, entry.skill_id);
     }
   }
-  const ownedAreas = (gapResult?.skills_have ?? [])
-    .map((name, index) => {
-      const skillId = idByName.get(name) ?? name;
-      return {
-        skill_id: skillId,
-        skill: name,
-        tone: TONES[index % TONES.length],
-        icon: plan?.groups?.find((entry) => entry.skill_id === skillId)?.icon,
-        resources: resources.filter((resource) => resource.skill_id === skillId),
-      };
-    })
-    .filter((area) => area.skill_id !== holding);
+  const ownedSkills = (gapResult.skills_have ?? [])
+    .map((name) => ({ skill_id: idByName.get(name) ?? name, skill: name }))
+    .filter((entry) => {
+      const area = areaOf(entry.skill_id);
+      return !area || (area.refresher && area.resources.length === 0);
+    });
+  const refreshStateOf = (entry) => {
+    if (!areaOf(entry.skill_id)) return 'idle';
+    return planKey === skillKey ? 'none' : 'loading';
+  };
 
   const showFinished = (skillId) => {
     setOpenFinished((ids) => (ids.includes(skillId) ? ids : [...ids, skillId]));
-    document
-      .getElementById(`finished-${skillId}`)
-      ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    setMoreTab('finished');
+    scrollToMore(`finished-${skillId}`);
   };
 
   const resourceRows = (area) =>
-    area.resources.map((resource, index) => (
+    area.resources.map((resource) => (
       <Resource
         key={resource.id}
         resource={resource}
         status={statusOf(progress, resource.id)}
-        step={index + 1}
-        total={area.resources.length}
         onFinish={(item) => finish(item)}
         onUnfinish={unfinish}
         onSave={toggleSave}
@@ -478,12 +451,8 @@ export default function Learning() {
       <Header />
 
       <main className="page-shell max-w-[1200px] flex-1 pt-14 pb-40">
-        {/* Back target: the journey for signed-in users, the gap screen for guests. */}
-        {user ? (
-          <BackLink to="/journey">Back to your journey</BackLink>
-        ) : (
-          <BackLink to="/diagnostic/gap">Back to your readiness</BackLink>
-        )}
+        {/* Guests have no journey, so they get a way back to the gap screen. */}
+        {!user && <BackLink to="/diagnostic/gap">Back to your readiness</BackLink>}
 
         <div className="mt-3 flex flex-wrap items-start justify-between gap-x-8 gap-y-4">
           <div className="min-w-0">
@@ -512,9 +481,12 @@ export default function Learning() {
         {plan && resources.length > 0 && (
           <LearningHero
             progress={progress}
-            done={skillsOwned}
-            total={totalRoleSkills}
+            done={finishedCount}
+            total={gapResources.length}
             timeLeft={timeLeft}
+            refreshDone={refreshResources.length - unfinished(refreshResources).length}
+            refreshTotal={refreshResources.length}
+            refreshTimeLeft={totalTime(unfinished(refreshResources))}
             role={selectedRole?.role}
             featured={featured}
             queueSize={queue.length}
@@ -540,27 +512,29 @@ export default function Learning() {
         )}
 
         {plan && resources.length > 0 && (
-          <div className="mt-14 grid gap-10 lg:grid-cols-[15rem_minmax(0,1fr)] lg:gap-14">
+          <div className="mt-14 grid gap-10 lg:grid-cols-[16.5rem_minmax(0,1fr)] lg:gap-14">
             <aside>
               <AreaRail
-                areas={activeAreas}
-                active={active}
-                onSelect={jumpTo}
+                areas={activeAreas.filter((area) => !area.refresher)}
+                active={shownArea?.skill_id}
+                onSelect={showArea}
                 laterCount={laterGaps.length}
-                onLater={() =>
-                  document
-                    .getElementById('up-later')
-                    ?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-                }
-                finished={ownedAreas}
+                onLater={() => {
+                  setMoreTab('later');
+                  scrollToMore();
+                }}
+                refreshing={activeAreas.filter((area) => area.refresher)}
+                finished={finishedAreas}
                 onSelectFinished={showFinished}
               />
             </aside>
 
-            <section aria-label="All resources" className="min-w-0">
+            <section ref={learningNow} aria-label="All resources" className="min-w-0 scroll-mt-8">
               {activeAreas.length > 0 && (
                 <div className="mb-8">
-                  <ChapterLabel>Learning now</ChapterLabel>
+                  <ChapterLabel>
+                    {shownArea?.refresher ? 'Refreshing' : 'Learning now'}
+                  </ChapterLabel>
                 </div>
               )}
               {queue.length === 0 && activeAreas.length > 0 && (
@@ -572,46 +546,75 @@ export default function Learning() {
                 </p>
               )}
 
-              {activeAreas.map((area) => (
+              {shownArea && (
                 <section
-                  key={area.skill_id}
-                  id={`area-${area.skill_id}`}
-                  data-area={area.skill_id}
-                  data-tone={area.tone}
-                  data-complete={area.complete || undefined}
-                  data-entering={area.skill_id === entering || undefined}
-                  className="lp-area lp-tone"
+                  key={shownArea.skill_id}
+                  id={`area-${shownArea.skill_id}`}
+                  data-tone={shownArea.tone}
+                  data-complete={shownArea.complete || undefined}
+                  data-entering={shownArea.skill_id === entering || undefined}
+                  className="lp-area lp-tone lp-swap"
                 >
-                  <h2 className="font-display text-[1.75rem] font-bold leading-tight tracking-[-0.03em] text-ink">
-                    {area.skill}
+                  <h2 className="flex flex-wrap items-center gap-x-3 gap-y-1 font-display text-[1.75rem] font-bold leading-tight tracking-[-0.03em] text-ink">
+                    {shownArea.skill}
+                    {shownArea.refresher && <span className="lp-refresh-tag">Refresher</span>}
                   </h2>
-                  {area.blurb && <p className="mt-1 text-sm text-ink-soft">{area.blurb}</p>}
+                  {shownArea.blurb && (
+                    <p className="mt-1 text-sm text-ink-soft">{shownArea.blurb}</p>
+                  )}
 
-                  <ul className="mt-4 space-y-1">{resourceRows(area)}</ul>
+                  <ul className="mt-4 space-y-1">{resourceRows(shownArea)}</ul>
                 </section>
-              ))}
-
-              {laterGaps.length > 0 && (
-                <UpLater gaps={laterGaps} role={selectedRole?.role} onAdd={addToPlan} />
               )}
 
-              {ownedAreas.length > 0 && (
-                <FinishedAreas
-                  areas={ownedAreas}
-                  open={openFinished}
-                  onToggle={(skillId) =>
-                    setOpenFinished((ids) =>
-                      ids.includes(skillId) ? ids.filter((id) => id !== skillId) : [...ids, skillId]
-                    )
-                  }
-                  signedIn={Boolean(user)}
-                  onCv={(area) => skillOnCv(cvDraft, roleId, area.skill)}
-                  onAddToCv={(area) =>
-                    setCvDraft(addSkillToCv(useIntakeStore.getState(), area.skill))
-                  }
-                  renderResources={resourceRows}
-                />
-              )}
+              <MoreSkills
+                current={moreTab}
+                onSelect={setMoreTab}
+                tabs={[
+                  laterGaps.length > 0 && {
+                    id: 'later',
+                    label: 'Up later',
+                    count: laterGaps.length,
+                    panel: <UpLater gaps={laterGaps} role={selectedRole?.role} onAdd={addToPlan} />,
+                  },
+                  ownedSkills.length > 0 && {
+                    id: 'refresh',
+                    label: 'Refresh',
+                    count: ownedSkills.length,
+                    panel: (
+                      <RefreshSkills
+                        skills={ownedSkills}
+                        stateOf={refreshStateOf}
+                        onRefresh={addRefresher}
+                      />
+                    ),
+                  },
+                  finishedAreas.length > 0 && {
+                    id: 'finished',
+                    label: 'Finished',
+                    count: finishedAreas.length,
+                    panel: (
+                      <FinishedAreas
+                        areas={finishedAreas}
+                        open={openFinished}
+                        onToggle={(skillId) =>
+                          setOpenFinished((ids) =>
+                            ids.includes(skillId)
+                              ? ids.filter((id) => id !== skillId)
+                              : [...ids, skillId]
+                          )
+                        }
+                        signedIn={Boolean(user)}
+                        onCv={(area) => skillOnCv(cvDraft, roleId, area.skill)}
+                        onAddToCv={(area) =>
+                          setCvDraft(addSkillToCv(useIntakeStore.getState(), area.skill))
+                        }
+                        renderResources={resourceRows}
+                      />
+                    ),
+                  },
+                ].filter(Boolean)}
+              />
             </section>
           </div>
         )}
@@ -639,9 +642,7 @@ export default function Learning() {
         onAddToCv={() => setCvDraft(addSkillToCv(useIntakeStore.getState(), momentArea.skill))}
         onRemoveFromCv={() => setCvDraft(removeSkillFromCv(cvDraft, roleId, momentArea.skill))}
         onClose={closePanel}
-        profileSync={
-          profileSync?.area?.skill_id === momentArea?.skill_id ? profileSync : null
-        }
+        profileSync={profileSync?.area?.skill_id === momentArea?.skill_id ? profileSync : null}
         onRetry={() => profileSync?.area && syncProfileSkill(profileSync.area)}
       />
     </div>

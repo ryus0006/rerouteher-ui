@@ -1,30 +1,29 @@
 import { useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import { CaretDown, Plus } from '@phosphor-icons/react';
-import ChapterLabel from './ChapterLabel.jsx';
 
 const EASE = [0.32, 0.72, 0, 1];
 
-/** Rows shown before the rest of the list is folded behind "Show more". */
+/**
+ * Rows shown before the rest of the list is folded behind "Show more". A
+ * single extra row is shown rather than folded.
+ */
 const VISIBLE = 3;
 
 /**
- * Gaps not yet in the learning plan, in ranking order. Each can be added to
- * the plan, which fetches its resources and adds it as a focus area. Only the
- * first few are listed until the list is expanded.
+ * Gaps not yet in the learning plan, in ranking order, shown as a tab of More
+ * skills. Each can be added to the plan, which fetches its resources and adds
+ * it as a focus area. Only the first few are listed until the list is expanded.
  */
 export default function UpLater({ gaps, role, onAdd }) {
   const [expanded, setExpanded] = useState(false);
   const count = `${gaps.length} more ${gaps.length === 1 ? 'skill' : 'skills'}`;
-  const hidden = gaps.length - VISIBLE;
-  const shown = expanded || hidden <= 0 ? gaps : gaps.slice(0, VISIBLE);
+  const hidden = gaps.length > VISIBLE + 1 ? gaps.length - VISIBLE : 0;
+  const shown = expanded || hidden === 0 ? gaps : gaps.slice(0, VISIBLE);
 
   return (
-    <section id="up-later" aria-labelledby="up-later-title" className="lp-area lp-later">
-      <ChapterLabel as="h2" id="up-later-title">
-        Up later
-      </ChapterLabel>
-      <p className="mt-3 text-sm text-ink-soft">
+    <>
+      <p className="text-sm text-ink-soft">
         {count} to close for {role ?? 'your target role'}. Add one to your plan when you’re ready.
       </p>
 
@@ -64,10 +63,10 @@ export default function UpLater({ gaps, role, onAdd }) {
           data-open={expanded || undefined}
           className="lp-later-more"
         >
-          {expanded ? 'Show fewer' : `Show ${hidden} more ${hidden === 1 ? 'skill' : 'skills'}`}
+          {expanded ? 'Show fewer' : `Show ${hidden} more skills`}
           <CaretDown weight="bold" className="lp-done-caret size-3" aria-hidden="true" />
         </button>
       )}
-    </section>
+    </>
   );
 }

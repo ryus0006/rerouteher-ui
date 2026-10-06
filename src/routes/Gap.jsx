@@ -96,7 +96,12 @@ export default function Gap() {
     const current = useIntakeStore.getState().confirmedSkills;
     const added = gaps
       .filter((gap) => !current.some((s) => s.skill_name === gap.skill))
-      .map((gap) => ({ skill_id: gap.skill_id ?? null, skill_name: gap.skill }));
+      // The definition is kept for display only; requests send ids and names.
+      .map((gap) => ({
+        skill_id: gap.skill_id ?? null,
+        skill_name: gap.skill,
+        definition: gap.definition ?? null,
+      }));
     return recompute([...current, ...added]);
   }
 

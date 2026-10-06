@@ -23,6 +23,9 @@ const initialState = {
   // Latest employer matches, mirrored here so the companion can reference them.
   // Derived data; cleared when priorities change or the snapshot resets.
   employerMatches: [],
+  // Employers the user saved, per role id: { [roleId]: Employer[] }, newest last.
+  // The whole match is kept so a saved employer still shows after priorities change.
+  employerShortlist: {},
   // Learning plan state per resource id: { status: 'saved' | 'started' | 'done', at }.
   learningProgress: {},
   // Focus areas whose resources are all finished ({ skill_id, skill }), offered
@@ -31,9 +34,14 @@ const initialState = {
   // Gaps added to the learning plan beyond the first focus areas, per role id:
   // { [roleId]: skill_id[] }, in the order they were added.
   addedFocusAreas: {},
+  // Skills the user already has, added back to the learning plan as refreshers,
+  // per role id: { [roleId]: { skill_id, skill }[] }, in the order they were added.
+  refreshAreas: {},
   // CV drafts, one per role (see openCvBook). Saved with the journey and cleared
   // whenever upstream profile data changes.
   cvDraft: null,
+  // Roles whose CV has been downloaded as a PDF: { [roleId]: true }.
+  cvDownloaded: {},
   snapshot: null,
   selectedRole: null,
   gapResult: null,
@@ -78,7 +86,10 @@ export const PLAN_FIELDS = [
   'learningProgress',
   'learnedSkills',
   'addedFocusAreas',
+  'refreshAreas',
+  'employerShortlist',
   'cvDraft',
+  'cvDownloaded',
   'confirmedSkills',
   'snapshot',
   'selectedRole',
@@ -92,8 +103,11 @@ export const PLAN_FIELDS = [
 const resetAfterBreak = () => ({
   confirmedSkills: [],
   addedFocusAreas: {},
+  refreshAreas: {},
   employerMatches: [],
+  employerShortlist: {},
   cvDraft: null,
+  cvDownloaded: {},
   snapshot: null,
   selectedRole: null,
   gapResult: null,
@@ -166,6 +180,15 @@ export const useIntakeStore = create(
       setEmployerPriorities: (employerPriorities) =>
         set({ employerPriorities, employerMatches: [] }),
       setEmployerMatches: (employerMatches) => set({ employerMatches: employerMatches ?? [] }),
+      // Saves an employer to the role's shortlist, or removes it if already saved.
+      toggleShortlist: (roleId, employer) =>
+        set((state) => {
+          const saved = state.employerShortlist?.[roleId] ?? [];
+          const next = saved.some((entry) => entry.id === employer.id)
+            ? saved.filter((entry) => entry.id !== employer.id)
+            : [...saved, employer];
+          return { employerShortlist: { ...state.employerShortlist, [roleId]: next } };
+        }),
       /**
        * Sets a resource's status ('saved', 'started' or 'done'); null clears it.
        * A finished resource keeps the status it had before (`from`) so
@@ -192,6 +215,14 @@ export const useIntakeStore = create(
           if (added.includes(skillId)) return state;
           return {
             addedFocusAreas: { ...state.addedFocusAreas, [roleId]: [...added, skillId] },
+          };
+        }),
+      addRefreshArea: (roleId, entry) =>
+        set((state) => {
+          const added = state.refreshAreas?.[roleId] ?? [];
+          if (added.some((item) => item.skill_id === entry.skill_id)) return state;
+          return {
+            refreshAreas: { ...state.refreshAreas, [roleId]: [...added, entry] },
           };
         }),
 
@@ -240,6 +271,12 @@ export const useIntakeStore = create(
               : state.gapResult,
         })),
       setCvDraft: (cvDraft) => set({ cvDraft }),
+      markCvDownloaded: (roleId) =>
+        set((state) =>
+          state.cvDownloaded?.[roleId]
+            ? state
+            : { cvDownloaded: { ...state.cvDownloaded, [roleId]: true } }
+        ),
       setCurrentStepIndex: (currentStepIndex) => set({ currentStepIndex }),
 
       /** True once at least one activity is recorded. Duration 0 ("less than a year") is valid. */

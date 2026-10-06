@@ -54,20 +54,12 @@ export function upNext(resources, progress) {
  */
 export function learnedSkillsFor(areas, resources, progress, stored) {
   const inPlan = new Set(areas.map((area) => area.skill_id));
-  const storedById = new Map(stored.map((entry) => [entry.skill_id, entry]));
   const learned = areas
     .filter((area) => {
       const own = resources.filter((resource) => resource.skill_id === area.skill_id);
-      // Learned when every resource is done, or - for an owned skill with no fetched
-      // material - when it was already recorded as learned.
-      if (own.length > 0) return own.every((resource) => statusOf(progress, resource.id) === 'done');
-      return storedById.has(area.skill_id);
+      return own.length > 0 && own.every((resource) => statusOf(progress, resource.id) === 'done');
     })
-    .map(({ skill_id, skill }) => ({
-      ...(storedById.get(skill_id) ?? {}),
-      skill_id,
-      skill,
-    }));
+    .map(({ skill_id, skill }) => ({ skill_id, skill }));
   return [...stored.filter((entry) => !inPlan.has(entry.skill_id)), ...learned];
 }
 

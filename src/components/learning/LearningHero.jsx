@@ -10,25 +10,33 @@ const LEAD = {
   none: 'Start here',
 };
 
-function Stat({ value, label }) {
+/** A single bar filled to the share of resources finished. */
+function Meter({ done, total, tone }) {
   return (
-    <div>
-      <p className="font-display text-2xl font-bold tracking-[-0.02em] text-ink tabular">{value}</p>
-      <p className="mt-0.5 text-xs font-medium text-ink-soft">{label}</p>
-    </div>
+    <span aria-hidden="true" data-tone={tone} className="lp-tone lp-hero-meter mt-5">
+      <span
+        className="lp-meter-fill"
+        style={{ transform: `scaleX(${total ? done / total : 0})` }}
+      />
+    </span>
   );
 }
 
 /**
  * Top of the learning plan: progress across every focus area, and the one
- * resource to do next. Once everything is finished, the next gap not yet in
- * the plan takes its place.
+ * resource to do next. Gap resources and refreshers are counted in separate
+ * columns, each with its own bar and time left, so neither figure mixes the
+ * two. Once everything is finished, the next gap not yet in the plan takes the
+ * resource's place.
  */
 export default function LearningHero({
   progress,
   done,
   total,
   timeLeft,
+  refreshDone = 0,
+  refreshTotal = 0,
+  refreshTimeLeft,
   role,
   featured,
   queueSize,
@@ -46,16 +54,41 @@ export default function LearningHero({
     <section aria-label="Your progress" className="lp-hero mt-8 grid gap-6 p-3 lg:grid-cols-12">
       <div className="flex flex-col justify-center px-5 pt-6 pb-4 lg:col-span-7 lg:px-7 lg:py-8">
         <p className="lp-eyebrow">Your progress</p>
-        <p className="mt-3 font-display text-[3.5rem] font-bold leading-none tracking-[-0.04em] text-ink tabular">
-          {done}
-          <span className="text-ink/25"> / {total}</span>
-        </p>
-        <p className="mt-2 text-sm text-ink-soft">
-          skills ready for {role ?? 'your target role'}
-        </p>
+        {/* Laid out row by row so each part lines up across the two columns. */}
+        <div
+          className={`mt-3 grid items-end gap-x-12 ${
+            refreshTotal > 0 ? 'grid-cols-[minmax(0,1fr)_minmax(0,11rem)]' : 'grid-cols-1'
+          }`}
+        >
+          <p className="font-display text-[3.5rem] font-bold leading-none tracking-[-0.04em] text-ink tabular">
+            {done}
+            <span className="text-ink/25"> / {total}</span>
+          </p>
+          {refreshTotal > 0 && (
+            <p className="font-display text-[2rem] font-bold leading-none tracking-[-0.03em] text-ink tabular">
+              {refreshDone}
+              <span className="text-ink/25"> / {refreshTotal}</span>
+            </p>
+          )}
 
-        <div className="mt-8 flex flex-wrap gap-x-10 gap-y-4">
-          <Stat value={timeLeft ?? '0 min'} label="of learning left" />
+          <p className="mt-2 self-start text-sm text-ink-soft">
+            resources finished towards {role ?? 'your target role'}
+          </p>
+          {refreshTotal > 0 && (
+            <p className="mt-2 self-start text-sm text-ink-soft">refreshers finished</p>
+          )}
+
+          <Meter done={done} total={total} />
+          {refreshTotal > 0 && <Meter done={refreshDone} total={refreshTotal} tone="refresh" />}
+
+          <p className="mt-2 text-xs font-medium text-ink-faint tabular">
+            {timeLeft ? `${timeLeft} left` : 'All done'}
+          </p>
+          {refreshTotal > 0 && (
+            <p className="mt-2 text-xs font-medium text-ink-faint tabular">
+              {refreshTimeLeft ? `${refreshTimeLeft} left` : 'All done'}
+            </p>
+          )}
         </div>
       </div>
 

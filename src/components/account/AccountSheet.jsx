@@ -44,16 +44,26 @@ export default function AccountSheet() {
 
   const creating = mode === 'create';
 
+  /* The sheet stays mounted while closed, so the password is cleared whenever
+     it closes or changes mode; it is never kept for the next sign-in. The
+     username is kept for convenience. */
+  function forgetPassword() {
+    setPassword('');
+    setShowPassword(false);
+  }
+
   /* Errors are cleared on close so opening the sheet does not need to reset
      state from inside an effect. */
   function dismiss() {
     setErrors({});
+    forgetPassword();
     closeSheet();
   }
 
   /* Preserve the redirect target when switching between sign-in and create. */
   function switchMode() {
     setErrors({});
+    forgetPassword();
     openSheet(creating ? 'signIn' : 'create', sheetRedirect);
   }
 
@@ -66,6 +76,8 @@ export default function AccountSheet() {
     function onKeyDown(event) {
       if (event.key === 'Escape') {
         setErrors({});
+        setPassword('');
+        setShowPassword(false);
         closeSheet();
         return;
       }
@@ -138,6 +150,7 @@ export default function AccountSheet() {
       const keptDevice = !creating && !hasJourney(result.plan);
       if (!creating && !keptDevice) store.importPlan(result.plan);
 
+      forgetPassword();
       setUser({
         username: result.username,
         displayName: resolveDisplayName({

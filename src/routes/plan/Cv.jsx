@@ -177,6 +177,7 @@ export default function Cv() {
   const learnedSkills = useIntakeStore((state) => state.learnedSkills);
   const storedBook = useIntakeStore((state) => state.cvDraft);
   const setCvDraft = useIntakeStore((state) => state.setCvDraft);
+  const markCvDownloaded = useIntakeStore((state) => state.markCvDownloaded);
 
   const [suggestion, setSuggestion] = useState(null);
   const [downloadError, setDownloadError] = useState(null);
@@ -379,6 +380,7 @@ export default function Cv() {
       link.click();
       link.remove();
       setTimeout(() => URL.revokeObjectURL(url), 1000);
+      markCvDownloaded(activeRole.role_id);
     } catch {
       setDownloadError('The PDF could not be created. Try again.');
     }

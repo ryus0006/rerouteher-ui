@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, Navigate } from 'react-router-dom';
 import { motion } from 'motion/react';
-import { ArrowUpRight, Check } from '@phosphor-icons/react';
+import { ArrowRight, ArrowUpRight, Check } from '@phosphor-icons/react';
 import useSmoothNavigate from '../hooks/useSmoothNavigate.js';
 import Header from '../components/layout/Header.jsx';
 import { RequirementSegments } from '../components/gap/MatchPanel.jsx';
@@ -96,8 +96,8 @@ function RoleSwitch({ roles, selected, busy, onSelect }) {
 
 /**
  * One step on the path. The current step is expanded with its action; the
- * others are status rows only. The header links to each tool, so the rows are
- * not links.
+ * others are compact rows that open their tool too, so any step can be picked
+ * from here as well as from the header. Locked steps are not links.
  */
 function PathStep({ number, step, state, last, delay }) {
   const current = state === 'current';
@@ -160,11 +160,24 @@ function PathStep({ number, step, state, last, delay }) {
             </GradientButton>
           </div>
         </div>
-      ) : (
+      ) : locked ? (
         <div className="mb-3 flex flex-1 items-center gap-4 px-5 py-3">
           {marker}
           {text}
         </div>
+      ) : (
+        <Link
+          to={step.to}
+          className="group mb-3 flex flex-1 items-center gap-4 rounded-[1.25rem] px-5 py-3 transition duration-500 ease-spring hover:bg-surface hover:shadow-card focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
+        >
+          {marker}
+          {text}
+          <ArrowRight
+            aria-hidden="true"
+            weight="bold"
+            className="size-4 shrink-0 text-ink-faint transition duration-500 ease-spring group-hover:translate-x-0.5 group-hover:text-ink"
+          />
+        </Link>
       )}
     </motion.li>
   );
@@ -175,7 +188,8 @@ function PathStep({ number, step, state, last, delay }) {
  * the gap to applying, in order, with where she is on it.
  *
  * Results live on their own pages (skills on the snapshot, gaps on the gap
- * page). The header links to each tool; this page adds the order and progress.
+ * page). Each step links to its tool, as the header does; this page adds the
+ * order and progress.
  */
 export default function Journey() {
   const navigate = useSmoothNavigate();
@@ -188,6 +202,8 @@ export default function Journey() {
   const learningProgress = useIntakeStore((state) => state.learningProgress);
   const learnedSkills = useIntakeStore((state) => state.learnedSkills);
   const cvDraft = useIntakeStore((state) => state.cvDraft);
+  const cvDownloaded = useIntakeStore((state) => state.cvDownloaded);
+  const employerShortlist = useIntakeStore((state) => state.employerShortlist);
   const snapshot = useIntakeStore((state) => state.snapshot);
   const selectedRole = useIntakeStore((state) => state.selectedRole);
   const gapResult = useIntakeStore((state) => state.gapResult);
@@ -276,7 +292,9 @@ export default function Journey() {
     (entry) => entry.status === 'started' || entry.status === 'done'
   );
   const hasDraft = Boolean(selectedRole && openCvBook(cvDraft).drafts[selectedRole.role_id]);
+  const downloaded = Boolean(selectedRole && cvDownloaded?.[selectedRole.role_id]);
   const matched = employerMatches?.length ?? 0;
+  const shortlisted = (selectedRole && employerShortlist?.[selectedRole.role_id]?.length) || 0;
 
   // A set is completed once every question in it has feedback.
   const practice = sessions.filter((s) => s.role?.role_id === selectedRole?.role_id);
@@ -301,8 +319,13 @@ export default function Journey() {
     {
       title: 'Tailor your CV',
       to: '/plan/cv',
-      done: hasDraft,
-      status: hasDraft ? 'Draft saved' : 'A CV written for this role',
+      // Done once downloaded; a draft alone may never have been finished.
+      done: downloaded,
+      status: downloaded
+        ? 'CV downloaded'
+        : hasDraft
+          ? 'Draft saved. Download it when it’s ready.'
+          : 'A CV written for this role',
       detail: `Rewrite your CV around this role, using the skills you already have and the ones you build.`,
       action: 'Open CV builder',
     },
@@ -322,11 +345,14 @@ export default function Journey() {
     {
       title: 'Find employers that fit',
       to: '/plan/employers/matches',
-      done: matched > 0,
+      // Done once an employer is saved; matches alone only mean results loaded.
+      done: shortlisted > 0,
       status:
-        matched > 0
-          ? `${count(matched, 'employer')} matched to your priorities`
-          : 'Employers that publish what matters to you',
+        shortlisted > 0
+          ? `${count(shortlisted, 'employer')} shortlisted`
+          : matched > 0
+            ? `${count(matched, 'employer')} matched. Save the ones you like.`
+            : 'Employers that publish what matters to you',
       detail: 'See which employers hiring for this role have published the support you need.',
       action: 'See employer matches',
     },

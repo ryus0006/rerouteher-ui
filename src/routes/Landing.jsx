@@ -226,7 +226,7 @@ export default function Landing() {
                   <MaskLine delay={80}>Return to work</MaskLine>{' '}
                   <MaskLine delay={190}>with a plan,</MaskLine>{' '}
                   <MaskLine delay={300} className="text-pink-600">
-                    <span className="land-underline">not a guess.</span>
+                    not a guess.
                   </MaskLine>
                 </h1>
 

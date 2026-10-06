@@ -1,14 +1,25 @@
 import { useId, useState } from 'react';
+import { definitionsByName } from '../../lib/skillDefinition.js';
+import { useIntakeStore } from '../../store/intakeStore.js';
+import SkillDefinitionPopover from '../skills/SkillDefinitionPopover.jsx';
 
 /**
  * Collapsible list of role requirements the user already meets, collapsed to
- * a count by default.
+ * a count by default. The requirements arrive as names, so each definition is
+ * looked up from the user's own skills and opens on hover or focus where known.
  *
  * `onPlane` switches to the colour scheme for the dark readiness panel.
  */
 export default function MetRequirements({ skills, total, onPlane = false }) {
   const [open, setOpen] = useState(false);
   const panelId = useId();
+  const snapshot = useIntakeStore((state) => state.snapshot);
+  const confirmedSkills = useIntakeStore((state) => state.confirmedSkills);
+  const definitions = definitionsByName([
+    ...(snapshot?.professional_skills ?? []),
+    ...(snapshot?.reframed_skills ?? []),
+    ...(confirmedSkills ?? []),
+  ]);
 
   if (skills.length === 0) {
     return (
@@ -54,19 +65,36 @@ export default function MetRequirements({ skills, total, onPlane = false }) {
       </button>
 
       <ul id={panelId} hidden={!open} className="mt-3 space-y-1.5">
-        {skills.map((skill) => (
-          <li
-            key={skill}
-            className={[
-              'rounded-xl border px-3 py-2 text-xs',
-              onPlane
-                ? 'border-white/12 bg-white/8 text-on-plane-soft'
-                : 'border-verify/20 bg-verify-soft text-verify',
-            ].join(' ')}
-          >
-            {skill}
-          </li>
-        ))}
+        {skills.map((skill) => {
+          const definition = definitions.get(skill.toLowerCase());
+          const itemClass = [
+            'block w-full rounded-xl border px-3 py-2 text-left text-xs transition-colors',
+            onPlane
+              ? 'border-white/12 bg-white/8 text-on-plane-soft'
+              : 'border-verify/20 bg-verify-soft text-verify',
+          ].join(' ');
+          return (
+            <li key={skill}>
+              <SkillDefinitionPopover definition={definition} label={skill} tone="verify">
+                {(triggerProps) =>
+                  definition ? (
+                    <button
+                      type="button"
+                      {...triggerProps}
+                      className={`${itemClass} cursor-default ${
+                        onPlane ? 'hover:bg-white/14 hover:text-white' : 'hover:border-verify/40'
+                      }`}
+                    >
+                      {skill}
+                    </button>
+                  ) : (
+                    <span className={itemClass}>{skill}</span>
+                  )
+                }
+              </SkillDefinitionPopover>
+            </li>
+          );
+        })}
       </ul>
     </div>
   );
