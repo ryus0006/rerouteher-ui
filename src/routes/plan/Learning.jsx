@@ -402,9 +402,6 @@ export default function Learning() {
   const timeLeft = totalTime(
     resources.filter((resource) => statusOf(progress, resource.id) !== 'done')
   );
-  const upliftLeft = withResources
-    .filter((area) => !area.complete)
-    .reduce((sum, area) => sum + (area.uplift ?? 0), 0);
 
   const jumpTo = (skillId) => {
     document
@@ -518,7 +515,6 @@ export default function Learning() {
             done={skillsOwned}
             total={totalRoleSkills}
             timeLeft={timeLeft}
-            upliftLeft={upliftLeft}
             role={selectedRole?.role}
             featured={featured}
             queueSize={queue.length}
@@ -590,11 +586,6 @@ export default function Learning() {
                     {area.skill}
                   </h2>
                   {area.blurb && <p className="mt-1 text-sm text-ink-soft">{area.blurb}</p>}
-                  {area.uplift != null && (
-                    <p className="mt-2.5 text-xs font-semibold text-verify tabular">
-                      +{area.uplift}% readiness if learned
-                    </p>
-                  )}
 
                   <ul className="mt-4 space-y-1">{resourceRows(area)}</ul>
                 </section>

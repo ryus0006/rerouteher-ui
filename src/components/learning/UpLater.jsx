@@ -45,11 +45,6 @@ export default function UpLater({ gaps, role, onAdd }) {
                   {gap.skill}
                   {index === 0 && <span className="lp-later-next">Suggested next</span>}
                 </h3>
-                {gap.uplift != null && (
-                  <p className="mt-1.5 text-xs font-semibold text-verify tabular">
-                    +{gap.uplift}% readiness if learned
-                  </p>
-                )}
               </div>
               <button type="button" onClick={() => onAdd(gap)} className="lp-ghost shrink-0">
                 <Plus weight="bold" className="size-3.5" aria-hidden="true" />

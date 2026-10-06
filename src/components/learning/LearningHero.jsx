@@ -10,11 +10,6 @@ const LEAD = {
   none: 'Start here',
 };
 
-function formatReadiness(value) {
-  const numeric = Number(value);
-  return Number.isFinite(numeric) ? numeric.toFixed(1).replace(/\.0$/, '') : '0';
-}
-
 function Stat({ value, label }) {
   return (
     <div>
@@ -34,7 +29,6 @@ export default function LearningHero({
   done,
   total,
   timeLeft,
-  upliftLeft,
   role,
   featured,
   queueSize,
@@ -62,7 +56,6 @@ export default function LearningHero({
 
         <div className="mt-8 flex flex-wrap gap-x-10 gap-y-4">
           <Stat value={timeLeft ?? '0 min'} label="of learning left" />
-          <Stat value={`+${formatReadiness(upliftLeft)}%`} label="readiness still on offer" />
         </div>
       </div>
 
@@ -145,11 +138,6 @@ export default function LearningHero({
             <p className="mt-1 font-display text-xl font-bold leading-snug text-ink">
               {nextGap.skill}
             </p>
-            {nextGap.uplift != null && (
-              <p className="mt-2 text-xs font-semibold text-verify tabular">
-                +{nextGap.uplift}% readiness if learned
-              </p>
-            )}
             <p className="mt-3 text-sm leading-relaxed text-ink-soft">
               Add it and its resources join your plan below.
             </p>

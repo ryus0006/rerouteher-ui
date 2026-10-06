@@ -277,9 +277,6 @@ export default function InterviewPractice() {
                     See areas to improve
                   </PillButton>
                 )}
-                <PillButton icon="retry" iconSide="start" disabled={busy} onClick={newSet}>
-                  New questions
-                </PillButton>
                 <PillButton
                   icon="pencil"
                   iconSide="start"
