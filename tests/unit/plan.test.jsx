@@ -107,6 +107,19 @@ describe('learning plan', () => {
     expect(within(section).queryByText('AI features in Figma')).toBeNull();
   });
 
+  it('limits the readiness remaining value to one decimal place', async () => {
+    useIntakeStore.setState({
+      gapResult: {
+        readiness: 78,
+        gaps: GAPS.map((gap) => ({ ...gap, uplift: 2.8 })),
+      },
+    });
+    open(['/plan/learning']);
+
+    expect(await screen.findByText('+8.4%')).toBeVisible();
+    expect(screen.queryByText(/\+8\.399/)).toBeNull();
+  });
+
   it('shows each focus-area resource as an ordered step', async () => {
     open(['/plan/learning']);
 

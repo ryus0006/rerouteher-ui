@@ -10,6 +10,11 @@ const LEAD = {
   none: 'Start here',
 };
 
+function formatReadiness(value) {
+  const numeric = Number(value);
+  return Number.isFinite(numeric) ? numeric.toFixed(1).replace(/\.0$/, '') : '0';
+}
+
 function Stat({ value, label }) {
   return (
     <div>
@@ -57,7 +62,7 @@ export default function LearningHero({
 
         <div className="mt-8 flex flex-wrap gap-x-10 gap-y-4">
           <Stat value={timeLeft ?? '0 min'} label="of learning left" />
-          <Stat value={`+${upliftLeft}%`} label="readiness still on offer" />
+          <Stat value={`+${formatReadiness(upliftLeft)}%`} label="readiness still on offer" />
         </div>
       </div>
 
