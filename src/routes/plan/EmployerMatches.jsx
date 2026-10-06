@@ -69,22 +69,41 @@ function ArrowBadge({ direction = 'right', className = '' }) {
 }
 
 /** Logo placeholder: the company name on its brand colour. */
-function LogoTile({ logo, name }) {
+function LogoTile({ logo, logoUrl, name }) {
+  // Show the image logo when present; fall back to the initials/name badge if it is
+  // missing or fails to load.
+  const [imageFailed, setImageFailed] = useState(false);
+  const showImage = Boolean(logoUrl) && !imageFailed;
   const long = (logo?.text ?? name).length > 7;
 
   return (
     <span
       aria-hidden="true"
-      style={{ backgroundColor: logo?.bg ?? 'var(--color-canvas-sunk)', color: logo?.fg ?? '#fff' }}
+      style={
+        showImage
+          ? undefined
+          : { backgroundColor: logo?.bg ?? 'var(--color-canvas-sunk)', color: logo?.fg ?? '#fff' }
+      }
       className={[
-        'flex shrink-0 items-center justify-center overflow-hidden rounded-2xl px-1 text-center font-bold leading-tight',
+        'flex shrink-0 items-center justify-center overflow-hidden rounded-2xl text-center font-bold leading-tight',
         'shadow-[inset_0_0_0_1px_rgb(44_33_66/0.06)]',
         'size-14',
+        showImage ? 'bg-white p-1.5' : 'px-1',
         // Smaller text for long names so they fit the tile.
         long ? 'text-[0.625rem]' : 'text-[0.75rem]',
       ].join(' ')}
     >
-      {logo?.text ?? name}
+      {showImage ? (
+        <img
+          src={logoUrl}
+          alt=""
+          loading="lazy"
+          className="size-full object-contain"
+          onError={() => setImageFailed(true)}
+        />
+      ) : (
+        logo?.text ?? name
+      )}
     </span>
   );
 }
@@ -178,7 +197,7 @@ function EmployerCard({ employer, featured = false }) {
       <div className="grid gap-1.5 rounded-[calc(2rem-0.375rem)] bg-surface p-1.5 shadow-card md:grid-cols-[minmax(0,1fr)_18rem]">
         <div className="flex flex-col p-5">
           <div className="flex items-center gap-4">
-            <LogoTile logo={employer.logo} name={employer.name} />
+            <LogoTile logo={employer.logo} logoUrl={employer.logo_url} name={employer.name} />
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
                 <h2 className="font-display text-xl font-bold tracking-[-0.015em] text-ink">

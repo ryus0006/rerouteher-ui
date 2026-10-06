@@ -121,6 +121,7 @@
  * @property {string} [industry]
  * @property {string} [location]
  * @property {{ text: string, bg: string, fg: string } | null} [logo]
+ * @property {string | null} [logo_url]
  * @property {string} [website]
  * @property {string} [summary]
  * @property {string[]} discloses
