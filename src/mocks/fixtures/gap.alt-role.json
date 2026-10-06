@@ -1,6 +1,10 @@
 {
   "readiness": 54,
-  "skills_have": ["Active Listening", "Coordination", "Time Management"],
+  "skills_have": [
+    { "skill_id": "mock-have-listening", "skill": "Active Listening" },
+    { "skill_id": "mock-have-coordination", "skill": "Coordination" },
+    { "skill_id": "mock-have-time-management", "skill": "Time Management" }
+  ],
   "gaps": [
     {
       "skill_id": "mock-campaign-analytics",

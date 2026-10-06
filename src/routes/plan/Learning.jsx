@@ -25,7 +25,6 @@ import {
   upNext,
 } from '../../lib/learningProgress.js';
 import { addSkillToCv, removeSkillFromCv, skillOnCv } from '../../lib/cvDraft.js';
-import { addProfessionalSkill } from '../../api/account.js';
 import { recommendLearning } from '../../api/learning.js';
 import { useAccountStore } from '../../store/accountStore.js';
 import { useIntakeStore } from '../../store/intakeStore.js';
@@ -159,7 +158,6 @@ export default function Learning() {
   const openSheet = useAccountStore((state) => state.openSheet);
   const learnedSkills = useIntakeStore((state) => state.learnedSkills);
   const setLearnedSkills = useIntakeStore((state) => state.setLearnedSkills);
-  const applyProfileSkillUpdate = useIntakeStore((state) => state.applyProfileSkillUpdate);
   const addedFocusAreas = useIntakeStore((state) => state.addedFocusAreas);
   const addFocusArea = useIntakeStore((state) => state.addFocusArea);
   const refreshAreas = useIntakeStore((state) => state.refreshAreas);
@@ -186,7 +184,6 @@ export default function Learning() {
   const scrolledTo = useRef(null);
   // Finished focus areas opened to show their resources.
   const [openFinished, setOpenFinished] = useState([]);
-  const [profileSync, setProfileSync] = useState(null);
 
   const roleId = selectedRole?.role_id;
   const added = addedFocusAreas?.[roleId];
@@ -283,17 +280,6 @@ export default function Learning() {
     setPicked(entry.skill_id);
   };
 
-  const syncProfileSkill = async (area) => {
-    setProfileSync({ area, status: 'syncing' });
-    try {
-      const update = await addProfessionalSkill(area.skill_id);
-      applyProfileSkillUpdate(update);
-      setProfileSync({ area, status: 'success' });
-    } catch (cause) {
-      setProfileSync({ area, status: 'error', message: cause.message });
-    }
-  };
-
   const open = (resource) => {
     if (!user) return;
     if (statusOf(progress, resource.id) !== 'done') setStatus(resource.id, 'started');
@@ -302,15 +288,15 @@ export default function Learning() {
   };
 
   // Ticking a resource needs no panel; only finishing a whole focus area does.
+  // Finishing a gap area keeps it in the plan so it moves to Finished; it is not
+  // auto-added to the professional profile (the panel offers adding it to the CV).
   const finish = (resource) => {
     if (!user) return askToSignIn(resource);
     setStatus(resource.id, 'done');
     const completesArea = resources
       .filter((other) => other.skill_id === resource.skill_id && other.id !== resource.id)
       .every((other) => statusOf(progress, other.id) === 'done');
-    const area = areaOf(resource.skill_id);
     setMoment(completesArea ? { kind: 'area', id: resource.id } : null);
-    if (completesArea && area && !area.refresher) void syncProfileSkill(area);
   };
 
   // Restores the status held before it was finished; entries without `from`
@@ -403,21 +389,11 @@ export default function Learning() {
   const finishedAreas = withResources.filter((area) => area.complete && area.skill_id !== holding);
   const shownArea = activeAreas.find((area) => area.skill_id === picked) ?? activeAreas[0];
 
-  // Owned skills for this role, with an id where the profile or learning plan
-  // knows one; the name stands in otherwise. Refreshers with resources are in the
-  // plan above, so they leave this list.
-  const idByName = new Map();
-  for (const entry of [
-    ...(snapshot?.professional_skills ?? []),
-    ...(snapshot?.reframed_skills ?? []),
-    ...learnedSkills,
-  ]) {
-    if (entry?.skill && entry?.skill_id && !idByName.has(entry.skill)) {
-      idByName.set(entry.skill, entry.skill_id);
-    }
-  }
+  // Owned skills for this role. The gap result carries each held skill's id, so
+  // refreshers can be fetched deterministically. Refreshers already in the plan
+  // above (with resources) leave this list.
   const ownedSkills = (gapResult.skills_have ?? [])
-    .map((name) => ({ skill_id: idByName.get(name) ?? name, skill: name }))
+    .map((entry) => ({ skill_id: entry.skill_id, skill: entry.skill }))
     .filter((entry) => {
       const area = areaOf(entry.skill_id);
       return !area || (area.refresher && area.resources.length === 0);
@@ -642,8 +618,6 @@ export default function Learning() {
         onAddToCv={() => setCvDraft(addSkillToCv(useIntakeStore.getState(), momentArea.skill))}
         onRemoveFromCv={() => setCvDraft(removeSkillFromCv(cvDraft, roleId, momentArea.skill))}
         onClose={closePanel}
-        profileSync={profileSync?.area?.skill_id === momentArea?.skill_id ? profileSync : null}
-        onRetry={() => profileSync?.area && syncProfileSkill(profileSync.area)}
       />
     </div>
   );

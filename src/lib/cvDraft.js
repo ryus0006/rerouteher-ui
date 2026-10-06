@@ -59,7 +59,7 @@ export function supportedSkills({ snapshot, confirmedSkills }) {
 
 /** Whether the skill is one the gap result lists as already held for the target role. */
 export function roleRelevant(skill, gapResult) {
-  return (gapResult?.skills_have ?? []).some((have) => sameSkill(have, skill));
+  return (gapResult?.skills_have ?? []).some((have) => sameSkill(have.skill, skill));
 }
 
 function careerBreakSection(careerBreak, snapshot) {

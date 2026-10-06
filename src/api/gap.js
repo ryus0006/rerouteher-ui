@@ -28,9 +28,9 @@ export function computeGap(snapshot, targetRole, confirmedSkills = []) {
 }
 
 /**
- * Moves gaps the user confirmed into `skills_have`. Gaps carry a skill name but
- * no ESCO id, so skills added from the gap list cannot be sent as ids and are
- * matched here by name instead.
+ * Moves gaps the user confirmed into `skills_have`. Confirmed skills are matched
+ * to gaps by name; each met gap carries its ESCO `skill_id`, so it joins
+ * `skills_have` as a `{ skill_id, skill }` entry.
  *
  * @param {import('../types/api.js').GapResult} result
  * @param {{ skill_name: string }[]} confirmedSkills
@@ -44,6 +44,9 @@ function withConfirmedSkills(result, confirmedSkills) {
   return {
     ...result,
     gaps: result.gaps.filter((gap) => !met.includes(gap)),
-    skills_have: [...result.skills_have, ...met.map((gap) => gap.skill)],
+    skills_have: [
+      ...result.skills_have,
+      ...met.map((gap) => ({ skill_id: gap.skill_id, skill: gap.skill })),
+    ],
   };
 }

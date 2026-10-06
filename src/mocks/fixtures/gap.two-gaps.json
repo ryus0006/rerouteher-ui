@@ -1,14 +1,14 @@
 {
   "readiness": 88,
   "skills_have": [
-    "User Research & Persona Synthesis",
-    "Wireframing & Interactive Prototyping",
-    "Design Systems & Component Tokens",
-    "Information Architecture & User Flows",
-    "Usability Testing & Feedback Loops",
-    "Active Listening & Stakeholder Empathy",
-    "Time & Multi-project Prioritisation",
-    "Accessibility & Inclusive Design"
+    { "skill_id": "mock-have-user-research", "skill": "User Research & Persona Synthesis" },
+    { "skill_id": "mock-have-wireframing", "skill": "Wireframing & Interactive Prototyping" },
+    { "skill_id": "mock-have-design-systems", "skill": "Design Systems & Component Tokens" },
+    { "skill_id": "mock-have-ia", "skill": "Information Architecture & User Flows" },
+    { "skill_id": "mock-have-usability", "skill": "Usability Testing & Feedback Loops" },
+    { "skill_id": "mock-have-listening", "skill": "Active Listening & Stakeholder Empathy" },
+    { "skill_id": "mock-have-prioritisation", "skill": "Time & Multi-project Prioritisation" },
+    { "skill_id": "mock-have-accessibility", "skill": "Accessibility & Inclusive Design" }
   ],
   "gaps": [
     {

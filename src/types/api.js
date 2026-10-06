@@ -68,9 +68,15 @@
  */
 
 /**
+ * @typedef {Object} HeldSkill
+ * @property {string} skill_id
+ * @property {string} skill
+ */
+
+/**
  * @typedef {Object} GapResult
  * @property {number} readiness
- * @property {string[]} skills_have
+ * @property {HeldSkill[]} skills_have Role requirements the user already holds, each with its ESCO id.
  * @property {Gap[]} gaps
  */
 

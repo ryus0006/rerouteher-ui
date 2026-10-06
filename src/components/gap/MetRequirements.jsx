@@ -5,8 +5,9 @@ import SkillDefinitionPopover from '../skills/SkillDefinitionPopover.jsx';
 
 /**
  * Collapsible list of role requirements the user already meets, collapsed to
- * a count by default. The requirements arrive as names, so each definition is
- * looked up from the user's own skills and opens on hover or focus where known.
+ * a count by default. The requirements arrive as `{ skill_id, skill }`, so each
+ * definition is looked up by name from the user's own skills and opens on hover
+ * or focus where known.
  *
  * `onPlane` switches to the colour scheme for the dark readiness panel.
  */
@@ -65,8 +66,9 @@ export default function MetRequirements({ skills, total, onPlane = false }) {
       </button>
 
       <ul id={panelId} hidden={!open} className="mt-3 space-y-1.5">
-        {skills.map((skill) => {
-          const definition = definitions.get(skill.toLowerCase());
+        {skills.map((held) => {
+          const name = held.skill;
+          const definition = definitions.get(name.toLowerCase());
           const itemClass = [
             'block w-full rounded-xl border px-3 py-2 text-left text-xs transition-colors',
             onPlane
@@ -74,8 +76,8 @@ export default function MetRequirements({ skills, total, onPlane = false }) {
               : 'border-verify/20 bg-verify-soft text-verify',
           ].join(' ');
           return (
-            <li key={skill}>
-              <SkillDefinitionPopover definition={definition} label={skill} tone="verify">
+            <li key={held.skill_id}>
+              <SkillDefinitionPopover definition={definition} label={name} tone="verify">
                 {(triggerProps) =>
                   definition ? (
                     <button
@@ -85,10 +87,10 @@ export default function MetRequirements({ skills, total, onPlane = false }) {
                         onPlane ? 'hover:bg-white/14 hover:text-white' : 'hover:border-verify/40'
                       }`}
                     >
-                      {skill}
+                      {name}
                     </button>
                   ) : (
-                    <span className={itemClass}>{skill}</span>
+                    <span className={itemClass}>{name}</span>
                   )
                 }
               </SkillDefinitionPopover>
