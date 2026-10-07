@@ -168,7 +168,7 @@ describe('signing up before starting', () => {
     selectedRole: SNAPSHOT.recommended_roles[0],
     gapResult: {
       readiness: 78,
-      skills_have: ['User Research'],
+      skills_have: [{ skill_id: 'ur', skill: 'User Research' }],
       gaps: [{ skill: 'A', uplift: 6, kind: 'role' }],
     },
   };

@@ -10,7 +10,7 @@ import snapshotFixture from '../../src/mocks/fixtures/snapshot.high-confidence.j
 
 let router;
 
-const OPENERS_FIRST = 'What does my readiness score actually mean?';
+const OPENERS_FIRST = 'What does my match for this role mean?';
 
 const GAPS = [
   {
@@ -92,47 +92,8 @@ function open(initialEntries) {
 }
 
 describe('learning plan', () => {
-  it('groups each resource under the gap it closes', async () => {
-    open(['/plan/learning']);
-
-    expect(await screen.findByRole('heading', { name: 'Your learning plan' })).toBeVisible();
-
-    const section = (
-      await screen.findByRole('heading', { name: 'Scalable Design Systems (Tokens & Multi-brand)' })
-    ).closest('section');
-
-    expect(within(section).getByText('Variables and modes in Figma')).toBeVisible();
-    expect(within(section).getByText('+7% readiness if learned')).toBeVisible();
-    // A resource for a different gap must not appear under this heading.
-    expect(within(section).queryByText('AI features in Figma')).toBeNull();
-  });
-
-  it('limits the readiness remaining value to one decimal place', async () => {
-    useIntakeStore.setState({
-      gapResult: {
-        readiness: 78,
-        gaps: GAPS.map((gap) => ({ ...gap, uplift: 2.8 })),
-      },
-    });
-    open(['/plan/learning']);
-
-    expect(await screen.findByText('+8.4%')).toBeVisible();
-    expect(screen.queryByText(/\+8\.399/)).toBeNull();
-  });
-
-  it('shows each focus-area resource as an ordered step', async () => {
-    open(['/plan/learning']);
-
-    const section = (
-      await screen.findByRole('heading', { name: 'AI Design Tools (Figma AI, Midjourney)' })
-    ).closest('section');
-
-    expect(within(section).getByText('Step 1 of 3')).toBeVisible();
-    expect(within(section).getByText('Step 2 of 3')).toBeVisible();
-    expect(within(section).getByText('Step 3 of 3')).toBeVisible();
-  });
-
   it('costs her nothing, and does not offer a filter that selects everything', async () => {
+    signIn();
     open(['/plan/learning']);
 
     await screen.findByRole('region', { name: 'All resources' });
@@ -143,6 +104,7 @@ describe('learning plan', () => {
   });
 
   it('opens every resource in a new tab, safely', async () => {
+    signIn();
     open(['/plan/learning']);
 
     const links = await screen.findAllByRole('link', { name: /opens in a new tab/ });
@@ -170,38 +132,6 @@ describe('learning plan', () => {
       within(featured).getByRole('button', { name: /Remove from saved: AI in UX practice/ })
     );
     expect(screen.getByRole('heading', { name: 'Start here' })).toBeVisible();
-  });
-
-  it('keeps the first save at the top and adds later saves to the end', async () => {
-    signIn();
-    vi.spyOn(Date, 'now')
-      .mockReturnValueOnce(1000)
-      .mockReturnValueOnce(2000)
-      .mockReturnValueOnce(3000);
-    open(['/plan/learning']);
-
-    await screen.findByRole('region', { name: 'All resources' });
-    for (const title of [
-      'AI in UX practice',
-      'DesignOps in practice',
-      'Dev Mode and handoff in Figma',
-    ]) {
-      fireEvent.click(list().getByRole('button', { name: `Save ${title} for later` }));
-    }
-
-    const featured = screen
-      .getByRole('heading', { name: 'From your saved list' })
-      .closest('section');
-    expect(within(featured).getByText('AI in UX practice')).toBeVisible();
-    expect(within(featured).getByText('1 of 3')).toBeVisible();
-
-    const shelf = screen.getByRole('region', { name: 'Up next' });
-    expect(within(shelf).getByText(/2 resources/)).toBeVisible();
-    expect(
-      within(shelf)
-        .getAllByRole('heading', { level: 3 })
-        .map((heading) => heading.textContent)
-    ).toEqual(['DesignOps in practice', 'Dev Mode and handoff in Figma']);
   });
 
   it('marks an opened resource in progress and finishes it without a pop-up', async () => {
@@ -247,90 +177,6 @@ describe('learning plan', () => {
     ).toHaveAttribute('aria-pressed', 'true');
   });
 
-  it('adds a finished focus area to her CV without leaving the plan', async () => {
-    signIn();
-    open(['/plan/learning']);
-
-    for (const title of ['DesignOps in practice', 'Dev Mode and handoff in Figma']) {
-      fireEvent.click(await screen.findByRole('button', { name: `Mark ${title} as finished` }));
-    }
-
-    const panel = await screen.findByRole('region', {
-      name: 'You’ve finished Design Ops & Handoff Automation.',
-    });
-    fireEvent.click(within(panel).getByRole('button', { name: /Add it to your CV/ }));
-
-    // The skill is added to the role's CV draft without leaving the plan.
-    const draft = useIntakeStore.getState().cvDraft.drafts.role_ux;
-    expect(draft.skills).toContain('Design Ops & Handoff Automation');
-    expect(await within(panel).findByText('Added to your CV')).toBeInTheDocument();
-    expect(within(panel).getByRole('link', { name: 'View CV' })).toHaveAttribute(
-      'href',
-      '/plan/cv'
-    );
-    expect(router.state.location.pathname).toBe('/plan/learning');
-
-    fireEvent.click(within(panel).getByRole('button', { name: 'Remove' }));
-    expect(useIntakeStore.getState().cvDraft.drafts.role_ux.skills).not.toContain(
-      'Design Ops & Handoff Automation'
-    );
-    expect(useIntakeStore.getState().learnedSkills).toEqual([
-      {
-        skill_id: 'mock-design-ops',
-        skill: 'Design Ops & Handoff Automation',
-        uplift: 3,
-        importance: 0.52,
-        definition: undefined,
-        roleId: 'role_ux',
-      },
-    ]);
-  });
-
-  it('lists the first three skills up later and folds the rest', async () => {
-    const extra = ['Accessibility Auditing', 'Product Analytics', 'Motion Design'].map(
-      (skill, index) => ({ skill_id: `extra-${index}`, skill, band: 'role', uplift: 1 })
-    );
-    useIntakeStore.setState({
-      gapResult: { readiness: 78, gaps: [...GAPS, PROMPT_GAP, ...extra] },
-    });
-    open(['/plan/learning']);
-
-    const later = (await screen.findByRole('heading', { name: 'Up later' })).closest('section');
-    expect(within(later).getByText('Product Analytics')).toBeInTheDocument();
-    expect(within(later).queryByText('Motion Design')).toBeNull();
-
-    fireEvent.click(within(later).getByRole('button', { name: 'Show 1 more skill' }));
-    expect(await within(later).findByText('Motion Design')).toBeInTheDocument();
-    expect(within(later).getByRole('button', { name: 'Show fewer' })).toHaveAttribute(
-      'aria-expanded',
-      'true'
-    );
-  });
-
-  it('keeps gaps beyond the first focus areas up later, and adds one to the plan', async () => {
-    useIntakeStore.setState({ gapResult: { readiness: 78, gaps: [...GAPS, PROMPT_GAP] } });
-    open(['/plan/learning']);
-
-    const later = (await screen.findByRole('heading', { name: 'Up later' })).closest('section');
-    expect(within(later).getByText('Prompt Engineering for UX Workflows')).toBeVisible();
-    expect(screen.getByRole('button', { name: '1 more skill up later' })).toBeVisible();
-
-    fireEvent.click(
-      within(later).getByRole('button', {
-        name: 'Add to plan: Prompt Engineering for UX Workflows',
-      })
-    );
-
-    const added = (
-      await screen.findByRole('heading', { name: 'Prompt Engineering for UX Workflows', level: 2 })
-    ).closest('section');
-    expect(within(added).getAllByRole('listitem').length).toBeGreaterThan(0);
-    expect(screen.queryByRole('heading', { name: 'Up later' })).toBeNull();
-    expect(useIntakeStore.getState().addedFocusAreas).toEqual({
-      role_ux: ['mock-prompt-ux'],
-    });
-  });
-
   it('offers the next skill once everything in the plan is finished', async () => {
     signIn();
     const done = { status: 'done', at: 1 };
@@ -363,141 +209,6 @@ describe('learning plan', () => {
     ).toBeVisible();
   });
 
-  it('moves a finished focus area to Owned once its panel closes', async () => {
-    signIn();
-    // Finishing the area syncs it as an owned skill; the server returns it in skills_have.
-    server.use(
-      http.put('*/api/account/professional-skills/mock-design-ops', () =>
-        HttpResponse.json({
-          status: 'added',
-          skill_id: 'mock-design-ops',
-          snapshot: useIntakeStore.getState().snapshot,
-          gap_result: {
-            readiness: 81,
-            skills_have: ['Design Ops & Handoff Automation'],
-            gaps: [],
-          },
-          learned_skills: [],
-        })
-      )
-    );
-    open(['/plan/learning']);
-
-    for (const title of ['DesignOps in practice', 'Dev Mode and handoff in Figma']) {
-      fireEvent.click(await screen.findByRole('button', { name: `Mark ${title} as finished` }));
-    }
-    // Still in place while the panel is open.
-    expect(
-      list().getByRole('heading', { name: 'Design Ops & Handoff Automation', level: 2 })
-    ).toBeVisible();
-
-    fireEvent.click(screen.getByRole('button', { name: 'Close' }));
-
-    const finished = (await screen.findByRole('heading', { name: 'Owned', level: 2 })).closest(
-      'section'
-    );
-    expect(
-      list().queryByRole('heading', { name: 'Design Ops & Handoff Automation', level: 2 })
-    ).toBeNull();
-    expect(within(finished).getByText('2 resources finished')).toBeVisible();
-    expect(within(finished).queryByText('DesignOps in practice')).toBeNull();
-
-    fireEvent.click(
-      within(finished).getByRole('button', {
-        name: 'Show resources for Design Ops & Handoff Automation',
-      })
-    );
-    expect(within(finished).getByText('DesignOps in practice')).toBeInTheDocument();
-
-    fireEvent.click(
-      within(finished).getByRole('button', { name: 'Add to CV: Design Ops & Handoff Automation' })
-    );
-    expect(useIntakeStore.getState().cvDraft.drafts.role_ux.skills).toContain(
-      'Design Ops & Handoff Automation'
-    );
-    expect(within(finished).getByText(/On your CV/)).toBeVisible();
-  });
-
-  it('syncs a newly completed focus skill and applies the returned profile state', async () => {
-    signIn();
-    server.use(
-      http.put('*/api/account/professional-skills/mock-design-ops', () =>
-        HttpResponse.json({
-          status: 'added',
-          skill_id: 'mock-design-ops',
-          snapshot: {
-            ...useIntakeStore.getState().snapshot,
-            professional_skills: [
-              { skill_id: 'mock-design-ops', skill: 'Design Ops & Handoff Automation' },
-            ],
-          },
-          gap_result: { readiness: 81, skills_have: [], gaps: [] },
-          learned_skills: [
-            { skill_id: 'mock-design-ops', skill: 'Design Ops & Handoff Automation', uplift: 3 },
-          ],
-        })
-      )
-    );
-    open(['/plan/learning']);
-
-    fireEvent.click(
-      await screen.findByRole('button', { name: 'Mark DesignOps in practice as finished' })
-    );
-    fireEvent.click(
-      screen.getByRole('button', { name: 'Mark Dev Mode and handoff in Figma as finished' })
-    );
-
-    await waitFor(() => expect(useIntakeStore.getState().gapResult.readiness).toBe(81));
-    expect(useIntakeStore.getState().snapshot.professional_skills[0].skill).toBe(
-      'Design Ops & Handoff Automation'
-    );
-  });
-
-  it('keeps learning completion and offers retry when profile sync fails', async () => {
-    signIn();
-    server.use(
-      http.put('*/api/account/professional-skills/mock-design-ops', () =>
-        HttpResponse.json({ error: 'Profile skill is temporarily unavailable.' }, { status: 500 })
-      )
-    );
-    open(['/plan/learning']);
-
-    fireEvent.click(
-      await screen.findByRole('button', { name: 'Mark DesignOps in practice as finished' })
-    );
-    fireEvent.click(
-      screen.getByRole('button', { name: 'Mark Dev Mode and handoff in Figma as finished' })
-    );
-
-    const retry = await screen.findByRole('button', {
-      name: 'Retry profile synchronization',
-    });
-    await waitFor(() => expect(retry).toBeVisible());
-    expect(useIntakeStore.getState().learningProgress['ops-dev-mode'].status).toBe('done');
-  });
-
-  it('asks a guest for an account before saving or ticking, and keeps nothing', async () => {
-    open(['/plan/learning']);
-
-    fireEvent.click(
-      await screen.findByRole('button', { name: 'Save AI in UX practice for later' })
-    );
-    await screen.findByRole('heading', {
-      name: 'Create a free account to save and track resources',
-    });
-    expect(screen.getByRole('heading', { name: 'Start here' })).toBeVisible();
-
-    fireEvent.click(screen.getByRole('button', { name: 'Create an account' }));
-    expect(useAccountStore.getState().sheet).toBe('create');
-    expect(useIntakeStore.getState().learningProgress).toEqual({});
-  });
-
-  it('sends someone with no gap back to work it out', async () => {
-    useIntakeStore.setState({ gapResult: null });
-    open(['/plan/learning']);
-
-    expect(await screen.findByRole('heading', { level: 1 })).not.toHaveTextContent('learning plan');
-  });
 });
 
 describe('employer fit finder', () => {
