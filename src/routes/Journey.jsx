@@ -370,7 +370,7 @@ export default function Journey() {
     <div className="flex min-h-screen flex-col">
       <Header />
 
-      <main className="page-shell max-w-[1100px] flex-1 pt-14 pb-24">
+      <main className="page-shell max-w-[1100px] flex-1 pt-14 pb-24 max-md:pt-8 max-md:pb-12">
         <motion.div {...rise(0)}>
           <h1 className="font-display text-3xl font-bold leading-[1.1] tracking-[-0.02em] text-ink sm:text-4xl">
             Welcome back, {displayName}
@@ -384,11 +384,12 @@ export default function Journey() {
           )}
         </motion.div>
 
-        <div className="mt-9 grid grid-cols-12 items-start gap-8">
+        {/* Role card beside the step list; one column on phones. */}
+        <div className="mt-9 grid grid-cols-12 items-start gap-8 max-md:mt-7 max-md:grid-cols-1 max-md:gap-6">
           {gapResult ? (
             /* Target role: the one dark surface on the page. */
             <motion.section
-              className="relative col-span-5 overflow-hidden rounded-[1.75rem] bg-plane p-8 text-on-plane shadow-plane"
+              className="relative col-span-5 overflow-hidden rounded-[1.75rem] bg-plane p-8 text-on-plane shadow-plane max-md:col-span-full max-md:p-6"
               {...rise(1)}
             >
               <div
@@ -449,11 +450,11 @@ export default function Journey() {
           ) : (
             /* Diagnostic incomplete: progress and a single resume action. */
             <motion.section
-              className="journey-hero card-with-illustration col-span-5 rounded-[1.75rem]"
+              className="journey-hero card-with-illustration col-span-5 rounded-[1.75rem] max-md:col-span-full"
               {...rise(1)}
             >
               <CardIllustration src={journeyPath} />
-              <div className="p-8">
+              <div className="p-8 max-md:p-6">
                 <p className="eyebrow">{`${progress.completed} of ${progress.total} steps`}</p>
                 <h2 className="mt-1 font-display text-[1.625rem] font-bold tracking-[-0.015em] text-ink">
                   {byId[progress.next.chapter].name}
@@ -483,7 +484,7 @@ export default function Journey() {
             </motion.section>
           )}
 
-          <section className="col-span-7">
+          <section className="col-span-7 max-md:col-span-full">
             <motion.div className="flex items-baseline justify-between gap-4" {...rise(2)}>
               <h2 className="font-display text-xl font-bold tracking-[-0.015em] text-ink">
                 Your path back to work

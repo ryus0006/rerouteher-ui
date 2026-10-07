@@ -13,7 +13,8 @@ export default function DurationSlider({ value, onChange }) {
 
   return (
     <div>
-      <div className="flex items-baseline justify-between gap-4">
+      {/* Question and current value share a line; on phones the value drops below. */}
+      <div className="flex items-baseline justify-between gap-4 max-sm:flex-col max-sm:gap-1">
         <label htmlFor={inputId} className="text-base font-semibold text-ink">
           1. Roughly how long was your career break?
         </label>

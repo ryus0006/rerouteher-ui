@@ -51,8 +51,8 @@ export default function EmployerFinder() {
       <Header />
 
       {/* Compact spacing keeps the actions visible without scrolling. */}
-      <main className="page-shell max-w-[900px] flex-1 py-10">
-        <h1 className="font-display text-[2rem] font-bold leading-[1.12] tracking-[-0.02em] text-ink">
+      <main className="page-shell max-w-[900px] flex-1 py-10 max-md:py-8">
+        <h1 className="font-display text-[2rem] font-bold leading-[1.12] tracking-[-0.02em] text-ink max-md:text-[1.75rem]">
           What matters most for your return?
         </h1>
         <p className="mt-2 text-sm text-ink-soft">Select all the priorities that matter to you.</p>
@@ -65,20 +65,26 @@ export default function EmployerFinder() {
           <HowItWorks compact />
         </div>
 
-        {/* Actions bar: Cancel on the left; selection summary and submit on the right. */}
-        <div className="mt-6 flex items-center justify-between gap-6">
+        {/* Actions bar: Cancel on the left; selection summary and submit on the right.
+            On phones it stacks: submit, summary, then Cancel. */}
+        <div className="mt-6 flex items-center justify-between gap-6 max-sm:flex-col-reverse max-sm:items-stretch max-sm:gap-3">
           {/* Cancel is shown only when a previous search exists; with no
               priorities the matches page redirects back here. */}
           {baseline.length > 0 ? (
-            <GradientButton variant="secondary" size="md" onClick={cancel}>
+            <GradientButton
+              variant="secondary"
+              size="md"
+              onClick={cancel}
+              className="max-sm:w-full"
+            >
               Cancel
             </GradientButton>
           ) : (
-            <span />
+            <span className="max-sm:hidden" />
           )}
 
-          <div className="flex items-center gap-5">
-            <p aria-live="polite" className="text-right">
+          <div className="flex items-center gap-5 max-sm:flex-col-reverse max-sm:items-stretch max-sm:gap-3">
+            <p aria-live="polite" className="text-right max-sm:text-center">
               <span className="block text-sm text-ink">
                 <span className="tabular font-semibold">{chosen.length}</span>{' '}
                 {chosen.length === 1 ? 'priority' : 'priorities'} chosen
@@ -94,6 +100,7 @@ export default function EmployerFinder() {
               variant="accent"
               disabled={chosen.length === 0}
               onClick={() => navigate('/plan/employers/matches')}
+              className="max-sm:w-full"
             >
               See your matches
               <span aria-hidden="true">→</span>

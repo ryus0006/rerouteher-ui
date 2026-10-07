@@ -1,4 +1,6 @@
+import { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { List, X } from '@phosphor-icons/react';
 import useSmoothNavigate from '../../hooks/useSmoothNavigate.js';
 import logoWebp from '../../assets/logo-full.webp';
 import logoPng from '../../assets/logo-full.png';
@@ -22,6 +24,22 @@ export default function Header() {
 
   const navigate = useSmoothNavigate();
   const { pathname } = useLocation();
+
+  /* Below the lg breakpoint the links collapse into a menu panel. The menu
+     records the page it was opened on, so it reads as closed after any
+     navigation. */
+  const [menuPath, setMenuPath] = useState(null);
+  const menuOpen = menuPath === pathname;
+  const setMenuOpen = (open) => setMenuPath(open ? pathname : null);
+
+  useEffect(() => {
+    if (!menuOpen) return undefined;
+    const onKeyDown = (event) => {
+      if (event.key === 'Escape') setMenuPath(null);
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [menuOpen]);
 
   const cvParsed = useIntakeStore((state) => state.cvParsed);
   const activities = useIntakeStore((state) => state.break?.activities);
@@ -73,8 +91,20 @@ export default function Header() {
     unlocked && { to: '/plan/cv', label: 'CV builder', current: pathname === '/plan/cv' },
   ].filter(Boolean);
 
+  // Signed-in users always get the menu: below lg it holds the sign-out action.
+  const hasMenu = links.length > 0 || Boolean(user);
+
+  const handleSignOut = () => {
+    /* Navigate to the landing page and sign out in the same tick.
+       React batches both updates, so no results page stays mounted to
+       hit its missing-snapshot guard. Awaiting navigate would delay the
+       sign-out and briefly leave the user's data on the device. */
+    navigate('/');
+    signOut();
+  };
+
   return (
-    <header className="page-bar flex items-center gap-8 border-b border-line bg-surface py-4 sm:py-5">
+    <header className="page-bar max-lg:relative flex items-center gap-8 border-b border-line bg-surface py-4 sm:py-5">
       <Link
         to="/"
         aria-label="ReRouteHer — new paths, still you — home"
@@ -93,7 +123,7 @@ export default function Header() {
       </Link>
 
       {links.length > 0 && (
-        <nav aria-label="Main" className="flex items-center gap-1">
+        <nav aria-label="Main" className="flex items-center gap-1 max-lg:hidden">
           {links.map((link) => (
             <Link
               key={link.to}
@@ -124,17 +154,11 @@ export default function Header() {
               <Avatar name={name} />
               <span className="sr-only">Your profile</span>
             </Link>
+            {/* Below lg, sign-out moves into the menu panel. */}
             <button
               type="button"
-              onClick={() => {
-                /* Navigate to the landing page and sign out in the same tick.
-                   React batches both updates, so no results page stays mounted to
-                   hit its missing-snapshot guard. Awaiting navigate would delay the
-                   sign-out and briefly leave the user's data on the device. */
-                navigate('/');
-                signOut();
-              }}
-              className="rounded-full px-3 py-1.5 text-sm text-ink-soft transition hover:bg-canvas-sunk hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
+              onClick={handleSignOut}
+              className="rounded-full px-3 py-1.5 text-sm text-ink-soft transition hover:bg-canvas-sunk hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 max-lg:hidden"
             >
               Sign out
             </button>
@@ -159,7 +183,87 @@ export default function Header() {
             </button>
           </div>
         )}
+
+        {/* Menu toggle, shown only below lg where the nav links are hidden. */}
+        {hasMenu && (
+          <button
+            type="button"
+            aria-expanded={menuOpen}
+            aria-controls="site-menu"
+            aria-label={menuOpen ? 'Close menu' : 'Open menu'}
+            onClick={() => setMenuOpen(!menuOpen)}
+            className="-mr-2 flex size-10 items-center justify-center rounded-full text-ink transition hover:bg-canvas-sunk focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 lg:hidden"
+          >
+            {menuOpen ? (
+              <X weight="bold" className="size-5" aria-hidden="true" />
+            ) : (
+              <List weight="bold" className="size-5" aria-hidden="true" />
+            )}
+          </button>
+        )}
       </div>
+
+      {hasMenu && menuOpen && (
+        <>
+          {/* Dims the page under the header; tapping it closes the menu. */}
+          <button
+            type="button"
+            tabIndex={-1}
+            aria-hidden="true"
+            onClick={() => setMenuOpen(false)}
+            className="absolute inset-x-0 top-full z-[44] h-dvh cursor-default bg-ink/15 lg:hidden"
+          />
+          {/* Drops down from the header: nav links, then profile and sign-out. */}
+          <div
+            id="site-menu"
+            className="site-menu absolute inset-x-0 top-full z-[45] bg-surface px-4 pb-5 pt-2 lg:hidden"
+          >
+            {links.length > 0 && (
+              <nav aria-label="Main menu" className="flex flex-col">
+                {links.map((link) => (
+                  <Link
+                    key={link.to}
+                    to={link.to}
+                    aria-current={link.current ? 'page' : undefined}
+                    onClick={() => setMenuOpen(false)}
+                    className={[
+                      'flex min-h-12 items-center rounded-2xl px-4 text-base font-medium transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600',
+                      link.current
+                        ? 'bg-canvas-sunk text-ink'
+                        : 'text-ink-soft hover:bg-canvas-sunk hover:text-ink',
+                    ].join(' ')}
+                  >
+                    {link.label}
+                  </Link>
+                ))}
+              </nav>
+            )}
+
+            {user && (
+              <div className={`flex flex-col ${links.length > 0 ? 'mt-3' : ''}`}>
+                <Link
+                  to="/profile"
+                  onClick={() => setMenuOpen(false)}
+                  className="flex min-h-12 items-center gap-3 rounded-2xl px-4 text-base font-medium text-ink-soft transition hover:bg-canvas-sunk hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
+                >
+                  <Avatar name={name} />
+                  <span className="min-w-0 truncate">{name}</span>
+                </Link>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMenuOpen(false);
+                    handleSignOut();
+                  }}
+                  className="flex min-h-12 items-center rounded-2xl px-4 text-left text-base font-medium text-ink-soft transition hover:bg-canvas-sunk hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
+                >
+                  Sign out
+                </button>
+              </div>
+            )}
+          </div>
+        </>
+      )}
     </header>
   );
 }

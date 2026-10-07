@@ -117,7 +117,7 @@ export default function Background() {
       </motion.div>
 
       <motion.div
-        className="mt-8 flex justify-end"
+        className="action-row mt-8 flex justify-end"
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.8, delay: 0.12, ease: EASE }}

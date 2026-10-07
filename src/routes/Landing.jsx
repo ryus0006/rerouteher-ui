@@ -214,15 +214,16 @@ export default function Landing() {
       <Header />
 
       <main className="flex-1">
-        {/* Hero: headline on the left, an example annotated CV on the right. */}
-        <section ref={heroRef} className="px-5 pt-5">
+        {/* Hero: headline on the left, an example annotated CV on the right.
+            Below lg only the headline shows; phones also get a smaller size. */}
+        <section ref={heroRef} className="px-5 pt-5 max-md:px-3 max-md:pt-3">
           <motion.div
-            className="land-stage land-stage-in relative mx-auto max-w-[1440px] origin-top overflow-hidden rounded-[2.5rem]"
+            className="land-stage land-stage-in relative mx-auto max-w-[1440px] origin-top overflow-hidden rounded-[2.5rem] max-md:rounded-[1.75rem]"
             style={motionStyle({ scale: stageScale })}
           >
-            <div className="relative mx-auto grid min-h-[min(46rem,calc(100svh-7rem))] max-w-[1200px] items-center gap-12 px-8 py-20 lg:grid-cols-[minmax(0,1fr)_34rem]">
+            <div className="relative mx-auto grid min-h-[min(46rem,calc(100svh-7rem))] max-w-[1200px] items-center gap-12 px-8 py-20 lg:grid-cols-[minmax(0,1fr)_34rem] max-md:min-h-0 max-md:px-6 max-md:pt-14 max-md:pb-12">
               <motion.div style={motionStyle({ y: copyY, opacity: copyOpacity })}>
-                <h1 className="font-display text-[4rem] font-bold leading-[1] tracking-[-0.045em] text-ink xl:text-[4.75rem]">
+                <h1 className="font-display text-[4rem] font-bold leading-[1] tracking-[-0.045em] text-ink xl:text-[4.75rem] max-md:text-[2.75rem] max-md:leading-[1.02]">
                   <MaskLine delay={80}>Return to work</MaskLine>{' '}
                   <MaskLine delay={190}>with a plan,</MaskLine>{' '}
                   <MaskLine delay={300} className="text-pink-600">
@@ -231,7 +232,7 @@ export default function Landing() {
                 </h1>
 
                 <p
-                  className="land-step mt-7 max-w-[44ch] text-lg leading-relaxed text-ink-soft"
+                  className="land-step mt-7 max-w-[44ch] text-lg leading-relaxed text-ink-soft max-md:mt-5 max-md:text-base"
                   style={{ '--d': '520ms' }}
                 >
                   A career break can feel like starting from zero. It is not. We turn your past work
@@ -239,7 +240,7 @@ export default function Landing() {
                 </p>
 
                 <div
-                  className="land-step mt-9 flex flex-wrap items-center gap-6"
+                  className="land-step mt-9 flex flex-wrap items-center gap-6 max-md:mt-7 max-md:gap-5"
                   style={{ '--d': '640ms' }}
                 >
                   {/* Label and target depend on progress (see useResumePoint). */}
@@ -271,21 +272,21 @@ export default function Landing() {
         <SkillTranslator />
 
         {/* Building a profile through chat, for anyone without a CV. */}
-        <section aria-labelledby="hera-title" className="py-28">
-          <div className="mx-auto grid max-w-[1200px] items-center gap-16 px-8 lg:grid-cols-[minmax(0,1fr)_40rem]">
+        <section aria-labelledby="hera-title" className="py-28 max-md:py-16">
+          <div className="mx-auto grid max-w-[1200px] items-center gap-16 px-8 lg:grid-cols-[minmax(0,1fr)_40rem] max-md:px-5">
             <Reveal>
               <h2
                 id="hera-title"
-                className="font-display text-5xl font-bold leading-[1.02] tracking-[-0.035em] text-ink"
+                className="font-display text-5xl font-bold leading-[1.02] tracking-[-0.035em] text-ink max-md:text-[2.25rem]"
               >
                 No CV? <span className="block text-pink-600">Just talk to Hera.</span>
               </h2>
-              <p className="mt-6 max-w-[44ch] text-lg leading-relaxed text-ink-soft">
+              <p className="mt-6 max-w-[44ch] text-lg leading-relaxed text-ink-soft max-md:mt-4 max-md:text-base">
                 Tell Hera, our AI guide, about the work you did and your time away, in your own
                 words. She drafts your profile as you chat, and nothing is used until you confirm
                 it.
               </p>
-              <div className="mt-9">
+              <div className="mt-9 max-md:mt-7">
                 <HeraButton onClick={chatWithHera} />
               </div>
             </Reveal>
@@ -296,12 +297,15 @@ export default function Landing() {
           </div>
         </section>
 
-        <section aria-labelledby="how-it-works-title" className="px-5 pb-32">
-          <Reveal className="land-stage relative mx-auto max-w-[1440px] overflow-hidden rounded-[2.5rem]">
-            <div className="relative mx-auto grid max-w-[1200px] gap-14 px-8 py-24 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] lg:items-center">
+        <section
+          aria-labelledby="how-it-works-title"
+          className="px-5 pb-32 max-md:px-3 max-md:pb-16"
+        >
+          <Reveal className="land-stage relative mx-auto max-w-[1440px] overflow-hidden rounded-[2.5rem] max-md:rounded-[1.75rem]">
+            <div className="relative mx-auto grid max-w-[1200px] gap-14 px-8 py-24 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] lg:items-center max-md:gap-8 max-md:px-5 max-md:py-12">
               <h2
                 id="how-it-works-title"
-                className="max-w-[14ch] font-display text-5xl font-bold leading-[1.02] tracking-[-0.035em] text-ink"
+                className="max-w-[14ch] font-display text-5xl font-bold leading-[1.02] tracking-[-0.035em] text-ink max-md:text-[2.25rem]"
               >
                 Three steps. About ten minutes.
               </h2>
@@ -322,16 +326,16 @@ export default function Landing() {
           </Reveal>
         </section>
 
-        <section aria-labelledby="tools-title" className="pb-32">
-          <div className="mx-auto w-full max-w-[1200px] px-8">
-            <Reveal className="mb-14 grid gap-6 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)] lg:items-end">
+        <section aria-labelledby="tools-title" className="pb-32 max-md:pb-16">
+          <div className="mx-auto w-full max-w-[1200px] px-8 max-md:px-5">
+            <Reveal className="mb-14 grid gap-6 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)] lg:items-end max-md:mb-8 max-md:gap-4">
               <h2
                 id="tools-title"
-                className="max-w-[16ch] font-display text-5xl font-bold leading-[1.02] tracking-[-0.035em] text-ink"
+                className="max-w-[16ch] font-display text-5xl font-bold leading-[1.02] tracking-[-0.035em] text-ink max-md:text-[2.25rem]"
               >
                 Then everything works from your result.
               </h2>
-              <p className="max-w-[44ch] text-lg leading-relaxed text-ink-soft lg:justify-self-end">
+              <p className="max-w-[44ch] text-lg leading-relaxed text-ink-soft lg:justify-self-end max-md:text-base">
                 Your target role and the skills to build carry into four tools, so each one already
                 knows what you have and where you are heading.
               </p>
@@ -340,25 +344,29 @@ export default function Landing() {
           </div>
         </section>
 
-        <section ref={closingRef} aria-labelledby="closing-title" className="px-5 pb-5">
+        <section
+          ref={closingRef}
+          aria-labelledby="closing-title"
+          className="px-5 pb-5 max-md:px-3 max-md:pb-3"
+        >
           <motion.div
-            className="land-closing relative mx-auto max-w-[1440px] origin-bottom overflow-hidden rounded-[2.5rem]"
+            className="land-closing relative mx-auto max-w-[1440px] origin-bottom overflow-hidden rounded-[2.5rem] max-md:rounded-[1.75rem]"
             style={motionStyle({ scale: closingScale, y: closingY })}
           >
-            <div className="relative mx-auto max-w-[1200px] px-8 py-28">
+            <div className="relative mx-auto max-w-[1200px] px-8 py-28 max-md:px-6 max-md:py-16">
               <h2
                 id="closing-title"
-                className="max-w-[15ch] font-display text-[3.75rem] font-bold leading-[1] tracking-[-0.04em] text-ink"
+                className="max-w-[15ch] font-display text-[3.75rem] font-bold leading-[1] tracking-[-0.04em] text-ink max-md:text-[2.5rem] max-md:leading-[1.04]"
               >
                 <ScrubWords text={CLOSING_TITLE} progress={closingIn} range={[0.3, 0.9]} />
               </h2>
-              <p className="mt-6 max-w-[44ch] text-lg leading-relaxed text-ink-soft">
+              <p className="mt-6 max-w-[44ch] text-lg leading-relaxed text-ink-soft max-md:mt-4 max-md:text-base">
                 {user
                   ? 'Your plan saves as you go, and opens on any device you sign in on.'
                   : 'Free, and no account needed. Your plan stays in this tab. Sign up only if you want to keep it.'}
               </p>
 
-              <div className="mt-9 flex flex-wrap items-center gap-6">
+              <div className="mt-9 flex flex-wrap items-center gap-6 max-md:mt-7 max-md:gap-5">
                 {/* Same progress-aware action as the hero button. */}
                 <StartButton resume={resume} onClick={start} />
 
@@ -378,7 +386,7 @@ export default function Landing() {
         </section>
       </main>
 
-      <footer className="mx-auto flex w-full max-w-[1200px] flex-wrap items-center justify-between gap-4 px-8 py-10 text-sm text-ink-faint">
+      <footer className="mx-auto flex w-full max-w-[1200px] flex-wrap items-center justify-between gap-4 px-8 py-10 text-sm text-ink-faint max-md:px-5 max-md:py-8">
         <img src={logoWebp} alt="ReRouteHer" width={752} height={192} className="h-7 w-auto" />
         <p>For women returning to work in Malaysia.</p>
       </footer>

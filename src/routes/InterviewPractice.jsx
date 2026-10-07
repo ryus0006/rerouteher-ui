@@ -39,7 +39,7 @@ function NotReady() {
   return (
     <div className="flex min-h-screen flex-col">
       <Header />
-      <main className="page-shell max-w-[760px] flex-1 py-16">
+      <main className="page-shell max-w-[760px] flex-1 py-16 max-md:py-10">
         <h1 className="font-display text-3xl font-bold tracking-[-0.02em] text-ink">
           Interview practice
         </h1>
@@ -65,9 +65,9 @@ function SignInRequired() {
   return (
     <div className="flex min-h-screen flex-col">
       <Header />
-      <main className="page-shell grid max-w-[1080px] flex-1 items-center gap-16 py-16 lg:grid-cols-[minmax(0,1fr)_20rem]">
+      <main className="page-shell grid max-w-[1080px] flex-1 items-center gap-16 py-16 lg:grid-cols-[minmax(0,1fr)_20rem] max-md:gap-10 max-md:py-10">
         <div>
-          <h1 className="font-display text-4xl font-bold tracking-[-0.03em] text-ink">
+          <h1 className="font-display text-4xl font-bold tracking-[-0.03em] text-ink max-md:text-3xl">
             Interview practice
           </h1>
           <p className="mt-3 max-w-[54ch] text-base leading-relaxed text-ink-soft">
@@ -218,9 +218,10 @@ export default function InterviewPractice() {
     <MotionConfig reducedMotion="user">
       <div className="flex min-h-screen flex-col">
         <Header />
-        <main className="page-shell max-w-[1200px] flex-1 pt-14 pb-20">
+        <main className="page-shell max-w-[1200px] flex-1 pt-14 pb-20 max-md:pt-8 max-md:pb-12">
+          {/* Title or session details beside the actions; stacked on phones. */}
           <div
-            className={`iv-reveal flex justify-between gap-8 ${started ? 'items-center' : 'items-end'}`}
+            className={`iv-reveal flex justify-between gap-8 max-md:flex-col max-md:items-start max-md:gap-4 ${started ? 'items-center' : 'items-end'}`}
             style={{ '--i': 0 }}
           >
             <div className="min-w-0 flex-1">
@@ -228,7 +229,7 @@ export default function InterviewPractice() {
                 className={
                   started
                     ? 'sr-only'
-                    : 'font-display text-4xl font-bold leading-[1.05] tracking-[-0.035em] text-ink'
+                    : 'font-display text-4xl font-bold leading-[1.05] tracking-[-0.035em] text-ink max-md:text-3xl'
                 }
               >
                 Interview practice
@@ -264,7 +265,7 @@ export default function InterviewPractice() {
             </div>
 
             {started && (
-              <div className="flex shrink-0 items-center gap-3 pb-0.5">
+              <div className="flex shrink-0 items-center gap-3 pb-0.5 max-md:flex-wrap">
                 {hasReadyAttempt && view !== 'areas' && (
                   <PillButton icon="chart" iconSide="start" disabled={busy} onClick={showAreas}>
                     See areas to improve

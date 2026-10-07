@@ -102,9 +102,17 @@ export default function MatchPanel({ role, result, focusAreas, delay = 0 }) {
               className="relative mt-6 rounded-2xl bg-white/8 px-4 py-3 text-sm leading-relaxed font-medium text-white"
               {...rise(7)}
             >
-              {focus === 1
-                ? 'Your next step is the skill on the right.'
-                : `Your next steps are the ${focus} skills on the right.`}
+              {/* Below md the skills stack under this panel instead of beside it. */}
+              <span className="max-md:hidden">
+                {focus === 1
+                  ? 'Your next step is the skill on the right.'
+                  : `Your next steps are the ${focus} skills on the right.`}
+              </span>
+              <span className="md:hidden">
+                {focus === 1
+                  ? 'Your next step is the skill below.'
+                  : `Your next steps are the ${focus} skills below.`}
+              </span>
             </motion.p>
           )}
         </div>

@@ -247,12 +247,13 @@ export default function FinishPanel({
   return (
     <AnimatePresence>
       {show && (
+        /* Lifted on phones so it clears the Hera launcher. */
         <motion.section
           key="panel"
           role="region"
           aria-labelledby="lp-panel-title"
           aria-live="polite"
-          className="lp-island fixed inset-x-0 bottom-6 z-30 mx-auto w-[min(34rem,calc(100%-2rem))]"
+          className="lp-island fixed inset-x-0 bottom-6 z-30 mx-auto w-[min(34rem,calc(100%-2rem))] max-md:bottom-[5.5rem]"
           initial={{ opacity: 0, y: 48, scale: 0.96 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           exit={{ opacity: 0, y: 32, scale: 0.97 }}

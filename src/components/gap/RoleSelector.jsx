@@ -19,7 +19,8 @@ export default function RoleSelector({ roles, selected, pending = null, onSelect
       {/* Visually hidden: the page heading serves as the visible label. */}
       <legend className="sr-only">Select your target role</legend>
 
-      <div className="grid grid-cols-3 gap-1.5 rounded-[1.5rem] bg-ink/5 p-1.5">
+      {/* One card per role in a row, stacked on phones. */}
+      <div className="grid grid-cols-3 gap-1.5 rounded-[1.5rem] bg-ink/5 p-1.5 max-md:grid-cols-1">
         {roles.map((role, index) => {
           const checked = role.role_id === current?.role_id;
           const loading = role.role_id === pending?.role_id;

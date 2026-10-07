@@ -30,7 +30,7 @@ function Panel({ className = '', children }) {
 
 function InterviewPreview() {
   return (
-    <div className="flex h-full flex-col justify-center gap-3 px-8">
+    <div className="flex h-full flex-col justify-center gap-3 px-8 max-md:px-5">
       <Panel>
         <p className="text-xs text-ink-faint">Question 2 of 8</p>
         <p className="mt-1.5 font-display text-lg font-semibold leading-snug text-ink">
@@ -48,7 +48,7 @@ function InterviewPreview() {
           <span className="ml-2 text-xs text-ink-faint tabular">1:12</span>
         </div>
       </Panel>
-      <Panel className="ml-10 py-3">
+      <Panel className="ml-10 py-3 max-md:ml-6">
         <p className="flex items-center gap-2 text-sm font-semibold text-verify">
           <Tick />
           Confident about your break
@@ -169,7 +169,7 @@ const CV_SKILLS = ['Time Management', 'Coordination', 'Design Systems'];
 function CvPreview() {
   return (
     <div className="flex h-full items-center justify-center gap-3 px-7">
-      <Panel className="w-[58%]">
+      <Panel className="w-[58%] max-md:w-full">
         <p className="text-xs text-ink-faint">Experience · Senior UX Designer</p>
         <p className="mt-1.5 text-[0.8125rem] leading-relaxed text-ink-soft">
           Designed screens for the mobile banking app.
@@ -189,7 +189,8 @@ function CvPreview() {
           </div>
         </div>
       </Panel>
-      <Panel className="w-[38%] self-center">
+      {/* Hidden on phones so the experience panel fits the preview's fixed height. */}
+      <Panel className="w-[38%] self-center max-md:hidden">
         <p className="text-xs font-semibold text-ink">Add skills from your profile</p>
         <ul className="mt-2.5 flex flex-wrap gap-1.5">
           {CV_SKILLS.map((skill) => (
@@ -291,7 +292,7 @@ function Tile({ tool, index }) {
           </motion.div>
         </div>
 
-        <div className="px-7 pt-6 pb-8">
+        <div className="px-7 pt-6 pb-8 max-md:px-5 max-md:pt-5 max-md:pb-6">
           <p
             data-tone={tool.tone}
             className="land-tag flex items-center gap-2 text-sm font-semibold"
@@ -299,7 +300,7 @@ function Tile({ tool, index }) {
             <span aria-hidden="true" className="size-1.5 rounded-full bg-current" />
             {tool.tool}
           </p>
-          <h3 className="mt-1.5 font-display text-2xl font-bold tracking-[-0.02em] text-ink">
+          <h3 className="mt-1.5 font-display text-2xl font-bold tracking-[-0.02em] text-ink max-md:text-xl">
             {tool.title}
           </h3>
           <p className="mt-2 max-w-[46ch] text-[0.9375rem] leading-relaxed text-ink-soft">
@@ -314,7 +315,9 @@ function Tile({ tool, index }) {
 /** Four illustrated tiles, one per tool that builds on the readiness result. */
 export default function ToolTiles() {
   return (
-    <div className="grid gap-5 [perspective:1800px] lg:grid-cols-12">
+    /* Below lg a single column; minmax(0, 1fr) keeps wide previews from
+       stretching the grid past the screen. */
+    <div className="grid gap-5 [perspective:1800px] lg:grid-cols-12 max-lg:grid-cols-1">
       {TOOLS.map((tool, index) => (
         <Tile key={tool.id} tool={tool} index={index} />
       ))}

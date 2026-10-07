@@ -36,7 +36,7 @@ export default function CareerBreak() {
       </motion.div>
 
       <motion.div
-        className="mt-6 flex items-center justify-between"
+        className="action-row mt-6 flex items-center justify-between"
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.8, delay: 0.12, ease: EASE }}

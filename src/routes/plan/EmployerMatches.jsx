@@ -220,7 +220,7 @@ function EmployerCard({ employer, featured = false, saved = false, onToggleSave 
       className={`rounded-[2rem] p-1.5 ring-1 ${featured ? 'bg-ink/[0.06] ring-ink/[0.14]' : 'bg-ink/[0.03] ring-ink/[0.06]'}`}
     >
       <div className="grid gap-1.5 rounded-[calc(2rem-0.375rem)] bg-surface p-1.5 shadow-card md:grid-cols-[minmax(0,1fr)_18rem]">
-        <div className="flex flex-col p-5">
+        <div className="flex flex-col p-5 max-sm:p-3.5">
           <div className="flex items-center gap-4">
             <LogoTile logo={employer.logo} logoUrl={employer.logo_url} name={employer.name} />
             <div className="min-w-0 flex-1">
@@ -254,8 +254,10 @@ function EmployerCard({ employer, featured = false, saved = false, onToggleSave 
           {/* Pinned to the bottom of the column. */}
           <div className="mt-auto pt-6">
             {employer.job && (
+              /* Job details beside the Open job button; on phones the button
+                 wraps below them. */
               <div className="mb-6 flex flex-wrap items-center gap-x-4 gap-y-3">
-                <div className="min-w-0 flex-1">
+                <div className="min-w-0 flex-1 max-sm:basis-full">
                   <p className="flex items-center gap-2 text-[0.625rem] font-semibold uppercase tracking-[0.16em] text-ink-faint">
                     <span aria-hidden="true" className="size-1.5 rounded-full bg-verify" />
                     Hiring for your role.
@@ -376,7 +378,8 @@ function QueryBar({ chosen, count, onAdjust }) {
 
         <span aria-hidden="true" className="hidden h-9 w-px bg-line md:block" />
 
-        <div className="min-w-0 flex-1">
+        {/* Takes a full row on phones, with the count and adjust action below. */}
+        <div className="min-w-0 flex-1 max-sm:basis-full">
           <p className="text-xs text-ink-faint">Matching on</p>
           <ul aria-label="Priorities you chose" className="mt-1.5 flex flex-wrap gap-1.5">
             {known.map((id) => (
@@ -391,7 +394,7 @@ function QueryBar({ chosen, count, onAdjust }) {
           </ul>
         </div>
 
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4 max-sm:w-full max-sm:justify-between">
           {count !== null && (
             <p className="text-sm text-ink-soft">
               <span className="tabular font-semibold text-ink">{count}</span>{' '}
@@ -402,7 +405,7 @@ function QueryBar({ chosen, count, onAdjust }) {
           <button
             type="button"
             onClick={onAdjust}
-            className="group inline-flex items-center gap-2 rounded-full py-1 pr-1 pl-3.5 text-sm font-medium text-ink ring-1 ring-line-strong transition duration-300 ease-spring hover:ring-ink/30 active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
+            className="group inline-flex items-center gap-2 rounded-full max-sm:whitespace-nowrap py-1 pr-1 pl-3.5 text-sm font-medium text-ink ring-1 ring-line-strong transition duration-300 ease-spring hover:ring-ink/30 active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
           >
             Adjust priorities
             <ArrowBadge className="size-6 bg-canvas-sunk" />
@@ -529,13 +532,13 @@ export default function EmployerMatches() {
     <div className="flex min-h-screen flex-col">
       <Header />
 
-      <main className="page-shell max-w-[1200px] flex-1 pt-14 pb-28">
+      <main className="page-shell max-w-[1200px] flex-1 pt-14 pb-28 max-md:pt-8 max-md:pb-16">
         {/* Guests have no journey, so they get a way back to the gap screen. */}
         {!user && <BackLink to="/diagnostic/gap">Back to your readiness</BackLink>}
 
         {/* Page header: title, matching explanation and companion entry point. */}
         <div className="rise-in mt-4">
-          <h1 className="font-display text-4xl font-bold leading-[1.1] tracking-[-0.02em] text-ink">
+          <h1 className="font-display text-4xl font-bold leading-[1.1] tracking-[-0.02em] text-ink max-md:text-3xl">
             Your employer matches
           </h1>
           <p className="mt-3 max-w-[62ch] text-[0.9375rem] leading-relaxed text-ink-soft">

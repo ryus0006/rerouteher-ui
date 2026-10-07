@@ -16,7 +16,8 @@ export default function HowItWorks({ compact = false }) {
       <section className="rounded-2xl border border-line bg-canvas-sunk px-5 py-4">
         <h2 className="text-sm font-semibold text-ink">How it works</h2>
 
-        <ol className="mt-2.5 grid grid-cols-3 gap-3">
+        {/* Three columns, stacked into one on phones. */}
+        <ol className="mt-2.5 grid grid-cols-3 gap-3 max-md:grid-cols-1">
           {STEPS.map((step, index) => (
             <li key={step} className="flex items-start gap-2.5">
               <span className="mt-px flex size-5 shrink-0 items-center justify-center rounded-full bg-pink-600 text-xs font-semibold tabular text-white">

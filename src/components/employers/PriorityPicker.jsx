@@ -68,9 +68,10 @@ function PriorityCard({ priority, checked, tracksChanges, change, onToggle }) {
 
       {/* Placed below the blurb so long titles stay on one line. The row is
           always reserved when tracking changes, so toggling a card does not
-          change its height. */}
+          change its height. On phones the cards stack in one column, so the
+          empty row is dropped. */}
       {tracksChanges && (
-        <span className="mt-auto pt-4">
+        <span className={`mt-auto pt-4 ${change ? '' : 'max-sm:hidden'}`}>
           {change ? (
             <ChangeTag added={change === 'added'} />
           ) : (

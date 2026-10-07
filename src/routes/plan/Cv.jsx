@@ -22,7 +22,7 @@ function Notice({ title, children }) {
   return (
     <div className="flex min-h-screen flex-col">
       <Header />
-      <main className="page-shell max-w-[760px] flex-1 py-16">
+      <main className="page-shell max-w-[760px] flex-1 py-16 max-md:py-10">
         <h1 className="font-display text-3xl font-bold tracking-[-0.02em] text-ink">{title}</h1>
         {children}
       </main>
@@ -63,9 +63,9 @@ function SignInRequired() {
   return (
     <div className="flex min-h-screen flex-col">
       <Header />
-      <main className="page-shell grid max-w-[1080px] flex-1 items-center gap-16 py-16 lg:grid-cols-[minmax(0,1fr)_24rem]">
+      <main className="page-shell grid max-w-[1080px] flex-1 items-center gap-16 py-16 lg:grid-cols-[minmax(0,1fr)_24rem] max-md:gap-10 max-md:py-10">
         <div>
-          <h1 className="font-display text-4xl font-bold tracking-[-0.03em] text-ink">
+          <h1 className="font-display text-4xl font-bold tracking-[-0.03em] text-ink max-md:text-3xl">
             CV builder
           </h1>
           <p className="mt-3 max-w-[50ch] text-base leading-relaxed text-ink-soft">
@@ -388,11 +388,11 @@ export default function Cv() {
   return (
     <div className="flex min-h-screen flex-col">
       <Header />
-      <main className="page-shell max-w-[1200px] flex-1 pt-14 pb-24">
+      <main className="page-shell max-w-[1200px] flex-1 pt-14 pb-24 max-md:pt-8 max-md:pb-12">
         {/* Visually hidden; the active nav item labels the page. */}
         <h1 className="sr-only">CV builder</h1>
         <div className="cv-rise" style={{ '--i': 0 }}>
-          <p className="font-display text-[2rem] leading-[1.25] font-bold tracking-[-0.025em] text-ink">
+          <p className="font-display text-[2rem] leading-[1.25] font-bold tracking-[-0.025em] text-ink max-md:text-[1.625rem]">
             Your CV for{' '}
             <RolePicker
               roles={roles}
@@ -402,8 +402,15 @@ export default function Cv() {
               onChange={chooseRole}
             />
           </p>
-          <p className="mt-3 max-w-[60ch] text-base leading-relaxed text-ink-soft">
-            Built from your saved experience and skills. Click any text to edit it.
+          <p className="mt-3 max-w-[60ch] text-base leading-relaxed text-ink-soft max-md:text-[0.9375rem]">
+            {/* Whole sentences per breakpoint, so the desktop line renders as
+                one run of text. */}
+            <span className="max-md:hidden">
+              Built from your saved experience and skills. Click any text to edit it.
+            </span>
+            <span className="md:hidden">
+              Built from your saved experience and skills. Tap any text to edit it.
+            </span>
             {roles.length > 1 && ' Each role keeps its own draft.'}
           </p>
           {roleError && (
@@ -413,7 +420,7 @@ export default function Cv() {
           )}
         </div>
 
-        <div className="mt-12 grid items-start gap-10 lg:grid-cols-[minmax(0,1fr)_21rem]">
+        <div className="mt-12 grid items-start gap-10 lg:grid-cols-[minmax(0,1fr)_21rem] max-md:mt-8 max-md:gap-6">
           <div
             className="cv-stage cv-rise"
             style={{ '--i': 1 }}

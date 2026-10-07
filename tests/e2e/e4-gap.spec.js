@@ -220,7 +220,12 @@ test.describe('E4 — Role Readiness & Skill Gap', () => {
     await mockApi(page);
     await reachGap(page);
 
-    await expect(page.getByText('Your next steps are the 3 skills on the right.')).toBeVisible();
+    // The skills sit beside the panel on desktop and below it on phones.
+    await expect(
+      page
+        .getByText(/^Your next steps are the 3 skills (on the right|below)\.$/)
+        .filter({ visible: true })
+    ).toBeVisible();
     await expect(
       page.getByRole('button', { name: /See the 7 you already have out of 15 requirements/ })
     ).toBeVisible();

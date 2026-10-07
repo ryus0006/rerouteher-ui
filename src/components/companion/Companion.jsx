@@ -369,7 +369,7 @@ export default function Companion({ defaultMode = 'ask' }) {
   return (
     <>
       {/* Floating launcher. While the panel is open the same button acts as the
-          close control. */}
+          close control. Sits closer to the corner on phones. */}
       <button
         ref={openerRef}
         type="button"
@@ -378,7 +378,7 @@ export default function Companion({ defaultMode = 'ask' }) {
         aria-label={open ? 'Close Hera' : 'Ask Hera'}
         data-no-press
         data-open={open || undefined}
-        className="hera-launcher group fixed right-6 bottom-6 z-40 focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-blue-600"
+        className="hera-launcher group fixed right-6 bottom-6 z-40 max-md:right-4 max-md:bottom-4 focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-blue-600"
       >
         <HeraBot className="size-11 shrink-0" thinking={thinking} waving={!open} />
         {open ? (
@@ -399,8 +399,9 @@ export default function Companion({ defaultMode = 'ask' }) {
             aria-label="Ask Hera"
             exit={{ opacity: 0, y: 12, scale: 0.97, filter: 'blur(6px)' }}
             transition={{ duration: 0.4, ease: EASE }}
-            /* Fixed height so the panel does not resize as messages are added. */
-            className="hera-shell fixed right-6 bottom-[6.5rem] z-40 h-[min(37rem,74vh)] w-[25.5rem]"
+            /* Fixed height so the panel does not resize as messages are added.
+               On phones it spans the screen width above the launcher. */
+            className="hera-shell fixed right-6 bottom-[6.5rem] z-40 h-[min(37rem,74vh)] w-[25.5rem] max-md:inset-x-3 max-md:bottom-[5.5rem] max-md:h-[min(37rem,calc(100dvh-7.5rem))] max-md:w-auto"
           >
             <div className="hera-core flex h-full flex-col overflow-hidden">
               <header className="hera-head flex items-center gap-3.5 px-5 pt-5 pb-4">

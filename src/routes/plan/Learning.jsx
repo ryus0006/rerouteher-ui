@@ -90,7 +90,9 @@ function Resource({ resource, status, onFinish, onUnfinish, onSave, onOpen }) {
       />
       <ProviderMark logo={resource.logo} provider={resource.provider} />
 
-      <div className="min-w-0 flex-1">
+      {/* lp-row-body and lp-row-actions let the actions wrap to their own
+          line on phones (see index.css). */}
+      <div className="lp-row-body min-w-0 flex-1">
         <h3 className="flex flex-wrap items-center gap-x-2 gap-y-1 font-semibold text-ink">
           {resource.title}
           {status && (
@@ -108,7 +110,7 @@ function Resource({ resource, status, onFinish, onUnfinish, onSave, onOpen }) {
         </div>
       </div>
 
-      <div className="flex shrink-0 items-center gap-1.5">
+      <div className="lp-row-actions flex shrink-0 items-center gap-1.5">
         <button
           type="button"
           onClick={() => onSave(resource)}
@@ -149,8 +151,8 @@ function SignInRequired() {
   return (
     <div className="flex min-h-screen flex-col">
       <Header />
-      <main className="page-shell max-w-[760px] flex-1 py-16">
-        <h1 className="font-display text-4xl font-bold tracking-[-0.03em] text-ink">
+      <main className="page-shell max-w-[760px] flex-1 py-16 max-md:py-10">
+        <h1 className="font-display text-4xl font-bold tracking-[-0.03em] text-ink max-md:text-3xl">
           Your learning plan
         </h1>
         <p className="mt-3 max-w-[54ch] text-base leading-relaxed text-ink-soft">
@@ -457,7 +459,7 @@ export default function Learning() {
     <div className="flex min-h-screen flex-col">
       <Header />
 
-      <main className="page-shell max-w-[1200px] flex-1 pt-14 pb-40">
+      <main className="page-shell max-w-[1200px] flex-1 pt-14 pb-40 max-md:pt-8 max-md:pb-16">
         {/* Guests have no journey, so they get a way back to the gap screen. */}
         {!user && <BackLink to="/diagnostic/gap">Back to your readiness</BackLink>}
 
@@ -519,7 +521,7 @@ export default function Learning() {
         )}
 
         {plan && resources.length > 0 && (
-          <div className="mt-14 grid gap-10 lg:grid-cols-[16.5rem_minmax(0,1fr)] lg:gap-14">
+          <div className="mt-14 grid gap-10 lg:grid-cols-[16.5rem_minmax(0,1fr)] lg:gap-14 max-md:mt-10">
             <aside>
               <AreaRail
                 areas={activeAreas.filter((area) => !area.refresher)}
@@ -562,7 +564,7 @@ export default function Learning() {
                   data-entering={shownArea.skill_id === entering || undefined}
                   className="lp-area lp-tone lp-swap"
                 >
-                  <h2 className="flex flex-wrap items-center gap-x-3 gap-y-1 font-display text-[1.75rem] font-bold leading-tight tracking-[-0.03em] text-ink">
+                  <h2 className="flex flex-wrap items-center gap-x-3 gap-y-1 font-display text-[1.75rem] font-bold leading-tight tracking-[-0.03em] text-ink max-md:text-2xl">
                     {shownArea.skill}
                     {shownArea.refresher && <span className="lp-refresh-tag">Refresher</span>}
                   </h2>

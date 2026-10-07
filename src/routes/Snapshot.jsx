@@ -88,14 +88,16 @@ export default function Snapshot() {
           </h1>
           <AskHeraAboutResults className="mt-1 shrink-0" />
         </div>
-        <div className="flex items-start justify-between gap-6">
+        <div className="flex items-start justify-between gap-6 max-md:flex-col max-md:gap-0">
           <div>
             <OccupationLine occupation={snapshot.previous_occupation} />
           </div>
           {hasDefinitions && (
             <p className="mt-2.5 flex shrink-0 items-center gap-1.5 text-sm text-ink-faint">
               <Cursor className="size-4" aria-hidden="true" />
-              Hover any skill to see what it means
+              {/* Touch screens have no hover; a tap opens the definition instead. */}
+              <span className="max-md:hidden">Hover any skill to see what it means</span>
+              <span className="md:hidden">Tap any skill to see what it means</span>
             </p>
           )}
         </div>
@@ -146,7 +148,7 @@ export default function Snapshot() {
         </div>
 
         <motion.div
-          className="mt-8 flex items-center justify-between"
+          className="action-row mt-8 flex items-center justify-between"
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.16, ease: EASE }}

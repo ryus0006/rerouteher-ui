@@ -66,7 +66,7 @@ export default function Priorities() {
         </p>
       )}
 
-      <div className="mt-6 flex items-center justify-between">
+      <div className="action-row mt-6 flex items-center justify-between">
         <BackLink to="/diagnostic/break">Back to career break</BackLink>
         <GradientButton
           disabled={!canGenerate || chosen.length === 0 || generating}
