@@ -369,7 +369,7 @@ export default function Cv() {
     try {
       const blob = buildCvPdf(
         { ...draft, careerBreak },
-        { title: `${draft.personal.name.trim() || 'CV'} – ${activeRole.role}` }
+        { title: `${draft.personal.name.trim() || 'CV'} - ${activeRole.role}` }
       );
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
