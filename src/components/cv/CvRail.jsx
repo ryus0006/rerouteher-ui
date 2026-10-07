@@ -2,7 +2,6 @@ import { CheckCircle, DownloadSimple, Plus } from '@phosphor-icons/react';
 
 /** Side panel for download, regeneration, and suggested skills. */
 export default function CvRail({
-  role,
   suggestedSkills,
   downloadError,
   disabled,
@@ -58,26 +57,13 @@ export default function CvRail({
             </h2>
             <p className="mt-1.5 text-sm leading-relaxed text-ink-soft">
               Already in your journey, so safe to claim.
-              {suggestedSkills.some((s) => s.relevant) && ` Marked ones fit ${role} best.`}
-              {suggestedSkills.some((s) => s.learned) &&
-                ' Learned ones come from focus areas you finished.'}
             </p>
             <ul className="mt-4 flex flex-wrap gap-2">
-              {suggestedSkills.map(({ skill, relevant, learned }) => (
+              {suggestedSkills.map(({ skill }) => (
                 <li key={skill}>
-                  <button
-                    type="button"
-                    onClick={() => onAddSkill(skill)}
-                    className="cv-skill-chip"
-                    data-relevant={relevant || learned || undefined}
-                  >
+                  <button type="button" onClick={() => onAddSkill(skill)} className="cv-skill-chip">
                     <Plus weight="bold" className="size-3" aria-hidden="true" />
                     {skill}
-                    {learned ? (
-                      <span className="cv-skill-fit cv-skill-learned">Learned</span>
-                    ) : (
-                      relevant && <span className="cv-skill-fit">Fits role</span>
-                    )}
                     <span className="sr-only">, add to your CV</span>
                   </button>
                 </li>

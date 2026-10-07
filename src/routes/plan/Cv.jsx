@@ -469,7 +469,6 @@ export default function Cv() {
           </div>
           <CvRail
             draft={draft}
-            role={activeRole.role}
             suggestedSkills={suggestedSkills}
             downloadError={downloadError}
             disabled={Boolean(generatingRole)}
