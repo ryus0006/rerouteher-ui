@@ -1,13 +1,11 @@
 import { CheckCircle, DownloadSimple, Plus } from '@phosphor-icons/react';
 
-/** Side panel for download, regeneration, and suggested skills. */
+/** Side panel for download and suggested skills. */
 export default function CvRail({
   suggestedSkills,
   downloadError,
   disabled,
   onDownload,
-  regenerating,
-  onRegenerate,
   onAddSkill,
 }) {
   return (
@@ -24,14 +22,6 @@ export default function CvRail({
             <span className="cv-download-icon" aria-hidden="true">
               <DownloadSimple weight="bold" className="size-4" />
             </span>
-          </button>
-          <button
-            type="button"
-            onClick={onRegenerate}
-            disabled={disabled || regenerating}
-            className="cv-quiet mt-3 w-full"
-          >
-            {regenerating ? 'Regenerating…' : 'Regenerate from saved journey'}
           </button>
           {downloadError && (
             <p role="alert" className="mt-3 text-sm text-pink-600">

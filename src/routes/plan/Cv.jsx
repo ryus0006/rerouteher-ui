@@ -473,11 +473,6 @@ export default function Cv() {
             downloadError={downloadError}
             disabled={Boolean(generatingRole)}
             onDownload={download}
-            regenerating={generatingRole === roleId}
-            onRegenerate={() => {
-              generationRequests.current.add(roleId);
-              requestDraft(roleId, true);
-            }}
             onAddSkill={(skill) =>
               update((current) => ({ ...current, skills: [...current.skills, skill] }))
             }
