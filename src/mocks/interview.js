@@ -2,7 +2,7 @@ import { http, HttpResponse } from 'msw';
 
 /* In-memory, stateful mocks for the interview endpoints. They mirror the real
    stateful contract: one session per role and focus, attempts saved to their
-   question slot, grounded feedback, and server-side areas aggregation. Like the
+   question slot, and grounded feedback. Like the
    real services they never add facts not present in the input. */
 
 const GENERAL_QUESTIONS = [
@@ -251,33 +251,5 @@ export const interviewHandlers = [
     });
     refreshStatus(hit.detail);
     return HttpResponse.json(hit.attempt, { status: 200 });
-  }),
-
-  http.get('*/api/interview/areas', () => {
-    const improvements = new Map();
-    const strengths = new Map();
-    const tally = (bucket, item) => {
-      const entry = bucket.get(item.criterion_id) ?? {
-        criterion_id: item.criterion_id,
-        title: item.title,
-        response_count: 0,
-      };
-      entry.response_count += 1;
-      bucket.set(item.criterion_id, entry);
-    };
-    for (const detail of sessions.values()) {
-      for (const slot of detail.questions) {
-        const latest = slot.attempts.filter((a) => a.feedback_status === 'ready').at(-1);
-        if (!latest) continue;
-        latest.improvements.forEach((item) => tally(improvements, item));
-        latest.strengths.forEach((item) => tally(strengths, item));
-      }
-    }
-    const sorted = (bucket) =>
-      [...bucket.values()].sort((a, b) => b.response_count - a.response_count);
-    return HttpResponse.json({
-      improvements: sorted(improvements),
-      strengths: sorted(strengths),
-    });
   }),
 ];

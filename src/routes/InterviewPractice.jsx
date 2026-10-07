@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, MotionConfig, motion } from 'motion/react';
 import Header from '../components/layout/Header.jsx';
 import GradientButton from '../components/ui/GradientButton.jsx';
-import AreasView from '../components/interview/AreasView.jsx';
 import PillButton from '../components/interview/PillButton.jsx';
 import QuestionCard from '../components/interview/QuestionCard.jsx';
 import SessionSteps from '../components/interview/SessionSteps.jsx';
@@ -72,7 +71,7 @@ function SignInRequired() {
           </h1>
           <p className="mt-3 max-w-[54ch] text-base leading-relaxed text-ink-soft">
             Create a free account to practise. You answer questions for your target role out loud,
-            get feedback on each answer, and see which areas come up most across your practice.
+            and get feedback on each answer.
           </p>
           <p className="mt-2 max-w-[54ch] text-sm leading-relaxed text-ink-soft">
             Everything you have done so far as a guest comes with you.
@@ -105,7 +104,6 @@ export default function InterviewPractice() {
 
   const sessions = useInterviewStore((state) => state.sessions);
   const current = useInterviewStore((state) => state.current);
-  const areas = useInterviewStore((state) => state.areas);
   const index = useInterviewStore((state) => state.index);
   const view = useInterviewStore((state) => state.view);
   const loading = useInterviewStore((state) => state.loading);
@@ -114,7 +112,6 @@ export default function InterviewPractice() {
   const openSession = useInterviewStore((state) => state.openSession);
   const startSession = useInterviewStore((state) => state.startSession);
   const refreshCurrent = useInterviewStore((state) => state.refreshCurrent);
-  const loadAreas = useInterviewStore((state) => state.loadAreas);
   const goTo = useInterviewStore((state) => state.goTo);
   const setView = useInterviewStore((state) => state.setView);
 
@@ -172,7 +169,6 @@ export default function InterviewPractice() {
   const isAnswered = (q) =>
     q.attempts.some((a) => a.feedback_status === 'ready' || a.feedback_status === 'error');
   const answeredInSet = slots.filter(isAnswered).length;
-  const hasReadyAttempt = slots.some((q) => q.attempts.some((a) => a.feedback_status === 'ready'));
   const statuses = slots.map((q, position) =>
     position === index ? 'current' : isAnswered(q) ? 'done' : 'todo'
   );
@@ -202,11 +198,6 @@ export default function InterviewPractice() {
       }
       setSetupError(`Your practice could not be started (${cause.message}). Try again.`);
     }
-  }
-
-  async function showAreas() {
-    await loadAreas();
-    setView('areas');
   }
 
   async function newSet() {
@@ -266,11 +257,6 @@ export default function InterviewPractice() {
 
             {started && (
               <div className="flex shrink-0 items-center gap-3 pb-0.5 max-md:flex-wrap">
-                {hasReadyAttempt && view !== 'areas' && (
-                  <PillButton icon="chart" iconSide="start" disabled={busy} onClick={showAreas}>
-                    See areas to improve
-                  </PillButton>
-                )}
                 <PillButton
                   icon="pencil"
                   iconSide="start"
@@ -323,19 +309,12 @@ export default function InterviewPractice() {
             )}
           </AnimatePresence>
 
-          {started && view === 'areas' && (
-            <div className="mt-8">
-              <AreasView areas={areas} onBack={() => setView('practice')} />
-            </div>
-          )}
-
           {started && view === 'complete' && (
             <div className="mt-8">
               <SetComplete
                 answered={answeredInSet}
                 total={slots.length}
                 onNewSet={newSet}
-                onSeeAreas={showAreas}
                 onReview={() => setView('practice')}
               />
             </div>

@@ -142,13 +142,3 @@ export async function retryFeedback(responseId) {
     return recoverable(error);
   }
 }
-
-/**
- * The recurring areas to improve and strengths aggregated across the user's
- * answered questions.
- *
- * @returns {Promise<{ improvements: { criterion_id: string, title: string, response_count: number }[], strengths: { criterion_id: string, title: string, response_count: number }[] }>}
- */
-export function getAreas() {
-  return getJson(`${BASE}/areas`);
-}

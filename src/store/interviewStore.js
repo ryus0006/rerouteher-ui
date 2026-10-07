@@ -2,7 +2,6 @@ import { create } from 'zustand';
 import {
   createSession,
   deleteSession,
-  getAreas,
   getSession,
   listSessions,
   refreshSession,
@@ -13,7 +12,6 @@ import {
 /**
  * @typedef {{ session_id: string, role: { role_id: string, role_title: string }, practice_focus: string, status: string, progress: number }} SessionSummary
  * @typedef {{ session_id: string, role: { role_id: string, role_title: string }, practice_focus: string, status: string, questions: object[] }} SessionDetail
- * @typedef {{ improvements: object[], strengths: object[] }} Areas
  */
 
 const initialState = {
@@ -21,11 +19,9 @@ const initialState = {
   sessions: [],
   /** @type {SessionDetail | null} */
   current: null,
-  /** @type {Areas | null} */
-  areas: null,
   /** Index of the question on screen within `current.questions`. */
   index: 0,
-  /** @type {'practice' | 'areas' | 'complete'} */
+  /** @type {'practice' | 'complete'} */
   view: 'practice',
   loading: false,
   /** @type {string | null} */
@@ -123,13 +119,6 @@ export const useInterviewStore = create((set, get) => {
         const result = await retryFeedback(responseId);
         await reread();
         return result;
-      }),
-
-    loadAreas: () =>
-      run(async () => {
-        const areas = await getAreas();
-        set({ areas });
-        return areas;
       }),
 
     goTo: (index) =>

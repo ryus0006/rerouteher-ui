@@ -3,9 +3,9 @@ import PillButton from './PillButton.jsx';
 
 /**
  * End-of-set summary, shown whether or not every question was answered.
- * Provides the actions to start a new set, review answers, or view themes.
+ * Provides the actions to start a new set or review answers.
  */
-export default function SetComplete({ answered, total, onNewSet, onSeeAreas, onReview }) {
+export default function SetComplete({ answered, total, onNewSet, onReview }) {
   const skipped = total - answered;
   return (
     <section className="interview-complete" aria-labelledby="interview-complete-title">
@@ -29,11 +29,6 @@ export default function SetComplete({ answered, total, onNewSet, onSeeAreas, onR
         <PillButton tone="accent" icon="right" onClick={onNewSet}>
           Practise a new set
         </PillButton>
-        {answered > 0 && (
-          <PillButton icon="chart" iconSide="start" onClick={onSeeAreas}>
-            See areas to improve
-          </PillButton>
-        )}
       </div>
       <button type="button" onClick={onReview} className="iv-text-button mt-6">
         Review this set

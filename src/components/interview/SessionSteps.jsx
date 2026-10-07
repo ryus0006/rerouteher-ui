@@ -2,7 +2,6 @@ const STEPS = [
   ['Answer out loud', 'Record your answer to each question, as you would say it in the room.'],
   ['Read your feedback', 'See what worked and what to strengthen, straight after each answer.'],
   ['Try again or move on', 'Retry any question. Your earlier attempts stay for comparison.'],
-  ['Spot the patterns', 'See which themes come up most across all your answers.'],
 ];
 
 /** Overview of the session steps, shown before a set starts. */

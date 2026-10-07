@@ -8,7 +8,6 @@ vi.mock('../../src/api/interview.js', () => ({
   deleteSession: vi.fn(),
   uploadAttempt: vi.fn(),
   retryFeedback: vi.fn(),
-  getAreas: vi.fn(),
 }));
 
 import * as api from '../../src/api/interview.js';
@@ -106,12 +105,6 @@ describe('interview store', () => {
     await store().removeSession('s1');
     expect(api.deleteSession).toHaveBeenCalledWith('s1');
     expect(store().current).toBeNull();
-  });
-
-  it('loadAreas stores areas', async () => {
-    api.getAreas.mockResolvedValue({ improvements: [{ title: 'Relevance' }], strengths: [] });
-    await store().loadAreas();
-    expect(store().areas.improvements[0].title).toBe('Relevance');
   });
 
   it('a failing call sets error and clears loading', async () => {

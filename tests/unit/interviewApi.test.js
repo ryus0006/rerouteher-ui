@@ -2,7 +2,6 @@ import { afterEach, expect, test, vi } from 'vitest';
 import {
   createSession,
   deleteSession,
-  getAreas,
   getSession,
   getSetup,
   listSessions,
@@ -106,11 +105,4 @@ test('retryFeedback returns ok:false with the saved attempt on 503', async () =>
   stubFetch(fail(503, { error: 'feedback_service_unavailable', attempt }));
   const result = await retryFeedback(42);
   expect(result).toEqual({ ok: false, attempt });
-});
-
-test('getAreas GETs the areas endpoint', async () => {
-  const fetchMock = stubFetch(ok({ improvements: [], strengths: [] }));
-  const out = await getAreas();
-  expect(fetchMock.mock.calls[0][0]).toContain('/api/interview/areas');
-  expect(out).toEqual({ improvements: [], strengths: [] });
 });
