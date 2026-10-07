@@ -71,6 +71,7 @@
  * @typedef {Object} HeldSkill
  * @property {string} skill_id
  * @property {string} skill
+ * @property {string | null} [definition] ESCO definition of the role requirement, for hover.
  */
 
 /**

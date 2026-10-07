@@ -1,5 +1,5 @@
 import { useId, useState } from 'react';
-import { definitionsByName } from '../../lib/skillDefinition.js';
+import { definitionsByName, getSkillDefinition } from '../../lib/skillDefinition.js';
 import { useIntakeStore } from '../../store/intakeStore.js';
 import SkillDefinitionPopover from '../skills/SkillDefinitionPopover.jsx';
 
@@ -68,7 +68,9 @@ export default function MetRequirements({ skills, total, onPlane = false }) {
       <ul id={panelId} hidden={!open} className="mt-3 space-y-1.5">
         {skills.map((held) => {
           const name = held.skill;
-          const definition = definitions.get(name.toLowerCase());
+          // Prefer the definition the gap result carries; fall back to a name
+          // match against the user's own skills for older plans without it.
+          const definition = getSkillDefinition(held) ?? definitions.get(name.toLowerCase());
           const itemClass = [
             'block w-full rounded-xl border px-3 py-2 text-left text-xs transition-colors',
             onPlane
