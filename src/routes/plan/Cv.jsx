@@ -7,6 +7,7 @@ import { CaretDown } from '@phosphor-icons/react';
 import { generateCv, improveCvText } from '../../api/cv.js';
 import useSmoothNavigate from '../../hooks/useSmoothNavigate.js';
 import {
+  careerBreakSection,
   missingForCv,
   normaliseDraft,
   openCvBook,
@@ -166,6 +167,7 @@ export default function Cv() {
   const snapshot = useIntakeStore((state) => state.snapshot);
   const selectedRole = useIntakeStore((state) => state.selectedRole);
   const gapResult = useIntakeStore((state) => state.gapResult);
+  const careerBreakInput = useIntakeStore((state) => state.break);
   const confirmedSkills = useIntakeStore((state) => state.confirmedSkills);
   const learnedSkills = useIntakeStore((state) => state.learnedSkills);
   const storedBook = useIntakeStore((state) => state.cvDraft);
@@ -257,6 +259,9 @@ export default function Cv() {
   }
 
   const supported = supportedSkills({ snapshot, confirmedSkills });
+  // Derived from the journey (not the draft) so it always reflects the break and
+  // shows for backend-generated drafts, which do not carry a career break.
+  const careerBreak = careerBreakSection(careerBreakInput, snapshot);
   const onCv = (skill) => draft.skills.some((s) => s.toLowerCase() === skill.toLowerCase());
   // Focus areas finished on the learning plan come first.
   const learned = learnedSkills
@@ -362,9 +367,10 @@ export default function Cv() {
 
   function download() {
     try {
-      const blob = buildCvPdf(draft, {
-        title: `${draft.personal.name.trim() || 'CV'} – ${activeRole.role}`,
-      });
+      const blob = buildCvPdf(
+        { ...draft, careerBreak },
+        { title: `${draft.personal.name.trim() || 'CV'} – ${activeRole.role}` }
+      );
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
@@ -428,6 +434,7 @@ export default function Cv() {
             >
               <CvSheet
                 draft={draft}
+                careerBreak={careerBreak}
                 suggestion={
                   suggestion && textFor(suggestion.field) !== undefined ? suggestion : null
                 }

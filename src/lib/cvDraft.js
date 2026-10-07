@@ -62,7 +62,11 @@ export function roleRelevant(skill, gapResult) {
   return (gapResult?.skills_have ?? []).some((have) => sameSkill(have.skill, skill));
 }
 
-function careerBreakSection(careerBreak, snapshot) {
+/**
+ * Career break summary for the CV, derived from the journey (break activities +
+ * reframed strengths). Returns null when no break activity is recorded.
+ */
+export function careerBreakSection(careerBreak, snapshot) {
   const activities = (careerBreak?.activities ?? [])
     .map((id) => ACTIVITY_LABELS[id])
     .filter(Boolean);
@@ -78,8 +82,6 @@ function careerBreakSection(careerBreak, snapshot) {
     .join(' ');
 
   return {
-    // null = not yet decided; the UI prompts the user to choose.
-    include: null,
     duration: years >= 1 ? `About ${years} ${years === 1 ? 'year' : 'years'}` : 'Less than a year',
     description,
   };

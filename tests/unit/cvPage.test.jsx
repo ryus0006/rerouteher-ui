@@ -16,7 +16,7 @@ beforeEach(() => {
   useIntakeStore.setState({
     cv: { fileName: 'cv.pdf', fileSize: 1 },
     cvParsed: true,
-    break: { duration_years: 2, activities: ['caregiving'] },
+    break: { duration_years: 2, activities: ['care_household.cared_for_elderly_sick_family'] },
     confirmedSkills: [],
     snapshot: snapshotFixture,
     selectedRole: snapshotFixture.recommended_roles[0],
@@ -38,13 +38,12 @@ function open() {
 }
 
 describe('CV generation page', () => {
-  it('generates a server draft and does not show a separate career-break section', async () => {
+  it('generates a server draft and shows the career-break section', async () => {
     open();
 
     expect(await screen.findByDisplayValue('Professional prepared for role_ux.')).toBeVisible();
-    expect(screen.getByRole('button', { name: 'Regenerate from saved journey' })).toBeVisible();
     expect(screen.queryByText(/include your career break/i)).toBeNull();
-    expect(screen.queryByRole('heading', { name: 'Career break' })).toBeNull();
+    expect(screen.getByRole('heading', { name: 'Career break' })).toBeVisible();
   });
 
   it('keeps a saved role draft and exposes explicit regeneration', async () => {

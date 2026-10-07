@@ -291,6 +291,14 @@ function layoutCv(draft) {
     });
   }
 
+  if (draft.careerBreak?.description?.trim()) {
+    layout.heading('Career break');
+    if (draft.careerBreak.duration?.trim()) {
+      layout.paragraph(draft.careerBreak.duration, { font: FONTS.bold, size: 10.5 });
+    }
+    layout.paragraph(draft.careerBreak.description);
+  }
+
   return layout;
 }
 

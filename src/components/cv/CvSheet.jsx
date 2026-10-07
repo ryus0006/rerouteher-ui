@@ -34,6 +34,7 @@ function Section({ title, action, children }) {
  */
 export default function CvSheet({
   draft,
+  careerBreak,
   suggestion,
   onPersonal,
   onSummary,
@@ -198,6 +199,15 @@ export default function CvSheet({
           Add a role
         </button>
       </Section>
+
+      {careerBreak && (
+        <Section title="Career break">
+          <div className="cv-role">
+            {careerBreak.duration && <p className="cv-role-dates">{careerBreak.duration}</p>}
+            <p className="cv-prose">{careerBreak.description}</p>
+          </div>
+        </Section>
+      )}
     </article>
   );
 }

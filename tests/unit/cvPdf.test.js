@@ -16,11 +16,10 @@ const draft = {
       description: '- Coordinated delivery across teams.',
     },
   ],
-  // Legacy input must not create a separate section in the current PDF.
   careerBreak: {
-    include: true,
     duration: 'About 2 years',
-    description: 'Caregiving and family responsibilities.',
+    description:
+      'Time focused on caring for family. Strengths built during this time: Coordination and Planning.',
   },
 };
 
@@ -45,13 +44,20 @@ describe('buildCvPdf', () => {
     expect(text).toContain('/V (City, state)');
   });
 
-  it('does not render a separate career-break section', async () => {
+  it('renders the career-break section when present', async () => {
     const bytes = new Uint8Array(await buildCvPdf(draft).arrayBuffer());
     const text = new TextDecoder().decode(bytes);
 
+    expect(text).toContain('Career break');
+    expect(text).toContain('About 2 years');
+  });
+
+  it('omits the career-break section when the draft has none', async () => {
+    const { careerBreak, ...withoutBreak } = draft;
+    const bytes = new Uint8Array(await buildCvPdf(withoutBreak).arrayBuffer());
+    const text = new TextDecoder().decode(bytes);
+
     expect(text).not.toContain('Career break');
-    expect(text).not.toContain('Caregiving');
-    expect(text).not.toContain('family responsibilities');
   });
 });
 
