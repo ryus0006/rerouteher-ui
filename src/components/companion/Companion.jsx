@@ -106,7 +106,7 @@ function SkillChecklist({ choices, onAdd }) {
  * the companion can answer about their results.
  */
 const ASK_OPENERS = [
-  'What does my readiness score actually mean?',
+  'What does my match for this role mean?',
   'Which focus area should I start with?',
   'Does my career break count as experience?',
 ];
