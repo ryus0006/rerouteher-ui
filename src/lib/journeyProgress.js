@@ -35,7 +35,7 @@ export const PLAN_SECTIONS = [
     id: 'learning',
     name: 'Your learning plan',
     to: '/plan/learning',
-    blurb: 'Resources for each focus area, with the time and cost of every one.',
+    blurb: 'Resources for each focus area, with the cost of every one.',
   },
   {
     id: 'employers',

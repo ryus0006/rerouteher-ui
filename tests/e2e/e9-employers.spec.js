@@ -22,10 +22,20 @@ const GUEST_SESSION = {
   version: 2,
 };
 
+// Employer fit requires an account.
+const ACCOUNT_SESSION = {
+  state: { user: { username: 'e2e', displayName: 'E2E' } },
+  version: 2,
+};
+
 test('employer matches show the fixture opening and real report link', async ({ page }) => {
-  await page.addInitScript((session) => {
-    window.sessionStorage.setItem('rerouteher.guestSession', JSON.stringify(session));
-  }, GUEST_SESSION);
+  await page.addInitScript(
+    ({ session, account }) => {
+      window.sessionStorage.setItem('rerouteher.guestSession', JSON.stringify(session));
+      window.sessionStorage.setItem('rerouteher.account', JSON.stringify(account));
+    },
+    { session: GUEST_SESSION, account: ACCOUNT_SESSION }
+  );
 
   await page.goto('/plan/employers/matches');
 

@@ -208,102 +208,118 @@ describe('learning plan', () => {
         .catch(() => screen.findByRole('heading', { name: 'Start here' }))
     ).toBeVisible();
   });
-
 });
 
 describe('employer fit finder', () => {
-  it('lets her pick as many priorities as matter, and will not run on none', async () => {
+  it('asks a guest to create an account before matching employers', async () => {
+    useIntakeStore.setState({ employerPriorities: ['flexible_work'] });
     open(['/plan/employers']);
 
-    expect(
-      await screen.findByRole('heading', { name: 'What matters most for your return?' })
-    ).toBeVisible();
-
-    const find = screen.getByRole('button', { name: /See your matches/ });
-    expect(find).toBeDisabled();
-
-    fireEvent.click(screen.getByLabelText(/Flexible Work/));
-    fireEvent.click(screen.getByLabelText(/Childcare Support/));
-    fireEvent.click(screen.getByLabelText(/Inclusive Workplace/));
-
-    // There is no selection limit: a fourth priority remains selectable.
-    expect(screen.getByLabelText(/Parental Support/)).toBeEnabled();
-    expect(find).toBeEnabled();
-
-    fireEvent.click(find);
+    expect(await screen.findByRole('heading', { name: 'Employer fit' })).toBeVisible();
     expect(router.state.location.pathname).toBe('/plan/employers/matches');
+    expect(screen.queryByRole('heading', { name: 'Your employer matches' })).toBeNull();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Create an account' }));
+    expect(useAccountStore.getState().sheet).toBe('create');
+    expect(useAccountStore.getState().sheetRedirect).toBe('/plan/employers/matches');
   });
 
-  it('ranks by what each company published, and shows what it read', async () => {
-    useIntakeStore.setState({
-      employerPriorities: ['flexible_work', 'childcare_support', 'inclusive_workplace'],
+  describe('signed in', () => {
+    beforeEach(signIn);
+
+    it('lets her pick as many priorities as matter, and will not run on none', async () => {
+      open(['/plan/employers']);
+
+      expect(
+        await screen.findByRole('heading', { name: 'What matters most for your return?' })
+      ).toBeVisible();
+
+      const find = screen.getByRole('button', { name: /See your matches/ });
+      expect(find).toBeDisabled();
+
+      fireEvent.click(screen.getByLabelText(/Flexible Work/));
+      fireEvent.click(screen.getByLabelText(/Childcare Support/));
+      fireEvent.click(screen.getByLabelText(/Inclusive Workplace/));
+
+      // There is no selection limit: a fourth priority remains selectable.
+      expect(screen.getByLabelText(/Parental Support/)).toBeEnabled();
+      expect(find).toBeEnabled();
+
+      fireEvent.click(find);
+      expect(router.state.location.pathname).toBe('/plan/employers/matches');
     });
-    open(['/plan/employers/matches']);
 
-    expect(await screen.findByRole('heading', { name: 'Your employer matches' })).toBeVisible();
+    it('ranks by what each company published, and shows what it read', async () => {
+      useIntakeStore.setState({
+        employerPriorities: ['flexible_work', 'childcare_support', 'inclusive_workplace'],
+      });
+      open(['/plan/employers/matches']);
 
-    const names = (await screen.findAllByRole('heading', { level: 2 })).map((h) => h.textContent);
-    expect(names[0]).toBe('Maybank');
+      expect(await screen.findByRole('heading', { name: 'Your employer matches' })).toBeVisible();
 
-    const maybank = screen.getByRole('heading', { name: 'Maybank' }).closest('article');
-    expect(within(maybank).getByText('Strong match')).toBeVisible();
-    expect(within(maybank).getByText('Hiring for your role.')).toBeVisible();
-    expect(within(maybank).getByText('UX Designer, Digital Banking')).toBeVisible();
-    expect(within(maybank).getByText(/Found 27 Sept? 2026/)).toBeVisible();
-    expect(within(maybank).getByRole('link', { name: /Open job/ })).toHaveAttribute(
-      'href',
-      'https://www.maybank.com/'
-    );
+      const names = (await screen.findAllByRole('heading', { level: 2 })).map((h) => h.textContent);
+      expect(names[0]).toBe('Maybank');
 
-    // The report is linked once per company, not per priority.
-    const sources = within(maybank).getAllByRole('link', { name: /Sustainability Report/ });
-    expect(sources).toHaveLength(1);
-    expect(sources[0]).toHaveAttribute('target', '_blank');
+      const maybank = screen.getByRole('heading', { name: 'Maybank' }).closest('article');
+      expect(within(maybank).getByText('Strong match')).toBeVisible();
+      expect(within(maybank).getByText('Hiring for your role.')).toBeVisible();
+      expect(within(maybank).getByText('UX Designer, Digital Banking')).toBeVisible();
+      expect(within(maybank).getByText(/Found 27 Sept? 2026/)).toBeVisible();
+      expect(within(maybank).getByRole('link', { name: /Open job/ })).toHaveAttribute(
+        'href',
+        'https://www.maybank.com/'
+      );
 
-    // Unmet priorities are listed explicitly.
-    const cimb = screen.getByRole('heading', { name: 'CIMB' }).closest('article');
-    expect(within(cimb).getByText('Not found in report')).toBeVisible();
+      // The report is linked once per company, not per priority.
+      const sources = within(maybank).getAllByRole('link', { name: /Sustainability Report/ });
+      expect(sources).toHaveLength(1);
+      expect(sources[0]).toHaveAttribute('target', '_blank');
 
-    // Company details link to the company's own website.
-    expect(within(cimb).getByRole('link', { name: /View company details/ })).toHaveAttribute(
-      'href',
-      'https://www.cimb.com/'
-    );
-  });
+      // Unmet priorities are listed explicitly.
+      const cimb = screen.getByRole('heading', { name: 'CIMB' }).closest('article');
+      expect(within(cimb).getByText('Not found in report')).toBeVisible();
 
-  it('stores matches and offers an Ask Hera entry on the matches page (US8.3.1)', async () => {
-    useIntakeStore.setState({
-      employerPriorities: ['flexible_work', 'childcare_support', 'inclusive_workplace'],
+      // Company details link to the company's own website.
+      expect(within(cimb).getByRole('link', { name: /View company details/ })).toHaveAttribute(
+        'href',
+        'https://www.cimb.com/'
+      );
     });
-    open(['/plan/employers/matches']);
 
-    await screen.findByRole('heading', { name: 'Your employer matches' });
-    await vi.waitFor(() =>
-      expect(useIntakeStore.getState().employerMatches.length).toBeGreaterThan(0)
-    );
-    fireEvent.click(screen.getByRole('button', { name: 'Ask Hera about your results' }));
-    expect(await screen.findByRole('dialog', { name: 'Ask Hera' })).toBeVisible();
-  });
+    it('stores matches and offers an Ask Hera entry on the matches page (US8.3.1)', async () => {
+      useIntakeStore.setState({
+        employerPriorities: ['flexible_work', 'childcare_support', 'inclusive_workplace'],
+      });
+      open(['/plan/employers/matches']);
 
-  it('sends her back to choose when she has picked nothing', async () => {
-    useIntakeStore.setState({ employerPriorities: [] });
-    open(['/plan/employers/matches']);
-
-    expect(
-      await screen.findByRole('heading', { name: 'What matters most for your return?' })
-    ).toBeVisible();
-    expect(router.state.location.pathname).toBe('/plan/employers');
-  });
-
-  it('distinguishes temporary job-search unavailability from an empty search', async () => {
-    useIntakeStore.setState({
-      employerPriorities: ['flexible_work'],
-      selectedRole: { role: 'Unavailable role', role_id: 'role_unavailable' },
+      await screen.findByRole('heading', { name: 'Your employer matches' });
+      await vi.waitFor(() =>
+        expect(useIntakeStore.getState().employerMatches.length).toBeGreaterThan(0)
+      );
+      fireEvent.click(screen.getByRole('button', { name: 'Ask Hera about your results' }));
+      expect(await screen.findByRole('dialog', { name: 'Ask Hera' })).toBeVisible();
     });
-    open(['/plan/employers/matches']);
 
-    expect(await screen.findByText(/Job openings are temporarily unavailable/i)).toBeVisible();
-    expect(screen.queryByText(/No current openings were found for this target role/i)).toBeNull();
+    it('sends her back to choose when she has picked nothing', async () => {
+      useIntakeStore.setState({ employerPriorities: [] });
+      open(['/plan/employers/matches']);
+
+      expect(
+        await screen.findByRole('heading', { name: 'What matters most for your return?' })
+      ).toBeVisible();
+      expect(router.state.location.pathname).toBe('/plan/employers');
+    });
+
+    it('distinguishes temporary job-search unavailability from an empty search', async () => {
+      useIntakeStore.setState({
+        employerPriorities: ['flexible_work'],
+        selectedRole: { role: 'Unavailable role', role_id: 'role_unavailable' },
+      });
+      open(['/plan/employers/matches']);
+
+      expect(await screen.findByText(/Job openings are temporarily unavailable/i)).toBeVisible();
+      expect(screen.queryByText(/No current openings were found for this target role/i)).toBeNull();
+    });
   });
 });
 

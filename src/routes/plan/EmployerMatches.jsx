@@ -3,8 +3,8 @@ import { Navigate } from 'react-router-dom';
 import { BookmarkSimple } from '@phosphor-icons/react';
 import useSmoothNavigate from '../../hooks/useSmoothNavigate.js';
 import Header from '../../components/layout/Header.jsx';
-import BackLink from '../../components/intake/BackLink.jsx';
 import AskHeraAboutResults from '../../components/companion/AskHeraAboutResults.jsx';
+import GradientButton from '../../components/ui/GradientButton.jsx';
 import TargetRoleSelect from '../../components/plan/TargetRoleSelect.jsx';
 import PriorityIcon from '../../components/employers/PriorityIcon.jsx';
 import { PRIORITY_NAMES } from '../../config/employerPriorities.js';
@@ -450,6 +450,33 @@ function ViewSwitch({ view, onChange, allCount, savedCount }) {
   );
 }
 
+/** Sign-in gate: employer matches and the saved shortlist are kept per account. */
+function SignInRequired() {
+  const openSheet = useAccountStore((state) => state.openSheet);
+  return (
+    <div className="flex min-h-screen flex-col">
+      <Header />
+      <main className="page-shell max-w-[760px] flex-1 py-16 max-md:py-10">
+        <h1 className="font-display text-4xl font-bold tracking-[-0.03em] text-ink max-md:text-3xl">
+          Employer fit
+        </h1>
+        <p className="mt-3 max-w-[54ch] text-base leading-relaxed text-ink-soft">
+          Create a free account to find employers that fit your return. It matches employers on the
+          priorities you choose and saves the ones you shortlist.
+        </p>
+        <p className="mt-2 max-w-[54ch] text-sm leading-relaxed text-ink-soft">
+          Everything you have done so far as a guest comes with you.
+        </p>
+        <div className="mt-7 flex flex-wrap gap-3">
+          <GradientButton size="md" onClick={() => openSheet('create', '/plan/employers/matches')}>
+            Create an account
+          </GradientButton>
+        </div>
+      </main>
+    </div>
+  );
+}
+
 /** Number of employer cards shown before the rest are folded behind "Show all". */
 const PAGE_SIZE = 10;
 
@@ -467,7 +494,6 @@ export default function EmployerMatches() {
   const shortlists = useIntakeStore((state) => state.employerShortlist);
   const toggleShortlist = useIntakeStore((state) => state.toggleShortlist);
   const user = useAccountStore((state) => state.user);
-  const openSheet = useAccountStore((state) => state.openSheet);
 
   const [employers, setEmployers] = useState(null);
   const [jobSearch, setJobSearch] = useState(null);
@@ -479,7 +505,7 @@ export default function EmployerMatches() {
   const key = chosen.join('|');
 
   useEffect(() => {
-    if (!gapResult || key === '') return undefined;
+    if (!user || !gapResult || key === '') return undefined;
 
     let live = true;
 
@@ -498,7 +524,10 @@ export default function EmployerMatches() {
     return () => {
       live = false;
     };
-  }, [key, gapResult, selectedRole?.role_id, setEmployerMatches]);
+  }, [user, key, gapResult, selectedRole?.role_id, setEmployerMatches]);
+
+  // Employer fit keeps a shortlist per account, so it requires sign in.
+  if (!user) return <SignInRequired />;
 
   if (!snapshot || !gapResult) return <Navigate to="/diagnostic/gap" replace />;
   // No priorities selected: redirect to the adjust page.
@@ -515,27 +544,23 @@ export default function EmployerMatches() {
   const anyJob = Boolean(employers?.some((employer) => employer.job));
 
   // Saved employers for this role, shown with their latest match where it is in
-  // the current results. Saving needs an account, as saving resources does.
+  // the current results.
   const roleId = selectedRole?.role_id;
   const saved = (shortlists?.[roleId] ?? []).map(
     (entry) => all.find((employer) => employer.id === entry.id) ?? entry
   );
   const isSaved = (employer) => saved.some((entry) => entry.id === employer.id);
   const cardProps = (employer) => ({
-    saved: Boolean(user) && isSaved(employer),
-    onToggleSave: () =>
-      user ? toggleShortlist(roleId, employer) : openSheet('create', '/plan/employers/matches'),
+    saved: isSaved(employer),
+    onToggleSave: () => toggleShortlist(roleId, employer),
   });
-  const showSaved = view === 'shortlist' && Boolean(user);
+  const showSaved = view === 'shortlist';
 
   return (
     <div className="flex min-h-screen flex-col">
       <Header />
 
       <main className="page-shell max-w-[1200px] flex-1 pt-14 pb-28 max-md:pt-8 max-md:pb-16">
-        {/* Guests have no journey, so they get a way back to the gap screen. */}
-        {!user && <BackLink to="/diagnostic/gap">Back to your readiness</BackLink>}
-
         {/* Page header: title, matching explanation and companion entry point. */}
         <div className="rise-in mt-4">
           <h1 className="font-display text-4xl font-bold leading-[1.1] tracking-[-0.02em] text-ink max-md:text-3xl">
@@ -556,7 +581,7 @@ export default function EmployerMatches() {
           />
         </div>
 
-        {user && employers?.length > 0 && (
+        {employers?.length > 0 && (
           <div className="mt-8">
             <ViewSwitch
               view={view}

@@ -5,7 +5,7 @@ const NEXT_PANELS = [
   {
     id: 'learning',
     title: 'Your learning plan',
-    body: 'Learning for each focus area, with the time and cost of each.',
+    body: 'Learning for each focus area, with the cost of each.',
     to: '/plan/learning',
     action: 'Open your learning plan',
   },
@@ -24,8 +24,8 @@ const NEXT_PANELS = [
  *
  * Each panel describes what the destination is for rather than repeating the
  * focus areas listed above it. Only the button in each panel is a link. Both
- * links are available to guests; for guests a single line below offers to save
- * the journey to an account.
+ * destinations require an account and ask a guest to create one; for guests a
+ * single line below also offers to save the journey to an account.
  */
 export default function ChapterBreak() {
   const user = useAccountStore((state) => state.user);

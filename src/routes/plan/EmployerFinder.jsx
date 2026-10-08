@@ -5,6 +5,7 @@ import Header from '../../components/layout/Header.jsx';
 import GradientButton from '../../components/ui/GradientButton.jsx';
 import HowItWorks from '../../components/employers/HowItWorks.jsx';
 import PriorityPicker from '../../components/employers/PriorityPicker.jsx';
+import { useAccountStore } from '../../store/accountStore.js';
 import { useIntakeStore } from '../../store/intakeStore.js';
 
 /** Summarises how the current selection differs from the baseline search. */
@@ -27,10 +28,13 @@ export default function EmployerFinder() {
   const gapResult = useIntakeStore((state) => state.gapResult);
   const priorities = useIntakeStore((state) => state.employerPriorities);
   const setPriorities = useIntakeStore((state) => state.setEmployerPriorities);
+  const user = useAccountStore((state) => state.user);
 
   // Priorities used for the current results; used to show changes and restored on Cancel.
   const [baseline] = useState(() => priorities ?? []);
 
+  // Guests are sent to the matches page, which asks them to sign in.
+  if (!user) return <Navigate to="/plan/employers/matches" replace />;
   if (!snapshot || !gapResult) return <Navigate to="/diagnostic/gap" replace />;
 
   const chosen = priorities ?? [];
