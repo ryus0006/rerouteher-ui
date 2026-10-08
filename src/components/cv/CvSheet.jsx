@@ -38,6 +38,7 @@ export default function CvSheet({
   suggestion,
   onPersonal,
   onSummary,
+  onCareerBreak,
   onExperience,
   onRemoveExperience,
   onAddExperience,
@@ -201,10 +202,26 @@ export default function CvSheet({
       </Section>
 
       {careerBreak && (
-        <Section title="Career break">
+        <Section
+          title="Career break"
+          action={
+            <ImproveButton
+              busy={Boolean(suggestion?.loading)}
+              label="Improve the wording of your career break"
+              onClick={() => onImprove('careerBreak', careerBreak.description)}
+            />
+          }
+        >
           <div className="cv-role">
             {careerBreak.duration && <p className="cv-role-dates">{careerBreak.duration}</p>}
-            <p className="cv-prose">{careerBreak.description}</p>
+            <textarea
+              aria-label="Career break"
+              value={careerBreak.description}
+              onChange={(event) => onCareerBreak(event.target.value)}
+              placeholder="What you focused on during your career break, one point per line."
+              className="cv-edit cv-prose"
+            />
+            {suggestionFor('careerBreak')}
           </div>
         </Section>
       )}

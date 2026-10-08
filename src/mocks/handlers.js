@@ -72,7 +72,11 @@ const cvDraftForRole = (roleId) => ({
       description: '- Owned the design system and ran usability testing.',
     },
   ],
-  careerBreak: null,
+  careerBreak: {
+    duration: 'About 2 years',
+    description:
+      '- Took a career break to care for children and run the household.\n- Managed the family budget.',
+  },
 });
 
 /** In-memory accounts created during the session, keyed by username. */
@@ -148,16 +152,19 @@ export const handlers = [
 
   http.post('*/api/cv/improve', async ({ request }) => {
     const { section } = await request.json();
+    const suggestion =
+      section === 'summary'
+        ? 'Professional prepared to contribute through user research and design coordination.'
+        : section === 'careerBreak'
+          ? '- Took a career break to care for children and run the household, staying organised and dependable throughout.\n- Managed the family budget with care and discipline.'
+          : 'Owned the design system and ran usability testing across product teams.';
     return HttpResponse.json({
       section,
       experience_index: section === 'experience' ? 0 : null,
-      suggestion:
-        section === 'summary'
-          ? 'Professional prepared to contribute through user research and design coordination.'
-          : 'Owned the design system and ran usability testing across product teams.',
+      suggestion,
       evidence:
-        section === 'summary'
-          ? 'Owned the design system, ran usability testing, and led information architecture for the mobile app.'
+        section === 'careerBreak'
+          ? ''
           : 'Owned the design system, ran usability testing, and led information architecture for the mobile app.',
     });
   }),

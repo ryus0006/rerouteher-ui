@@ -7,7 +7,6 @@ import { CaretDown } from '@phosphor-icons/react';
 import { generateCv, improveCvText } from '../../api/cv.js';
 import useSmoothNavigate from '../../hooks/useSmoothNavigate.js';
 import {
-  careerBreakSection,
   missingForCv,
   normaliseDraft,
   openCvBook,
@@ -167,7 +166,6 @@ export default function Cv() {
   const snapshot = useIntakeStore((state) => state.snapshot);
   const selectedRole = useIntakeStore((state) => state.selectedRole);
   const gapResult = useIntakeStore((state) => state.gapResult);
-  const careerBreakInput = useIntakeStore((state) => state.break);
   const confirmedSkills = useIntakeStore((state) => state.confirmedSkills);
   const learnedSkills = useIntakeStore((state) => state.learnedSkills);
   const storedBook = useIntakeStore((state) => state.cvDraft);
@@ -259,9 +257,8 @@ export default function Cv() {
   }
 
   const supported = supportedSkills({ snapshot, confirmedSkills });
-  // Derived from the journey (not the draft) so it always reflects the break and
-  // shows for backend-generated drafts, which do not carry a career break.
-  const careerBreak = careerBreakSection(careerBreakInput, snapshot);
+  // Backend-generated, editable section like the others.
+  const careerBreak = draft.careerBreak;
   const onCv = (skill) => draft.skills.some((s) => s.toLowerCase() === skill.toLowerCase());
   // Focus areas finished on the learning plan come first.
   const learned = learnedSkills
@@ -290,6 +287,12 @@ export default function Cv() {
       ),
     }));
 
+  const setCareerBreak = (description) =>
+    update((current) => ({
+      ...current,
+      careerBreak: { ...(current.careerBreak ?? {}), description },
+    }));
+
   /**
    * Switches to another role's CV. The target role and previously opened roles
    * load immediately; other roles first fetch their gap result so the draft can
@@ -309,7 +312,9 @@ export default function Cv() {
   const textFor = (field) =>
     field === 'summary'
       ? draft.summary
-      : draft.experiences[Number(field.replace('experience-', ''))]?.description;
+      : field === 'careerBreak'
+        ? draft.careerBreak?.description
+        : draft.experiences[Number(field.replace('experience-', ''))]?.description;
 
   async function improve(field, source, another = false) {
     if (!source?.trim()) {
@@ -333,11 +338,13 @@ export default function Cv() {
       loading: true,
     });
     try {
+      const section =
+        field === 'summary' ? 'summary' : field === 'careerBreak' ? 'careerBreak' : 'experience';
       const { suggestion: text } = await improveCvText({
-        section: field === 'summary' ? 'summary' : 'experience',
+        section,
         text: source,
         roleId,
-        experienceIndex: field === 'summary' ? undefined : Number(field.replace('experience-', '')),
+        experienceIndex: section === 'experience' ? Number(field.replace('experience-', '')) : undefined,
         previous,
       });
       setSuggestion({ field, source, previous, text, loading: false });
@@ -358,6 +365,7 @@ export default function Cv() {
     if (!suggestion?.text) return;
     if (suggestion.field === 'summary')
       update((current) => ({ ...current, summary: suggestion.text }));
+    else if (suggestion.field === 'careerBreak') setCareerBreak(suggestion.text);
     else
       setExperience(Number(suggestion.field.replace('experience-', '')), {
         description: suggestion.text,
@@ -367,10 +375,9 @@ export default function Cv() {
 
   function download() {
     try {
-      const blob = buildCvPdf(
-        { ...draft, careerBreak },
-        { title: `${draft.personal.name.trim() || 'CV'} - ${activeRole.role}` }
-      );
+      const blob = buildCvPdf(draft, {
+        title: `${draft.personal.name.trim() || 'CV'} - ${activeRole.role}`,
+      });
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
@@ -452,6 +459,7 @@ export default function Cv() {
                   }))
                 }
                 onSummary={(summary) => update((current) => ({ ...current, summary }))}
+                onCareerBreak={setCareerBreak}
                 onExperience={setExperience}
                 onRemoveExperience={(at) => {
                   setSuggestion(null);
