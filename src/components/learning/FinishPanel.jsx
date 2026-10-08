@@ -2,7 +2,6 @@ import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { AnimatePresence, motion } from 'motion/react';
 import { ArrowUpRight, Check, Plus, ReadCvLogo, X } from '@phosphor-icons/react';
-import { duration } from '../../lib/learningProgress.js';
 
 const EASE = [0.32, 0.72, 0, 1];
 
@@ -89,7 +88,6 @@ function CvTile({ skill, added, onAdd, onRemove }) {
 }
 
 function CheckIn({ resource, onYes, onNotYet }) {
-  const time = duration(resource.minutes);
   return (
     <>
       <p className="lp-eyebrow">Welcome back</p>
@@ -98,7 +96,6 @@ function CheckIn({ resource, onYes, onNotYet }) {
       </h2>
       <p className="mt-1 text-sm text-ink-soft">
         {resource.provider}
-        {time && ` · ${time}`}
       </p>
       <div className="mt-5 flex flex-wrap items-center gap-2">
         <button type="button" onClick={onYes} className="lp-primary group">

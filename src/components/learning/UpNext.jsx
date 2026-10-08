@@ -1,7 +1,7 @@
 import { AnimatePresence, motion } from 'motion/react';
 import { ArrowUpRight, BookmarkSimple, Check } from '@phosphor-icons/react';
 import ProviderMark from './ProviderMark.jsx';
-import { duration, statusOf, totalTime } from '../../lib/learningProgress.js';
+import { statusOf } from '../../lib/learningProgress.js';
 
 const EASE = [0.32, 0.72, 0, 1];
 
@@ -10,8 +10,6 @@ const EASE = [0.32, 0.72, 0, 1];
  * the top of the page. New saves join the end.
  */
 export default function UpNext({ items, progress, areaName, toneOf, onOpen, onFinish, onRemove }) {
-  const time = totalTime(items);
-
   return (
     <section aria-labelledby="up-next-title" className="mt-12">
       <div>
@@ -24,7 +22,6 @@ export default function UpNext({ items, progress, areaName, toneOf, onOpen, onFi
           </h2>
           <p className="text-sm text-ink-soft tabular">
             {items.length} {items.length === 1 ? 'resource' : 'resources'}
-            {time && ` · about ${time}`}
           </p>
         </div>
 
@@ -32,7 +29,6 @@ export default function UpNext({ items, progress, areaName, toneOf, onOpen, onFi
           <AnimatePresence initial={false}>
             {items.map((item) => {
               const status = statusOf(progress, item.id);
-              const time = duration(item.minutes);
               return (
                 <motion.li
                   key={item.id}
@@ -67,7 +63,6 @@ export default function UpNext({ items, progress, areaName, toneOf, onOpen, onFi
                       {status === 'started' ? 'In progress' : 'Saved'}
                     </span>
                     {item.format}
-                    {time && ` · ${time}`}
                   </p>
 
                   <div className="mt-auto flex items-center gap-2 pt-4">

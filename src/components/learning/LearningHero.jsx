@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { ArrowUpRight, BookmarkSimple, Check, Plus } from '@phosphor-icons/react';
 import ProviderMark from './ProviderMark.jsx';
-import { duration, statusOf } from '../../lib/learningProgress.js';
+import { statusOf } from '../../lib/learningProgress.js';
 
 /* Label for the featured resource, by its status. */
 const LEAD = {
@@ -25,18 +25,15 @@ function Meter({ done, total, tone }) {
 /**
  * Top of the learning plan: progress across every focus area, and the one
  * resource to do next. Gap resources and refreshers are counted in separate
- * columns, each with its own bar and time left, so neither figure mixes the
- * two. Once everything is finished, the next gap not yet in the plan takes the
+ * columns, each with its own bar, so neither figure mixes the two. Once everything is finished, the next gap not yet in the plan takes the
  * resource's place.
  */
 export default function LearningHero({
   progress,
   done,
   total,
-  timeLeft,
   refreshDone = 0,
   refreshTotal = 0,
-  refreshTimeLeft,
   role,
   featured,
   queueSize,
@@ -48,7 +45,6 @@ export default function LearningHero({
   onSave,
 }) {
   const status = featured ? (statusOf(progress, featured.id) ?? 'none') : null;
-  const time = featured && duration(featured.minutes);
 
   return (
     <section aria-label="Your progress" className="lp-hero mt-8 grid gap-6 p-3 lg:grid-cols-12">
@@ -80,15 +76,6 @@ export default function LearningHero({
 
           <Meter done={done} total={total} />
           {refreshTotal > 0 && <Meter done={refreshDone} total={refreshTotal} tone="refresh" />}
-
-          <p className="mt-2 text-xs font-medium text-ink-faint tabular">
-            {timeLeft ? `${timeLeft} left` : 'All done'}
-          </p>
-          {refreshTotal > 0 && (
-            <p className="mt-2 text-xs font-medium text-ink-faint tabular">
-              {refreshTimeLeft ? `${refreshTimeLeft} left` : 'All done'}
-            </p>
-          )}
         </div>
       </div>
 
@@ -116,7 +103,6 @@ export default function LearningHero({
                 </p>
                 <p className="mt-1 text-xs text-ink-faint">
                   {featured.provider} · {featured.format}
-                  {time && ` · ${time}`}
                 </p>
               </div>
             </div>

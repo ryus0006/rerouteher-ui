@@ -18,9 +18,7 @@ import ChapterLabel from '../../components/learning/ChapterLabel.jsx';
 import { MAX_FOCUS_AREAS } from '../../components/gap/FocusAreaList.jsx';
 import { pickFocusAreas } from '../../lib/focusAreas.js';
 import {
-  duration,
   learnedSkillsFor,
-  totalTime,
   sameLearned,
   statusOf,
   upNext,
@@ -75,7 +73,7 @@ function StatusRing({ status, title, onClick }) {
 
 /**
  * Learning resource row: title, `why` (how it addresses the gap), provider,
- * format, duration and cost, with its status and a bookmark for later.
+ * format and cost, with its status and a bookmark for later.
  */
 function Resource({ resource, status, onFinish, onUnfinish, onSave, onOpen }) {
   const saved = status === 'saved' || status === 'started';
@@ -105,7 +103,6 @@ function Resource({ resource, status, onFinish, onUnfinish, onSave, onOpen }) {
         <p className="mt-1.5 max-w-[62ch] text-sm leading-relaxed text-ink-soft">{resource.why}</p>
         <div className="mt-3 flex flex-wrap items-center gap-1.5">
           <Chip tone="format">{resource.format}</Chip>
-          {duration(resource.minutes) && <Chip>{duration(resource.minutes)}</Chip>}
           <Chip tone={resource.free ? 'free' : 'neutral'}>{resource.cost}</Chip>
         </div>
       </div>
@@ -392,11 +389,10 @@ export default function Learning() {
   const finishedCount = gapResources.filter(
     (resource) => statusOf(progress, resource.id) === 'done'
   ).length;
-  // Refreshers are counted on their own, and time left is split the same way.
+  // Refreshers are counted on their own.
   const refreshResources = resources.filter((resource) => areaOf(resource.skill_id)?.refresher);
   const unfinished = (list) =>
     list.filter((resource) => statusOf(progress, resource.id) !== 'done');
-  const timeLeft = totalTime(unfinished(gapResources));
 
   // Shows a focus area in place of the current one, bringing the top of the
   // list back into view when it has scrolled past.
@@ -492,10 +488,8 @@ export default function Learning() {
             progress={progress}
             done={finishedCount}
             total={gapResources.length}
-            timeLeft={timeLeft}
             refreshDone={refreshResources.length - unfinished(refreshResources).length}
             refreshTotal={refreshResources.length}
-            refreshTimeLeft={totalTime(unfinished(refreshResources))}
             role={selectedRole?.role}
             featured={featured}
             queueSize={queue.length}
