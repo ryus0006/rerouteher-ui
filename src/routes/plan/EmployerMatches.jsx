@@ -450,7 +450,7 @@ function ViewSwitch({ view, onChange, allCount, savedCount }) {
   );
 }
 
-/** Number of employer cards shown at first, and added by each "Show more". */
+/** Number of employer cards shown before the rest are folded behind "Show all". */
 const PAGE_SIZE = 10;
 
 /**
@@ -638,13 +638,10 @@ export default function EmployerMatches() {
               <div className="mt-10 flex justify-center">
                 <button
                   type="button"
-                  onClick={() => setLimit((current) => current + PAGE_SIZE)}
+                  onClick={() => setLimit(Infinity)}
                   className="rounded-full bg-surface px-6 py-3 text-sm font-semibold text-ink shadow-card transition duration-300 ease-spring hover:shadow-card-hover active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
                 >
-                  Show {Math.min(PAGE_SIZE, all.length - shown.length)} more
-                  <span className="ml-1.5 font-normal text-ink-faint">
-                    · {all.length - shown.length} left
-                  </span>
+                  Show all
                 </button>
               </div>
             )}
