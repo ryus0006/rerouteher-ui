@@ -31,7 +31,8 @@ function Row({ label, hint, filled, children }) {
  * user ticked in Hera's checklist.
  */
 export default function ProfileDraft({ draft, confirmedSkills, onConfirm, onChange }) {
-  const job = draft.cv?.experiences?.[0];
+  const experiences = draft.cv?.experiences ?? [];
+  const job = experiences[0];
   const careerBreak = draft.break;
   const priorities = draft.employerPriorities ?? [];
 
@@ -53,7 +54,10 @@ export default function ProfileDraft({ draft, confirmedSkills, onConfirm, onChan
         .join(' · ')
     : '';
 
-  const complete = Boolean(job?.title && breakText && skills.length && priorities.length);
+  const year = (value) => (String(value ?? '').match(/\d{4}/) || [value ?? ''])[0];
+  const jobDates = job?.start && job?.end ? `${year(job.start)} - ${year(job.end)}` : '';
+  const experienceReady = Boolean(job?.title && job?.organisation && job?.start && job?.end);
+  const complete = Boolean(experienceReady && breakText && skills.length && priorities.length);
 
   return (
     <section
@@ -80,7 +84,16 @@ export default function ProfileDraft({ draft, confirmedSkills, onConfirm, onChan
           <Row label="Experience" hint="Tell Hera about your last job" filled={Boolean(job?.title)}>
             <div key={`${job?.title}-${job?.organisation}`} className="hera-rise">
               <p className="text-sm font-semibold text-ink">{job?.title}</p>
-              {job?.organisation && <p className="text-xs text-ink-soft">{job.organisation}</p>}
+              {(job?.organisation || jobDates) && (
+                <p className="text-xs text-ink-soft">
+                  {[job?.organisation, jobDates].filter(Boolean).join(' · ')}
+                </p>
+              )}
+              {experiences.length > 1 && (
+                <p className="mt-1 text-xs text-ink-faint">
+                  +{experiences.length - 1} earlier {experiences.length - 1 === 1 ? 'role' : 'roles'}
+                </p>
+              )}
             </div>
           </Row>
 

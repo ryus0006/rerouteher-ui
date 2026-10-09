@@ -236,7 +236,15 @@ export const handlers = [
         journey_update: {
           cv: {
             raw_text: question,
-            experiences: [],
+            experiences: [
+              {
+                title: 'Marketing Coordinator',
+                organisation: 'Wira Digital',
+                start: '2015-03',
+                end: '2019-11',
+                description: 'Coordinated campaigns and managed schedules across teams.',
+              },
+            ],
             skill_mentions: ['coordination', 'scheduling'],
           },
           break: { duration_years: 2, activities: ['caregiving'] },
