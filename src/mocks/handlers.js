@@ -73,7 +73,7 @@ const cvDraftForRole = (roleId) => ({
     },
   ],
   careerBreak: {
-    duration: 'About 2 years',
+    duration: '2019 - Present',
     description:
       '- Took a career break to care for children and run the household.\n- Managed the family budget.',
   },
