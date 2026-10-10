@@ -811,6 +811,17 @@
   font-size: 0.8125rem;
 }
 
+/* The career break title and dates are plain text; padding matches the inputs
+   on role titles and dates so the lines sit level. */
+.cv-break-text {
+  padding-block: calc(0.15rem + 1px);
+}
+
+/* Ends where the role date inputs' text ends. */
+.cv-role-dates.cv-break-text {
+  padding-right: calc(0.35rem + 1px);
+}
+
 .cv-role-dates .cv-edit {
   width: auto;
   min-width: 2.5rem;
@@ -844,22 +855,49 @@
   opacity: 1;
 }
 
+/* A description with its wording help beside it, on the first line. */
+.cv-text-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+
+.cv-text-row > .cv-edit {
+  flex: 1;
+  min-width: 0;
+}
+
+@media (max-width: 39.99rem) {
+  .cv-text-row {
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+}
+
+/* Wording help beside each block: a quiet text action, the same everywhere. */
 .cv-improve {
   display: inline-flex;
+  flex-shrink: 0;
   align-items: center;
   gap: 0.35rem;
   border-radius: 999px;
-  padding: 0.3rem 0.65rem;
-  background: var(--color-pink-100);
-  color: var(--color-pink-600);
+  padding: 0.25rem 0.55rem;
+  color: rgb(102 94 120);
   font-family: var(--font-sans);
   font-size: 0.75rem;
   font-weight: 600;
-  transition: background-color 140ms var(--ease-smooth);
+  transition:
+    background-color 140ms var(--ease-smooth),
+    color 140ms var(--ease-smooth);
+}
+
+.cv-improve svg {
+  color: var(--color-pink-600);
 }
 
 .cv-improve:hover {
-  background: #f7dfe8;
+  background: var(--color-pink-100);
+  color: var(--color-pink-600);
 }
 
 .cv-improve:disabled {
