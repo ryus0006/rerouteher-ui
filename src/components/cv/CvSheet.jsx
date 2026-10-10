@@ -141,15 +141,21 @@ export default function CvSheet({
           <div className="cv-role">
             <div className="cv-role-head items-center">
               <h3 className="cv-role-title cv-break-text min-w-0 flex-1">Career break</h3>
-              {careerBreak.duration && (
-                <p className="cv-role-dates cv-break-text">{careerBreak.duration}</p>
-              )}
+              <div className="cv-role-dates">
+                <input
+                  aria-label="Career break dates"
+                  placeholder="Dates"
+                  value={careerBreak.duration ?? ''}
+                  onChange={(event) => onCareerBreak({ duration: event.target.value })}
+                  className="cv-edit"
+                />
+              </div>
             </div>
             <div className="cv-text-row">
               <textarea
                 aria-label="Career break"
                 value={careerBreak.description}
-                onChange={(event) => onCareerBreak(event.target.value)}
+                onChange={(event) => onCareerBreak({ description: event.target.value })}
                 placeholder="What you focused on during your career break, one point per line."
                 className="cv-edit cv-prose"
               />

@@ -811,15 +811,10 @@
   font-size: 0.8125rem;
 }
 
-/* The career break title and dates are plain text; padding matches the inputs
-   on role titles and dates so the lines sit level. */
+/* The career break title is plain text; padding matches the role title inputs
+   so the line sits level with the dates. */
 .cv-break-text {
   padding-block: calc(0.15rem + 1px);
-}
-
-/* Ends where the role date inputs' text ends. */
-.cv-role-dates.cv-break-text {
-  padding-right: calc(0.35rem + 1px);
 }
 
 .cv-role-dates .cv-edit {

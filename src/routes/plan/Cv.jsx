@@ -287,10 +287,10 @@ export default function Cv() {
       ),
     }));
 
-  const setCareerBreak = (description) =>
+  const setCareerBreak = (change) =>
     update((current) => ({
       ...current,
-      careerBreak: { ...(current.careerBreak ?? {}), description },
+      careerBreak: { ...(current.careerBreak ?? {}), ...change },
     }));
 
   /**
@@ -365,7 +365,7 @@ export default function Cv() {
     if (!suggestion?.text) return;
     if (suggestion.field === 'summary')
       update((current) => ({ ...current, summary: suggestion.text }));
-    else if (suggestion.field === 'careerBreak') setCareerBreak(suggestion.text);
+    else if (suggestion.field === 'careerBreak') setCareerBreak({ description: suggestion.text });
     else
       setExperience(Number(suggestion.field.replace('experience-', '')), {
         description: suggestion.text,
