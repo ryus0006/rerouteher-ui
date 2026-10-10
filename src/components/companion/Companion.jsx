@@ -268,6 +268,9 @@ export default function Companion({ defaultMode = 'ask' }) {
           learningProgress,
           learnedSkills,
         },
+        // The in-progress draft, so the backend can show Hera the true form state
+        // (what she has actually saved) and have her fill what is still missing.
+        draft: proposed,
         currentPage: location.pathname,
         interview:
           location.pathname === '/interview-practice'
@@ -522,17 +525,6 @@ export default function Companion({ defaultMode = 'ask' }) {
                   </div>
                 )}
 
-                {/* Drafted profile for review; applied to the journey only on confirm.
-                    "Change something" keeps the draft and returns to the message box. */}
-                {proposed && (
-                  <ProfileDraft
-                    draft={proposed}
-                    confirmedSkills={confirmedSkills}
-                    onConfirm={confirmProfile}
-                    onChange={() => inputRef.current?.focus()}
-                  />
-                )}
-
                 <div ref={endRef} />
               </div>
 
@@ -579,6 +571,31 @@ export default function Companion({ defaultMode = 'ask' }) {
                 </div>
               </form>
             </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Drafted profile for review, shown beside the chat so it never hides the
+          conversation: a panel to the left of Hera on desktop, a sheet above on
+          phones. Appears only while a draft exists and animates away on confirm. */}
+      <AnimatePresence>
+        {open && proposed && (
+          <motion.div
+            key="draft"
+            role="region"
+            aria-label="Your profile so far"
+            initial={{ opacity: 0, y: 12, scale: 0.97, filter: 'blur(6px)' }}
+            animate={{ opacity: 1, y: 0, scale: 1, filter: 'blur(0px)' }}
+            exit={{ opacity: 0, y: 12, scale: 0.97, filter: 'blur(6px)' }}
+            transition={{ duration: 0.4, ease: EASE }}
+            className="fixed inset-x-3 top-3 z-40 max-h-[42vh] overflow-y-auto md:inset-x-auto md:top-auto md:right-[27.5rem] md:bottom-[6.5rem] md:max-h-[min(37rem,74vh)] md:w-[19.5rem]"
+          >
+            <ProfileDraft
+              draft={proposed}
+              confirmedSkills={confirmedSkills}
+              onConfirm={confirmProfile}
+              onChange={() => inputRef.current?.focus()}
+            />
           </motion.div>
         )}
       </AnimatePresence>

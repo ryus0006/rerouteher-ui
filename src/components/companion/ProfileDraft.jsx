@@ -98,16 +98,6 @@ export default function ProfileDraft({ draft, confirmedSkills, onConfirm, onChan
           </Row>
 
           <Row
-            label="Career break"
-            hint="Tell Hera what filled your time away"
-            filled={Boolean(breakText)}
-          >
-            <p key={breakText} className="hera-rise text-sm text-ink">
-              {breakText}
-            </p>
-          </Row>
-
-          <Row
             label="Skills"
             hint="Mention skills you used, or tick the ones Hera suggests"
             filled={skills.length > 0}
@@ -122,6 +112,16 @@ export default function ProfileDraft({ draft, confirmedSkills, onConfirm, onChan
                 </li>
               ))}
             </ul>
+          </Row>
+
+          <Row
+            label="Career break"
+            hint="Tell Hera what filled your time away"
+            filled={Boolean(breakText)}
+          >
+            <p key={breakText} className="hera-rise text-sm text-ink">
+              {breakText}
+            </p>
           </Row>
 
           <Row
