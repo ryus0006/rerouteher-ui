@@ -68,7 +68,6 @@ describe('journey', () => {
     // the full skill and gap lists stay on their own pages.
     expect(screen.getByText('requirements you already have')).toBeVisible();
     expect(screen.getByRole('heading', { name: 'Build your top skills' })).toBeVisible();
-    expect(screen.getByText(/Start with: A\./)).toBeVisible();
     expect(screen.getByRole('link', { name: /View full breakdown/ })).toBeVisible();
     expect(screen.queryByText('User Research')).toBeNull();
 

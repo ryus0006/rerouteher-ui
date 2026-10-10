@@ -811,6 +811,17 @@
   font-size: 0.8125rem;
 }
 
+/* The career break title and dates are plain text; padding matches the inputs
+   on role titles and dates so the lines sit level. */
+.cv-break-text {
+  padding-block: calc(0.15rem + 1px);
+}
+
+/* Ends where the role date inputs' text ends. */
+.cv-role-dates.cv-break-text {
+  padding-right: calc(0.35rem + 1px);
+}
+
 .cv-role-dates .cv-edit {
   width: auto;
   min-width: 2.5rem;
@@ -844,22 +855,49 @@
   opacity: 1;
 }
 
+/* A description with its wording help beside it, on the first line. */
+.cv-text-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+
+.cv-text-row > .cv-edit {
+  flex: 1;
+  min-width: 0;
+}
+
+@media (max-width: 39.99rem) {
+  .cv-text-row {
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+}
+
+/* Wording help beside each block: a quiet text action, the same everywhere. */
 .cv-improve {
   display: inline-flex;
+  flex-shrink: 0;
   align-items: center;
   gap: 0.35rem;
   border-radius: 999px;
-  padding: 0.3rem 0.65rem;
-  background: var(--color-pink-100);
-  color: var(--color-pink-600);
+  padding: 0.25rem 0.55rem;
+  color: rgb(102 94 120);
   font-family: var(--font-sans);
   font-size: 0.75rem;
   font-weight: 600;
-  transition: background-color 140ms var(--ease-smooth);
+  transition:
+    background-color 140ms var(--ease-smooth),
+    color 140ms var(--ease-smooth);
+}
+
+.cv-improve svg {
+  color: var(--color-pink-600);
 }
 
 .cv-improve:hover {
-  background: #f7dfe8;
+  background: var(--color-pink-100);
+  color: var(--color-pink-600);
 }
 
 .cv-improve:disabled {
@@ -2732,6 +2770,12 @@ main h1[tabindex='-1']:focus,
   --tone-ink: var(--color-verify);
 }
 
+.lp-tone[data-tone='slate'] {
+  --tone: #8d86a6;
+  --tone-soft: #f1eff6;
+  --tone-ink: #5e5679;
+}
+
 .lp-tone[data-tone='violet'] {
   --tone: #9d8fcf;
   --tone-soft: #f2eefb;
@@ -3552,7 +3596,127 @@ main h1[tabindex='-1']:focus,
   color: var(--color-pink-600);
 }
 
+/* ---------------------------------------------------------------------------
+   Journey dashboard: the step tracker and the tool tiles.
+   ------------------------------------------------------------------------ */
+
+/* Rail behind the step marks, filled up to the last finished step. */
+.journey-track {
+  position: relative;
+}
+
+.journey-track::before,
+.journey-track::after {
+  content: '';
+  position: absolute;
+  top: 1.75rem;
+  left: 12.5%;
+  right: 12.5%;
+  height: 3px;
+  border-radius: 999px;
+  background: rgb(44 33 66 / 0.08);
+}
+
+.journey-track::after {
+  background: var(--color-verify);
+  transform-origin: left center;
+  transform: scaleX(min(var(--journey-fill, 0), 1));
+  transition: transform 900ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.journey-stop {
+  position: relative;
+  display: flex;
+  height: 100%;
+  flex-direction: column;
+  align-items: center;
+  border-radius: 1.25rem;
+  padding: 0 0.5rem 0.75rem;
+  text-align: center;
+  transition: transform 500ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.journey-stop-mark {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  width: 3.5rem;
+  height: 3.5rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 1.125rem;
+  background: white;
+  color: color-mix(in srgb, var(--color-ink-faint) 80%, white);
+  box-shadow: 0 10px 24px -16px rgb(44 33 66 / 0.4);
+  transition: transform 500ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.journey-stop[data-state='done'] .journey-stop-mark {
+  background: var(--color-verify);
+  color: white;
+  box-shadow: 0 10px 22px -12px rgb(29 106 76 / 0.6);
+}
+
+.journey-stop[data-state='current'] .journey-stop-mark {
+  background: var(--tone-soft);
+  color: var(--tone-ink);
+}
+
+/* Interview tile: the next question and her turn to answer, as a short exchange. */
+.journey-bubble {
+  max-width: 88%;
+  border-radius: 1.125rem;
+  padding: 0.75rem 1rem;
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+.journey-bubble-them {
+  border-top-left-radius: 0.375rem;
+  background: var(--color-canvas-sunk);
+  color: var(--color-ink);
+}
+
+.journey-bubble-me {
+  display: flex;
+  width: max-content;
+  align-items: center;
+  gap: 0.5rem;
+  margin-left: auto;
+  border-top-right-radius: 0.375rem;
+  background: var(--tone-soft);
+  font-weight: 600;
+  color: var(--tone-ink);
+}
+
+/* Tool tile on the dashboard; the current step's tile picks up its tone. */
+.journey-widget {
+  border-radius: 1.75rem;
+  background: var(--color-surface);
+  box-shadow: var(--shadow-card);
+}
+
+.journey-widget[data-state='current'] {
+  background: linear-gradient(160deg, var(--tone-soft) 0%, white 55%);
+  box-shadow:
+    0 1px 2px rgb(44 33 66 / 0.04),
+    0 24px 50px -30px rgb(44 33 66 / 0.35);
+}
+
+@media (max-width: 47.99rem) {
+  .journey-track::before,
+  .journey-track::after {
+    display: none;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
+  .journey-stop,
+  .journey-stop-mark,
+  .journey-track::after {
+    transition: none;
+  }
+
   .lp-ring-fill,
   .lp-ring-tick,
   .lp-meter-fill,

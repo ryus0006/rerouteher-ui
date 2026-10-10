@@ -244,7 +244,7 @@ function header(layout, personal) {
 
 function experience(layout, item) {
   const title = item.title || item.organisation || 'Role';
-  const dates = formatRange(item.start, item.end);
+  const dates = item.dates ?? formatRange(item.start, item.end);
   layout.ensure(48);
   layout.y -= 16;
   if (dates) {
@@ -283,20 +283,21 @@ function layoutCv(draft) {
     layout.columns(draft.skills);
   }
 
-  if (draft.experiences.length > 0) {
+  // The career break is the most recent entry, so it leads work experience.
+  const careerBreak = draft.careerBreak?.description?.trim() ? draft.careerBreak : null;
+  if (careerBreak || draft.experiences.length > 0) {
     layout.heading('Work experience');
+    if (careerBreak) {
+      experience(layout, {
+        title: 'Career break',
+        dates: careerBreak.duration?.trim(),
+        description: careerBreak.description,
+      });
+    }
     draft.experiences.forEach((item, at) => {
-      if (at > 0) layout.y -= 6;
+      if (at > 0 || careerBreak) layout.y -= 6;
       experience(layout, item);
     });
-  }
-
-  if (draft.careerBreak?.description?.trim()) {
-    layout.heading('Career break');
-    if (draft.careerBreak.duration?.trim()) {
-      layout.paragraph(draft.careerBreak.duration, { font: FONTS.bold, size: 10.5 });
-    }
-    layout.paragraph(draft.careerBreak.description);
   }
 
   return layout;

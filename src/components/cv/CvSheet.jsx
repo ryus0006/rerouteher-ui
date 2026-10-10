@@ -2,13 +2,15 @@ import { Plus, Sparkle, X } from '@phosphor-icons/react';
 import { PERSONAL_FIELDS, formatMonth } from '../../lib/cvDraft.js';
 import AiSuggestion from './AiSuggestion.jsx';
 
-function ImproveButton({ busy, onClick, label }) {
+function ImproveButton({ busy, hidden = false, onClick, label }) {
   return (
     <button
       type="button"
       disabled={busy}
       onClick={onClick}
-      className="cv-improve"
+      aria-hidden={hidden || undefined}
+      tabIndex={hidden ? -1 : undefined}
+      className={`cv-improve ${hidden ? 'invisible' : ''}`}
       aria-label={label}
     >
       <Sparkle weight="light" className="size-3.5" aria-hidden="true" />
@@ -48,6 +50,16 @@ export default function CvSheet({
   onDismiss,
 }) {
   const [nameField, ...contactFields] = PERSONAL_FIELDS;
+  // The wording action sits beside the text it rewrites, the same for every block,
+  // and is hidden (keeping its space) while that block's suggestion is open.
+  const improve = (field, source, label) => (
+    <ImproveButton
+      busy={Boolean(suggestion?.loading)}
+      hidden={suggestion?.field === field}
+      label={label}
+      onClick={() => onImprove(field, source)}
+    />
+  );
   const suggestionFor = (field) =>
     suggestion?.field === field && (
       <AiSuggestion
@@ -87,23 +99,17 @@ export default function CvSheet({
         </div>
       </header>
 
-      <Section
-        title="Professional summary"
-        action={
-          <ImproveButton
-            busy={Boolean(suggestion?.loading)}
-            label="Improve the wording of your professional summary"
-            onClick={() => onImprove('summary', draft.summary)}
+      <Section title="Professional summary">
+        <div className="cv-text-row">
+          <textarea
+            aria-label="Professional summary"
+            value={draft.summary}
+            onChange={(event) => onSummary(event.target.value)}
+            placeholder="A few lines on who you are and the role you are aiming for."
+            className="cv-edit cv-prose"
           />
-        }
-      >
-        <textarea
-          aria-label="Professional summary"
-          value={draft.summary}
-          onChange={(event) => onSummary(event.target.value)}
-          placeholder="A few lines on who you are and the role you are aiming for."
-          className="cv-edit cv-prose"
-        />
+          {improve('summary', draft.summary, 'Improve the wording of your professional summary')}
+        </div>
         {suggestionFor('summary')}
       </Section>
 
@@ -130,6 +136,32 @@ export default function CvSheet({
       </Section>
 
       <Section title="Work experience">
+        {/* The career break is the most recent entry, so it leads the list. */}
+        {careerBreak && (
+          <div className="cv-role">
+            <div className="cv-role-head items-center">
+              <h3 className="cv-role-title cv-break-text min-w-0 flex-1">Career break</h3>
+              {careerBreak.duration && (
+                <p className="cv-role-dates cv-break-text">{careerBreak.duration}</p>
+              )}
+            </div>
+            <div className="cv-text-row">
+              <textarea
+                aria-label="Career break"
+                value={careerBreak.description}
+                onChange={(event) => onCareerBreak(event.target.value)}
+                placeholder="What you focused on during your career break, one point per line."
+                className="cv-edit cv-prose"
+              />
+              {improve(
+                'careerBreak',
+                careerBreak.description,
+                'Improve the wording of your career break'
+              )}
+            </div>
+            {suggestionFor('careerBreak')}
+          </div>
+        )}
         {draft.experiences.length === 0 && (
           <p className="cv-empty">
             Your journey has no past roles on record, so none were added. Add one below if you would
@@ -177,21 +209,23 @@ export default function CvSheet({
                   <button type="button" onClick={() => onRemoveExperience(at)} className="cv-quiet">
                     Remove role
                   </button>
-                  <ImproveButton
-                    busy={Boolean(suggestion?.loading)}
-                    label={`Improve the wording for ${item.title || `role ${at + 1}`}`}
-                    onClick={() => onImprove(`experience-${at}`, item.description)}
-                  />
                 </div>
               </div>
             </div>
-            <textarea
-              aria-label={`What you did, role ${at + 1}`}
-              value={item.description}
-              onChange={(event) => onExperience(at, { description: event.target.value })}
-              placeholder="What you were responsible for and what you achieved."
-              className="cv-edit cv-prose"
-            />
+            <div className="cv-text-row">
+              <textarea
+                aria-label={`What you did, role ${at + 1}`}
+                value={item.description}
+                onChange={(event) => onExperience(at, { description: event.target.value })}
+                placeholder="What you were responsible for and what you achieved."
+                className="cv-edit cv-prose"
+              />
+              {improve(
+                `experience-${at}`,
+                item.description,
+                `Improve the wording for ${item.title || `role ${at + 1}`}`
+              )}
+            </div>
             {suggestionFor(`experience-${at}`)}
           </div>
         ))}
@@ -200,31 +234,6 @@ export default function CvSheet({
           Add a role
         </button>
       </Section>
-
-      {careerBreak && (
-        <Section
-          title="Career break"
-          action={
-            <ImproveButton
-              busy={Boolean(suggestion?.loading)}
-              label="Improve the wording of your career break"
-              onClick={() => onImprove('careerBreak', careerBreak.description)}
-            />
-          }
-        >
-          <div className="cv-role">
-            {careerBreak.duration && <p className="cv-role-dates">{careerBreak.duration}</p>}
-            <textarea
-              aria-label="Career break"
-              value={careerBreak.description}
-              onChange={(event) => onCareerBreak(event.target.value)}
-              placeholder="What you focused on during your career break, one point per line."
-              className="cv-edit cv-prose"
-            />
-            {suggestionFor('careerBreak')}
-          </div>
-        </Section>
-      )}
     </article>
   );
 }
