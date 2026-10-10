@@ -19,7 +19,7 @@ function ChangeTag({ added }) {
  * Selectable card for one priority. The blurb lists the concrete policies an
  * employer must disclose to match (e.g. maternity leave, nursing rooms).
  */
-function PriorityCard({ priority, checked, tracksChanges, change, onToggle }) {
+function PriorityCard({ priority, checked, change, onToggle }) {
   return (
     <label
       className={[
@@ -40,6 +40,7 @@ function PriorityCard({ priority, checked, tracksChanges, change, onToggle }) {
         <span className="min-w-0 flex-1 font-display text-base font-bold tracking-[-0.01em] text-ink">
           {priority.name}
         </span>
+        {change && <ChangeTag added={change === 'added'} />}
 
         <span
           aria-hidden="true"
@@ -65,22 +66,6 @@ function PriorityCard({ priority, checked, tracksChanges, change, onToggle }) {
       </span>
 
       <span className="mt-2 text-[0.9375rem] leading-relaxed text-ink-soft">{priority.blurb}</span>
-
-      {/* Placed below the blurb so long titles stay on one line. The row is
-          always reserved when tracking changes, so toggling a card does not
-          change its height. On phones the cards stack in one column, so the
-          empty row is dropped. */}
-      {tracksChanges && (
-        <span className={`mt-auto pt-4 ${change ? '' : 'max-sm:hidden'}`}>
-          {change ? (
-            <ChangeTag added={change === 'added'} />
-          ) : (
-            <span aria-hidden="true" className="invisible">
-              <ChangeTag added />
-            </span>
-          )}
-        </span>
-      )}
     </label>
   );
 }
@@ -89,15 +74,14 @@ function PriorityCard({ priority, checked, tracksChanges, change, onToggle }) {
  * Multi-select grid of employer priorities, used by the intake Priorities step
  * and the adjust-priorities page.
  *
- * `columns` is set by the caller because Tailwind breakpoints respond to the
- * viewport, not the container width.
+ * Four priorities, so the cards sit two by two.
  *
  * `baseline` is the selection used for the last search. When provided, cards
  * whose state differs show an Added/Removed badge.
  */
-export default function PriorityPicker({ chosen, baseline, columns = 3, onToggle }) {
+export default function PriorityPicker({ chosen, baseline, onToggle }) {
   return (
-    <ul className={`grid gap-4 sm:grid-cols-2 ${columns === 3 ? 'lg:grid-cols-3' : ''}`}>
+    <ul className="grid gap-4 sm:grid-cols-2">
       {EMPLOYER_PRIORITIES.map((priority, index) => {
         const checked = chosen.includes(priority.id);
         const before = baseline ? baseline.includes(priority.id) : checked;
@@ -112,7 +96,6 @@ export default function PriorityPicker({ chosen, baseline, columns = 3, onToggle
             <PriorityCard
               priority={priority}
               checked={checked}
-              tracksChanges={Boolean(baseline)}
               change={change}
               onToggle={() => onToggle(priority.id)}
             />

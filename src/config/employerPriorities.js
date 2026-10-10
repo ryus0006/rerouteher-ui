@@ -24,11 +24,6 @@ export const EMPLOYER_PRIORITIES = [
     blurb: 'Maternity leave, paternity leave, nursing rooms',
   },
   {
-    id: 'returning_to_work',
-    name: 'Returning to Work',
-    blurb: 'Return-to-work programmes, reintegration support',
-  },
-  {
     id: 'inclusive_workplace',
     name: 'Inclusive Workplace',
     blurb: 'Women leadership, gender equality initiatives',
@@ -38,3 +33,9 @@ export const EMPLOYER_PRIORITIES = [
 export const PRIORITY_NAMES = Object.fromEntries(
   EMPLOYER_PRIORITIES.map((priority) => [priority.id, priority.name])
 );
+
+/**
+ * Drops ids no longer offered (e.g. a retired priority still in a saved
+ * plan), so they are neither shown nor sent for matching.
+ */
+export const knownPriorities = (ids) => (ids ?? []).filter((id) => id in PRIORITY_NAMES);

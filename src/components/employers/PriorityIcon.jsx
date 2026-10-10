@@ -22,13 +22,6 @@ const PATHS = {
       <path d="M14.6 19v-1.2a2.4 2.4 0 0 1 4.8 0V19" />
     </>
   ),
-  // Circular return arrow.
-  returning_to_work: (
-    <>
-      <path d="M20 12a8 8 0 1 1-2.6-5.9" />
-      <path d="M20 4v4h-4" />
-    </>
-  ),
   // Three figures side by side.
   inclusive_workplace: (
     <>

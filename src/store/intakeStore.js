@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
+import { knownPriorities } from '../config/employerPriorities.js';
 
 export const STORAGE_KEY = 'rerouteher.guestSession';
 
@@ -178,7 +179,7 @@ export const useIntakeStore = create(
 
       // Replaces the full selection and clears matches computed from the previous set.
       setEmployerPriorities: (employerPriorities) =>
-        set({ employerPriorities, employerMatches: [] }),
+        set({ employerPriorities: knownPriorities(employerPriorities), employerMatches: [] }),
       setEmployerMatches: (employerMatches) => set({ employerMatches: employerMatches ?? [] }),
       // Saves an employer to the role's shortlist, or removes it if already saved.
       toggleShortlist: (roleId, employer) =>
@@ -265,10 +266,9 @@ export const useIntakeStore = create(
       applyProfileSkillUpdate: (update) =>
         set((state) => ({
           snapshot: update?.snapshot ?? state.snapshot,
-          gapResult:
-            Object.prototype.hasOwnProperty.call(update ?? {}, 'gap_result')
-              ? update.gap_result
-              : state.gapResult,
+          gapResult: Object.prototype.hasOwnProperty.call(update ?? {}, 'gap_result')
+            ? update.gap_result
+            : state.gapResult,
         })),
       setCvDraft: (cvDraft) => set({ cvDraft }),
       markCvDownloaded: (roleId) =>
@@ -298,7 +298,12 @@ export const useIntakeStore = create(
       importPlan: (stored) => {
         const plan = withLearningProgress(stored);
         if (!plan) return;
-        set(Object.fromEntries(PLAN_FIELDS.filter((f) => f in plan).map((f) => [f, plan[f]])));
+        set({
+          ...Object.fromEntries(PLAN_FIELDS.filter((f) => f in plan).map((f) => [f, plan[f]])),
+          ...('employerPriorities' in plan && {
+            employerPriorities: knownPriorities(plan.employerPriorities),
+          }),
+        });
       },
 
       /** Abandons the redo and restores the stashed previous plan. */
@@ -314,13 +319,20 @@ export const useIntakeStore = create(
     }),
     {
       name: STORAGE_KEY,
-      version: 3,
+      version: 4,
       storage: sessionBacked(),
       migrate: (persisted, version) => {
         if (version < 2) return {};
         return {
           ...withLearningProgress(persisted),
-          previousPlan: withLearningProgress(persisted?.previousPlan ?? null),
+          // Version 4 retired the "Returning to Work" priority.
+          employerPriorities: knownPriorities(persisted?.employerPriorities),
+          previousPlan: persisted?.previousPlan
+            ? {
+                ...withLearningProgress(persisted.previousPlan),
+                employerPriorities: knownPriorities(persisted.previousPlan.employerPriorities),
+              }
+            : null,
         };
       },
     }
