@@ -263,7 +263,7 @@ export default function Companion({ defaultMode = 'ask' }) {
           gapResult,
           employerPriorities,
           employerMatches,
-          confirmedSkills,
+          confirmedSkills: useIntakeStore.getState().confirmedSkills,
           roleSkillsOfferedForRoleId,
           learningProgress,
           learnedSkills,
@@ -501,6 +501,13 @@ export default function Companion({ defaultMode = 'ask' }) {
                                 onAdd={(picked) => {
                                   addConfirmedSkills(picked);
                                   markChoicesAdded(index, picked.length);
+                                  send(
+                                    picked.length === 1
+                                      ? `I used ${picked[0].skill_name} in that role.`
+                                      : `I used these in that role: ${picked
+                                          .map((skill) => skill.skill_name)
+                                          .join(', ')}.`
+                                  );
                                 }}
                               />
                             )}
