@@ -7,20 +7,12 @@ import AskHeraAboutResults from '../../components/companion/AskHeraAboutResults.
 import GradientButton from '../../components/ui/GradientButton.jsx';
 import TargetRoleSelect from '../../components/plan/TargetRoleSelect.jsx';
 import PriorityIcon from '../../components/employers/PriorityIcon.jsx';
+import { LogoTile, MatchMeter } from '../../components/employers/MatchVisuals.jsx';
+import { matchLabel } from '../../lib/matchLabel.js';
 import { PRIORITY_NAMES } from '../../config/employerPriorities.js';
 import { matchEmployers } from '../../api/employers.js';
 import { useAccountStore } from '../../store/accountStore.js';
 import { useIntakeStore } from '../../store/intakeStore.js';
-
-/**
- * Text label for match strength. A percentage is avoided because the score is
- * only a count of met priorities.
- */
-function matchLabel(met, total) {
-  if (met === total) return { text: 'Strong match', tone: 'text-verify' };
-  if (met * 2 >= total) return { text: 'Good match', tone: 'text-verify' };
-  return { text: 'Partial match', tone: 'text-ink-soft' };
-}
 
 function formatFoundAt(value) {
   if (!value) return 'date unavailable';
@@ -65,62 +57,6 @@ function ArrowBadge({ direction = 'right', className = '' }) {
           <path d="M3.5 8h9M9 4.5 12.5 8 9 11.5" />
         )}
       </svg>
-    </span>
-  );
-}
-
-/** Logo placeholder: the company name on its brand colour. */
-function LogoTile({ logo, logoUrl, name }) {
-  // Show the image logo when present; fall back to the initials/name badge if it is
-  // missing or fails to load.
-  const [imageFailed, setImageFailed] = useState(false);
-  const showImage = Boolean(logoUrl) && !imageFailed;
-  const long = (logo?.text ?? name).length > 7;
-
-  return (
-    <span
-      aria-hidden="true"
-      style={
-        showImage
-          ? undefined
-          : { backgroundColor: logo?.bg ?? 'var(--color-canvas-sunk)', color: logo?.fg ?? '#fff' }
-      }
-      className={[
-        'flex shrink-0 items-center justify-center overflow-hidden rounded-2xl text-center font-bold leading-tight',
-        'shadow-[inset_0_0_0_1px_rgb(44_33_66/0.06)]',
-        'size-14',
-        showImage ? 'bg-white p-1.5' : 'px-1',
-        // Smaller text for long names so they fit the tile.
-        long ? 'text-[0.625rem]' : 'text-[0.75rem]',
-      ].join(' ')}
-    >
-      {showImage ? (
-        <img
-          src={logoUrl}
-          alt=""
-          loading="lazy"
-          className="size-full object-contain"
-          onError={() => setImageFailed(true)}
-        />
-      ) : (
-        (logo?.text ?? name)
-      )}
-    </span>
-  );
-}
-
-/**
- * Segmented met/total meter. Decorative; the adjacent label conveys the same count.
- */
-function MatchMeter({ met, total }) {
-  return (
-    <span aria-hidden="true" className="flex gap-1">
-      {Array.from({ length: total }, (_, index) => (
-        <span
-          key={index}
-          className={`h-1.5 w-6 rounded-full ${index < met ? 'bg-verify' : 'bg-ink/10'}`}
-        />
-      ))}
     </span>
   );
 }

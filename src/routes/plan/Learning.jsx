@@ -16,20 +16,12 @@ import RefreshSkills from '../../components/learning/RefreshSkills.jsx';
 import MoreSkills from '../../components/learning/MoreSkills.jsx';
 import ChapterLabel from '../../components/learning/ChapterLabel.jsx';
 import { MAX_FOCUS_AREAS } from '../../components/gap/FocusAreaList.jsx';
-import { pickFocusAreas } from '../../lib/focusAreas.js';
-import {
-  learnedSkillsFor,
-  sameLearned,
-  statusOf,
-  upNext,
-} from '../../lib/learningProgress.js';
+import { FOCUS_TONES as TONES, planFocusAreas } from '../../lib/focusAreas.js';
+import { learnedSkillsFor, sameLearned, statusOf, upNext } from '../../lib/learningProgress.js';
 import { addSkillToCv, removeSkillFromCv, skillOnCv } from '../../lib/cvDraft.js';
 import { recommendLearning } from '../../api/learning.js';
 import { useAccountStore } from '../../store/accountStore.js';
 import { useIntakeStore } from '../../store/intakeStore.js';
-
-/* Focus areas take the landing page's tool tones, in ranking order. */
-const TONES = ['pink', 'indigo', 'amber', 'violet'];
 
 /* Time away from the tab before returning asks whether a resource was
    finished, so a quick switch back does not prompt. */
@@ -217,15 +209,10 @@ export default function Learning() {
   const refreshed = refreshAreas?.[roleId];
   // The first focus areas from the gap result, then any added from Up later,
   // then owned skills added back as refreshers.
-  const focusAreas = useMemo(() => {
-    if (!gapResult) return [];
-    const picked = pickFocusAreas(gapResult.gaps, MAX_FOCUS_AREAS);
-    const extra = (added ?? [])
-      .map((skillId) => gapResult.gaps.find((gap) => gap.skill_id === skillId))
-      .filter((gap) => gap && !picked.includes(gap));
-    const refreshers = (refreshed ?? []).map((entry) => ({ ...entry, refresher: true }));
-    return [...picked, ...extra, ...refreshers];
-  }, [gapResult, added, refreshed]);
+  const focusAreas = useMemo(
+    () => planFocusAreas(gapResult, added, refreshed, MAX_FOCUS_AREAS),
+    [gapResult, added, refreshed]
+  );
   const laterGaps = gapResult ? gapResult.gaps.filter((gap) => !focusAreas.includes(gap)) : [];
   const skillKey = focusAreas.map((gap) => gap.skill_id).join('|');
 
