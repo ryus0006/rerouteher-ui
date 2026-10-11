@@ -181,15 +181,17 @@ export default function Companion({ defaultMode = 'ask' }) {
   const [roleSkillsOfferedForRoleId, setRoleSkillsOfferedForRoleId] = useState(null);
 
   // Hera's chat and any unconfirmed draft are local UI state, scoped to whoever is
-  // signed in right now. Clear them whenever that identity changes - sign-out, sign-in,
-  // or switching accounts on a shared device - so nothing from one mother's session is
-  // ever shown, or answered from, under another's.
+  // signed in right now. Whenever that identity changes - sign-out, sign-in, or
+  // switching accounts on a shared device - minimise the panel first, so the previous
+  // identity's chat disappears from the screen immediately, then clear it underneath.
   useEffect(() => {
+    closeCompanion();
     setThread([]);
     setProposed(null);
     setRoleSkillsOfferedForRoleId(null);
     setQuestion('');
-  }, [username]);
+    setThinking(false);
+  }, [username, closeCompanion]);
 
   const panelRef = useRef(null);
   const inputRef = useRef(null);
