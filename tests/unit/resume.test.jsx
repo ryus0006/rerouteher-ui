@@ -218,16 +218,17 @@ describe('signing up before starting', () => {
     });
   });
 
-  it('opens both doors from the gap result without an account', async () => {
+  it('asks a guest to create an account to open My Journey from the gap result', async () => {
     useAccountStore.setState({ user: null });
     useIntakeStore.setState(finished);
 
     open(['/diagnostic/gap']);
 
-    // Both plan links are available to guests without an account.
-    expect(await screen.findByRole('link', { name: /Open your learning plan/ })).toBeVisible();
-    expect(screen.getByRole('link', { name: /See your matches/ })).toBeVisible();
-    expect(screen.queryByRole('button', { name: 'Create a free account' })).toBeNull();
+    fireEvent.click(await screen.findByRole('button', { name: /Create account to continue/ }));
+
+    expect(useAccountStore.getState().sheet).toBe('create');
+    expect(useAccountStore.getState().sheetRedirect).toBe('/journey');
+    expect(screen.queryByRole('link', { name: /Go to My Journey/ })).toBeNull();
   });
 });
 
