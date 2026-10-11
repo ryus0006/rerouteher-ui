@@ -135,7 +135,7 @@ export default function ProfileDraft({ draft, confirmedSkills, onConfirm, onChan
           </Row>
         </dl>
 
-        <div className="mt-4 flex flex-wrap items-center gap-2">
+        <div className="sticky bottom-0 -mx-4 -mb-4 mt-4 flex flex-wrap items-center gap-2 rounded-b-[1rem] border-t border-ink/[0.06] bg-surface px-4 py-3">
           <button
             type="button"
             onClick={onConfirm}
