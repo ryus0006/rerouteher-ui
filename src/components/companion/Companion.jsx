@@ -5,10 +5,11 @@ import { AnimatePresence, motion } from 'motion/react';
 import { ArrowUp, ArrowUpRight, X } from '@phosphor-icons/react';
 import { askCompanion } from '../../api/companion.js';
 import useSmoothNavigate from '../../hooks/useSmoothNavigate.js';
+import { useAccountStore } from '../../store/accountStore.js';
 import { useIntakeStore } from '../../store/intakeStore.js';
 import { useInterviewStore } from '../../store/interviewStore.js';
 import { buildInterviewContext } from '../../lib/interviewContext.js';
-import { useCompanionStore } from '../../store/companionStore.js';
+import { COMPANION_SESSION_KEY, useCompanionStore } from '../../store/companionStore.js';
 import HeraBot from './HeraBot.jsx';
 import ProfileDraft from './ProfileDraft.jsx';
 import { mergeDraft } from '../../lib/mergeDraft.js';
@@ -128,13 +129,16 @@ const INTERVIEW_OPENERS = [
   'What would a good answer sound like?',
 ];
 
-/** Returns a per-browser conversation id so history survives reloads. */
+/**
+ * Returns a per-tab guest conversation id so history survives reloads. Session-scoped
+ * (not localStorage), matching the guest plan's own storage, so it does not outlive the
+ * tab or bleed a previous guest's chat into the next one after a sign-out.
+ */
 function getSessionId() {
-  const KEY = 'rerouteher.companionSession';
-  let id = localStorage.getItem(KEY);
+  let id = sessionStorage.getItem(COMPANION_SESSION_KEY);
   if (!id) {
     id = crypto.randomUUID();
-    localStorage.setItem(KEY, id);
+    sessionStorage.setItem(COMPANION_SESSION_KEY, id);
   }
   return id;
 }
@@ -158,6 +162,7 @@ export default function Companion({ defaultMode = 'ask' }) {
   const addConfirmedSkills = useIntakeStore((state) => state.addConfirmedSkills);
   const setConfirmedSkills = useIntakeStore((state) => state.setConfirmedSkills);
   const applyProfileSkillUpdate = useIntakeStore((state) => state.applyProfileSkillUpdate);
+  const username = useAccountStore((state) => state.user?.username ?? null);
 
   const open = useCompanionStore((state) => state.open);
   const mode = useCompanionStore((state) => state.mode);
@@ -174,6 +179,17 @@ export default function Companion({ defaultMode = 'ask' }) {
   // Role the skills checklist was last offered for. Sent back to the backend so the
   // checklist is not repeated for the same role, while a role change still triggers it.
   const [roleSkillsOfferedForRoleId, setRoleSkillsOfferedForRoleId] = useState(null);
+
+  // Hera's chat and any unconfirmed draft are local UI state, scoped to whoever is
+  // signed in right now. Clear them whenever that identity changes - sign-out, sign-in,
+  // or switching accounts on a shared device - so nothing from one mother's session is
+  // ever shown, or answered from, under another's.
+  useEffect(() => {
+    setThread([]);
+    setProposed(null);
+    setRoleSkillsOfferedForRoleId(null);
+    setQuestion('');
+  }, [username]);
 
   const panelRef = useRef(null);
   const inputRef = useRef(null);

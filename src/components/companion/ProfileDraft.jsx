@@ -91,7 +91,8 @@ export default function ProfileDraft({ draft, confirmedSkills, onConfirm, onChan
               )}
               {experiences.length > 1 && (
                 <p className="mt-1 text-xs text-ink-faint">
-                  +{experiences.length - 1} earlier {experiences.length - 1 === 1 ? 'role' : 'roles'}
+                  +{experiences.length - 1} earlier{' '}
+                  {experiences.length - 1 === 1 ? 'role' : 'roles'}
                 </p>
               )}
             </div>

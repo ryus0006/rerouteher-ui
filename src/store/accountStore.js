@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { signOut as signOutRequest } from '../api/account.js';
+import { COMPANION_SESSION_KEY } from './companionStore.js';
 import { sessionBacked, useIntakeStore } from './intakeStore.js';
 import { useInterviewStore } from './interviewStore.js';
 
@@ -50,6 +51,11 @@ export const useAccountStore = create(
         set({ user: null, sheet: null });
         useIntakeStore.getState().reset();
         useInterviewStore.getState().reset();
+        // Drop the guest companion thread id too, so the next guest on this device
+        // starts a brand-new conversation instead of resuming whatever was last
+        // chatted here (Hera's own chat/draft state is cleared by Companion's
+        // identity-change effect once `user` goes null).
+        sessionStorage.removeItem(COMPANION_SESSION_KEY);
       },
     }),
     {
