@@ -33,8 +33,7 @@ export default function CvRail({
             Saved to your account as you type
           </p>
           <p className="mt-2 text-xs leading-relaxed text-ink-soft">
-            Anything you leave blank, like your phone number, prints as a field you can fill in on
-            the PDF.
+            Your name and contact details stay on this device and are not saved to your account.
           </p>
         </section>
       </div>
