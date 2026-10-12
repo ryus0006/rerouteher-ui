@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { createMemoryRouter, RouterProvider } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { http, HttpResponse } from 'msw';
@@ -10,7 +10,7 @@ import snapshotFixture from '../../src/mocks/fixtures/snapshot.high-confidence.j
 
 let router;
 
-const OPENERS_FIRST = 'What does my readiness score actually mean?';
+const OPENERS_FIRST = 'What does my match for this role mean?';
 
 const GAPS = [
   {
@@ -36,11 +36,19 @@ const GAPS = [
   },
 ];
 
+const PROMPT_GAP = {
+  skill_id: 'mock-prompt-ux',
+  skill: 'Prompt Engineering for UX Workflows',
+  band: 'ai_usage',
+  importance: 0.6,
+  uplift: 5,
+};
+
 beforeEach(() => {
   vi.spyOn(window, 'scrollTo').mockImplementation(() => {});
   vi.stubGlobal(
     'matchMedia',
-    vi.fn(() => ({ matches: false }))
+    vi.fn(() => ({ matches: false, addEventListener() {}, removeEventListener() {} }))
   );
   Element.prototype.scrollIntoView = vi.fn();
 
@@ -56,16 +64,27 @@ beforeEach(() => {
     },
     selectedRole: { role: 'Senior UX/UI Designer', role_id: 'role_ux' },
     gapResult: { readiness: 78, gaps: GAPS },
+    learningProgress: {},
+    learnedSkills: [],
+    addedFocusAreas: {},
+    cvDraft: null,
   });
 });
 
 afterEach(() => {
   cleanup();
   router?.dispose();
-  useAccountStore.setState({ user: null });
+  useAccountStore.setState({ user: null, sheet: null, sheetRedirect: null });
   vi.restoreAllMocks();
   vi.unstubAllGlobals();
 });
+
+/** The focus-area list, below the resource featured at the top. */
+const list = () => within(screen.getByRole('region', { name: 'All resources' }));
+
+function signIn() {
+  useAccountStore.setState({ user: { username: 'ccc', displayName: 'Chee Yeong' } });
+}
 
 function open(initialEntries) {
   router = createMemoryRouter(routes, { initialEntries });
@@ -73,74 +92,19 @@ function open(initialEntries) {
 }
 
 describe('learning plan', () => {
-  it('groups each resource under the gap it closes', async () => {
-    open(['/plan/learning']);
-
-    expect(await screen.findByRole('heading', { name: 'Your learning plan' })).toBeVisible();
-
-    const section = (
-      await screen.findByRole('heading', { name: 'Scalable Design Systems (Tokens & Multi-brand)' })
-    ).closest('section');
-
-    expect(within(section).getByText('Variables and modes in Figma')).toBeVisible();
-    expect(within(section).getByText('+7% if learned')).toBeVisible();
-    // A resource for a different gap must not appear under this heading.
-    expect(within(section).queryByText('AI features in Figma')).toBeNull();
-  });
-
-  it('narrows to one format, hides emptied focus areas, and counts what is shown', async () => {
-    open(['/plan/learning']);
-
-    expect(await screen.findByText('AI features in Figma')).toBeVisible();
-    expect(screen.getByText('Midjourney for product design')).toBeVisible();
-
-    // AI Design has 2 articles + 1 video, so the count starts at the full set.
-    const aiSection = () =>
-      screen
-        .getByRole('heading', { name: 'AI Design Tools (Figma AI, Midjourney)' })
-        .closest('section');
-    expect(within(aiSection()).getByRole('button', { name: /^3 resources/ })).toBeVisible();
-
-    fireEvent.click(screen.getByRole('button', { name: 'Videos' }));
-
-    // Design Ops has only articles, so filtering Videos removes its whole card
-    // rather than leaving an empty "nothing matches" shell.
-    expect(screen.queryByRole('heading', { name: 'Design Ops & Handoff Automation' })).toBeNull();
-
-    // AI Design keeps its one video, and the count now reflects what is shown.
-    expect(screen.getByText('Midjourney for product design')).toBeVisible();
-    expect(screen.queryByText('AI features in Figma')).toBeNull();
-    expect(within(aiSection()).getByRole('button', { name: /^1 resource/ })).toBeVisible();
-  });
-
   it('costs her nothing, and does not offer a filter that selects everything', async () => {
+    signIn();
     open(['/plan/learning']);
 
-    await screen.findByText('AI features in Figma');
+    await screen.findByRole('region', { name: 'All resources' });
 
-    // Every resource in the plan is free, so a "free only" chip would be a
-    // control that never changes what she sees.
+    // All resources are free, so no "Free only" filter is rendered.
     expect(screen.queryByRole('button', { name: 'Free only' })).toBeNull();
     expect(screen.queryByText(/RM |USD |\/ month/)).toBeNull();
   });
 
-  it('collapses a focus area she is not working on yet', async () => {
-    open(['/plan/learning']);
-
-    const toggle = await screen.findByRole('button', { name: /^3 resources/ });
-    expect(screen.getByText('AI features in Figma')).toBeVisible();
-
-    fireEvent.click(toggle);
-
-    expect(toggle).toHaveAttribute('aria-expanded', 'false');
-    expect(screen.queryByText('AI features in Figma')).toBeNull();
-    // The card itself stays, so the plan still reads as four focus areas.
-    expect(
-      screen.getByRole('heading', { name: 'AI Design Tools (Figma AI, Midjourney)' })
-    ).toBeVisible();
-  });
-
   it('opens every resource in a new tab, safely', async () => {
+    signIn();
     open(['/plan/learning']);
 
     const links = await screen.findAllByRole('link', { name: /opens in a new tab/ });
@@ -151,93 +115,265 @@ describe('learning plan', () => {
     }
   });
 
-  it('sends someone with no gap back to work it out', async () => {
-    useIntakeStore.setState({ gapResult: null });
+  it('puts a saved resource at the top until she removes it', async () => {
+    signIn();
     open(['/plan/learning']);
 
-    expect(await screen.findByRole('heading', { level: 1 })).not.toHaveTextContent('learning plan');
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'Save AI in UX practice for later' })
+    );
+
+    const featured = screen
+      .getByRole('heading', { name: 'From your saved list' })
+      .closest('section');
+    expect(within(featured).getByText('AI in UX practice')).toBeVisible();
+
+    fireEvent.click(
+      within(featured).getByRole('button', { name: /Remove from saved: AI in UX practice/ })
+    );
+    expect(screen.getByRole('heading', { name: 'Start here' })).toBeVisible();
+  });
+
+  it('marks an opened resource in progress and finishes it without a pop-up', async () => {
+    signIn();
+    open(['/plan/learning']);
+
+    await screen.findByRole('region', { name: 'All resources' });
+    const link = list().getByRole('link', { name: /AI features in Figma at .*new tab/ });
+    link.addEventListener('click', (event) => event.preventDefault());
+    fireEvent.click(link);
+
+    expect(
+      await screen.findByRole('heading', { name: 'Pick up where you left off' })
+    ).toBeVisible();
+
+    fireEvent.click(list().getByRole('button', { name: 'Mark AI features in Figma as finished' }));
+
+    expect(
+      list().getByRole('button', { name: 'Mark AI features in Figma as not finished' })
+    ).toBeVisible();
+    expect(screen.queryByRole('region', { name: /is done/ })).not.toBeInTheDocument();
+  });
+
+  it('puts an unfinished resource back the way it was before she ticked it', async () => {
+    signIn();
+    open(['/plan/learning']);
+
+    const ring = (title, done) =>
+      list().getByRole('button', { name: `Mark ${title} as ${done ? 'not ' : ''}finished` });
+
+    await screen.findByRole('region', { name: 'All resources' });
+    fireEvent.click(ring('AI features in Figma', false));
+    fireEvent.click(ring('AI features in Figma', true));
+    expect(screen.getByRole('heading', { name: 'Start here' })).toBeVisible();
+    expect(list().queryByText('In progress')).not.toBeInTheDocument();
+
+    fireEvent.click(list().getByRole('button', { name: 'Save AI in UX practice for later' }));
+    fireEvent.click(ring('AI in UX practice', false));
+    fireEvent.click(ring('AI in UX practice', true));
+    expect(screen.getByRole('heading', { name: 'From your saved list' })).toBeVisible();
+    expect(
+      list().getByRole('button', { name: 'Save AI in UX practice for later' })
+    ).toHaveAttribute('aria-pressed', 'true');
+  });
+
+  it('offers the next skill once everything in the plan is finished', async () => {
+    signIn();
+    const done = { status: 'done', at: 1 };
+    useIntakeStore.setState({
+      gapResult: { readiness: 78, gaps: [...GAPS, PROMPT_GAP] },
+      learningProgress: Object.fromEntries(
+        [
+          'ai-figma-features',
+          'ai-midjourney-product',
+          'ai-ux-practice',
+          'ds-variables-figma',
+          'ds-multibrand-video',
+          'ops-dev-mode',
+          'ops-designops-nng',
+        ].map((id) => [id, done])
+      ),
+    });
+    open(['/plan/learning']);
+
+    const hero = (
+      await screen.findByRole('heading', { name: 'Everything here is finished' })
+    ).closest('section');
+    expect(within(hero).getByText('Prompt Engineering for UX Workflows')).toBeVisible();
+
+    fireEvent.click(within(hero).getByRole('button', { name: /Add to plan/ }));
+    expect(
+      await screen
+        .findByRole('heading', { name: 'Pick up where you left off' })
+        .catch(() => screen.findByRole('heading', { name: 'Start here' }))
+    ).toBeVisible();
   });
 });
 
 describe('employer fit finder', () => {
-  it('lets her pick as many priorities as matter, and will not run on none', async () => {
+  it('asks a guest to create an account before matching employers', async () => {
+    useIntakeStore.setState({ employerPriorities: ['flexible_work'] });
     open(['/plan/employers']);
 
-    expect(
-      await screen.findByRole('heading', { name: 'Change what you are asking for' })
-    ).toBeVisible();
-
-    const find = screen.getByRole('button', { name: /See your matches/ });
-    expect(find).toBeDisabled();
-
-    fireEvent.click(screen.getByLabelText(/Flexible Work/));
-    fireEvent.click(screen.getByLabelText(/Childcare Support/));
-    fireEvent.click(screen.getByLabelText(/Inclusive Workplace/));
-
-    // The cap was removed: a fourth priority stays selectable, not disabled.
-    expect(screen.getByLabelText(/Parental Support/)).toBeEnabled();
-    expect(find).toBeEnabled();
-
-    fireEvent.click(find);
+    expect(await screen.findByRole('heading', { name: 'Employer fit' })).toBeVisible();
     expect(router.state.location.pathname).toBe('/plan/employers/matches');
+    expect(screen.queryByRole('heading', { name: 'Your employer matches' })).toBeNull();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Create an account' }));
+    expect(useAccountStore.getState().sheet).toBe('create');
+    expect(useAccountStore.getState().sheetRedirect).toBe('/plan/employers/matches');
   });
 
-  it('ranks by what each company published, and shows what it read', async () => {
-    useIntakeStore.setState({
-      employerPriorities: ['flexible_work', 'childcare_support', 'inclusive_workplace'],
+  describe('signed in', () => {
+    beforeEach(signIn);
+
+    it('lets her pick as many priorities as matter, and will not run on none', async () => {
+      open(['/plan/employers']);
+
+      expect(
+        await screen.findByRole('heading', { name: 'What matters most for your return?' })
+      ).toBeVisible();
+
+      const find = screen.getByRole('button', { name: /See your matches/ });
+      expect(find).toBeDisabled();
+
+      fireEvent.click(screen.getByLabelText(/Flexible Work/));
+      fireEvent.click(screen.getByLabelText(/Childcare Support/));
+      fireEvent.click(screen.getByLabelText(/Inclusive Workplace/));
+
+      // There is no selection limit: a fourth priority remains selectable.
+      expect(screen.getByLabelText(/Parental Support/)).toBeEnabled();
+      expect(find).toBeEnabled();
+
+      fireEvent.click(find);
+      expect(router.state.location.pathname).toBe('/plan/employers/matches');
     });
-    open(['/plan/employers/matches']);
 
-    expect(await screen.findByRole('heading', { name: 'Your employer matches' })).toBeVisible();
+    it('ranks by what each company published, and shows what it read', async () => {
+      useIntakeStore.setState({
+        employerPriorities: ['flexible_work', 'childcare_support', 'inclusive_workplace'],
+      });
+      open(['/plan/employers/matches']);
 
-    const names = (await screen.findAllByRole('heading', { level: 2 })).map((h) => h.textContent);
-    expect(names[0]).toBe('Maybank');
+      expect(await screen.findByRole('heading', { name: 'Your employer matches' })).toBeVisible();
 
-    const maybank = screen.getByRole('heading', { name: 'Maybank' }).closest('article');
-    expect(within(maybank).getByText('Strong match')).toBeVisible();
+      const names = (await screen.findAllByRole('heading', { level: 2 })).map((h) => h.textContent);
+      expect(names[0]).toBe('Maybank');
 
-    // One source per company, not one repeated beside every priority.
-    const sources = within(maybank).getAllByRole('link', { name: /Sustainability Report/ });
-    expect(sources).toHaveLength(1);
-    expect(sources[0]).toHaveAttribute('target', '_blank');
+      const maybank = screen.getByRole('heading', { name: 'Maybank' }).closest('article');
+      expect(within(maybank).getByText('Strong match')).toBeVisible();
+      expect(within(maybank).getByText('Hiring for your role.')).toBeVisible();
+      expect(within(maybank).getByText('UX Designer, Digital Banking')).toBeVisible();
+      expect(within(maybank).getByText(/Found 27 Sept? 2026/)).toBeVisible();
+      expect(within(maybank).getByRole('link', { name: /Open job/ })).toHaveAttribute(
+        'href',
+        'https://www.maybank.com/'
+      );
 
-    // Silence is reported as silence, not left out.
-    const cimb = screen.getByRole('heading', { name: 'CIMB' }).closest('article');
-    expect(within(cimb).getByText('Not found in report')).toBeVisible();
+      // The report is linked once per company, not per priority.
+      const sources = within(maybank).getAllByRole('link', { name: /Sustainability Report/ });
+      expect(sources).toHaveLength(1);
+      expect(sources[0]).toHaveAttribute('target', '_blank');
 
-    // Company details go to the company, not to another page of ours.
-    expect(within(cimb).getByRole('link', { name: /View company details/ })).toHaveAttribute(
-      'href',
-      'https://www.cimb.com/'
-    );
-  });
+      // Unmet priorities are listed explicitly.
+      const cimb = screen.getByRole('heading', { name: 'CIMB' }).closest('article');
+      expect(within(cimb).getByText('Not found in report')).toBeVisible();
 
-  it('stores matches and offers an Ask Hera entry on the matches page (US8.3.1)', async () => {
-    useIntakeStore.setState({
-      employerPriorities: ['flexible_work', 'childcare_support', 'inclusive_workplace'],
+      // Company details link to the company's own website.
+      expect(within(cimb).getByRole('link', { name: /View company details/ })).toHaveAttribute(
+        'href',
+        'https://www.cimb.com/'
+      );
     });
-    open(['/plan/employers/matches']);
 
-    await screen.findByRole('heading', { name: 'Your employer matches' });
-    await vi.waitFor(() =>
-      expect(useIntakeStore.getState().employerMatches.length).toBeGreaterThan(0)
-    );
-    fireEvent.click(screen.getByRole('button', { name: 'Ask Hera about your results' }));
-    expect(await screen.findByRole('dialog', { name: 'Ask Hera' })).toBeVisible();
-  });
+    it('stores matches and offers an Ask Hera entry on the matches page (US8.3.1)', async () => {
+      useIntakeStore.setState({
+        employerPriorities: ['flexible_work', 'childcare_support', 'inclusive_workplace'],
+      });
+      open(['/plan/employers/matches']);
 
-  it('sends her back to choose when she has picked nothing', async () => {
-    useIntakeStore.setState({ employerPriorities: [] });
-    open(['/plan/employers/matches']);
+      await screen.findByRole('heading', { name: 'Your employer matches' });
+      await vi.waitFor(() =>
+        expect(useIntakeStore.getState().employerMatches.length).toBeGreaterThan(0)
+      );
+      fireEvent.click(screen.getByRole('button', { name: 'Ask Hera about your results' }));
+      expect(await screen.findByRole('dialog', { name: 'Ask Hera' })).toBeVisible();
+    });
 
-    expect(
-      await screen.findByRole('heading', { name: 'Change what you are asking for' })
-    ).toBeVisible();
-    expect(router.state.location.pathname).toBe('/plan/employers');
+    it('sends her back to choose when she has picked nothing', async () => {
+      useIntakeStore.setState({ employerPriorities: [] });
+      open(['/plan/employers/matches']);
+
+      expect(
+        await screen.findByRole('heading', { name: 'What matters most for your return?' })
+      ).toBeVisible();
+      expect(router.state.location.pathname).toBe('/plan/employers');
+    });
+
+    it('distinguishes temporary job-search unavailability from an empty search', async () => {
+      useIntakeStore.setState({
+        employerPriorities: ['flexible_work'],
+        selectedRole: { role: 'Unavailable role', role_id: 'role_unavailable' },
+      });
+      open(['/plan/employers/matches']);
+
+      expect(await screen.findByText(/Job openings are temporarily unavailable/i)).toBeVisible();
+      expect(screen.queryByText(/No current openings were found for this target role/i)).toBeNull();
+    });
   });
 });
 
 describe('companion', () => {
+  it('sends learning context and applies Hera profile mutations immediately', async () => {
+    let requestBody;
+    server.use(
+      http.post('*/api/companion/ask', async ({ request }) => {
+        requestBody = await request.json();
+        return HttpResponse.json({
+          answer: 'SQL was added to your professional skills.',
+          sources: [],
+          profile_skill_update: {
+            action: 'add',
+            status: 'added',
+            skill_id: 's1',
+            skill: 'SQL',
+            snapshot: {
+              ...useIntakeStore.getState().snapshot,
+              professional_skills: [{ skill_id: 's1', skill: 'SQL' }],
+            },
+            gap_result: { readiness: 79, skills_have: ['SQL'], gaps: [] },
+            learned_skills: [{ skill_id: 's1', skill: 'SQL', uplift: 9 }],
+          },
+        });
+      })
+    );
+    useAccountStore.setState({ user: { username: 'ccc', displayName: 'Chee Yeong' } });
+    useIntakeStore.setState({
+      learningProgress: { r1: { status: 'done', at: 1 } },
+      learnedSkills: [{ skill_id: 'old', skill: 'Existing skill' }],
+    });
+    open(['/journey']);
+
+    fireEvent.click(await screen.findByRole('button', { name: /Ask Hera/ }));
+    fireEvent.change(screen.getByRole('textbox'), { target: { value: 'Add SQL' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Ask' }));
+
+    expect(await screen.findByText(/SQL was added/)).toBeVisible();
+    expect(requestBody.journey.learningProgress).toEqual({
+      r1: { status: 'done', at: 1 },
+    });
+    expect(requestBody.journey.learnedSkills).toEqual([
+      { skill_id: 'old', skill: 'Existing skill' },
+    ]);
+    expect(useIntakeStore.getState().snapshot.professional_skills[0].skill).toBe('SQL');
+    expect(useIntakeStore.getState().gapResult.readiness).toBe(79);
+    // A Hera add updates the snapshot and gap, but not the client-owned learnedSkills.
+    expect(useIntakeStore.getState().learnedSkills).toEqual([
+      { skill_id: 'old', skill: 'Existing skill' },
+    ]);
+    expect(screen.queryByText('Use this profile')).toBeNull();
+  });
+
   it('answers from her own gap, and cites what it read', async () => {
     useAccountStore.setState({ user: { username: 'ccc', displayName: 'Chee Yeong' } });
     open(['/journey']);
@@ -254,11 +390,11 @@ describe('companion', () => {
   it('opens results Q&A from her results page, guest-allowed (US8.2.1 entry)', async () => {
     open(['/diagnostic/snapshot']);
 
-    // A contextual entry on her results page, not only the floating bubble.
+    // Inline entry point on the results page, in addition to the floating launcher.
     fireEvent.click(await screen.findByRole('button', { name: 'Ask Hera about your results' }));
 
     expect(await screen.findByRole('dialog', { name: 'Ask Hera' })).toBeVisible();
-    // ask mode: it offers questions about her results, not profile-build openers.
+    // Ask mode: shows results questions, not profile-build openers.
     expect(screen.getByRole('button', { name: OPENERS_FIRST })).toBeVisible();
   });
 
@@ -275,7 +411,7 @@ describe('companion', () => {
     fireEvent.click(cta);
 
     expect(router.state.location.pathname).toBe('/plan/learning');
-    // the chat rides along the navigation instead of closing
+    // The chat stays open across the navigation.
     expect(screen.getByRole('dialog', { name: 'Ask Hera' })).toBeVisible();
   });
 
@@ -294,10 +430,10 @@ describe('companion', () => {
     fireEvent.click(cta);
 
     expect(router.state.location.pathname).toBe('/diagnostic/snapshot');
-    // The snapshot page has no snapshot yet, so it must generate from cv+break on
-    // arrival (skip-priorities path) and actually render - not sit on the loader.
+    // No snapshot exists yet, so the snapshot page generates it from cv + break on
+    // load and renders the result.
     expect(await screen.findByRole('heading', { name: 'Your skill snapshot' })).toBeVisible();
-    // and the chat rides along the navigation instead of closing
+    // The chat stays open across the navigation.
     expect(screen.getByRole('dialog', { name: 'Ask Hera' })).toBeVisible();
   });
 
@@ -403,8 +539,8 @@ describe('companion', () => {
   });
 
   it('keeps confirmed role skills when a chat profile is confirmed', async () => {
-    // She ticked role skills earlier; confirming the profile calls setCv, whose reset
-    // cascade would wipe them without the confirmProfile safeguard.
+    // Role skills confirmed earlier must survive confirmProfile, whose setCv call
+    // would otherwise clear them.
     useIntakeStore.setState({
       cv: null,
       cvParsed: false,
@@ -442,7 +578,7 @@ describe('companion', () => {
     });
     fireEvent.click(screen.getByRole('button', { name: 'Send' }));
 
-    // The drafted profile shows her priorities before anything is saved.
+    // The drafted profile shows the priorities before anything is saved.
     expect(await screen.findByText(/Flexible Work/)).toBeVisible();
     fireEvent.click(screen.getByRole('button', { name: 'Use this profile' }));
 
@@ -467,8 +603,8 @@ describe('companion', () => {
     expect(await screen.findByText(/Your profile so far/i)).toBeVisible();
     expect(useIntakeStore.getState().cvParsed).toBe(false);
 
-    // On confirm it enters the store through the same mutators the pages use, so
-    // the CV step reads as complete - no snapshot is produced here (next step).
+    // Confirming applies the profile through the store actions, marking the CV
+    // step complete; the snapshot is generated on the next step.
     fireEvent.click(screen.getByRole('button', { name: 'Use this profile' }));
     expect(useIntakeStore.getState().cvParsed).toBe(true);
     expect(useIntakeStore.getState().cv).not.toBeNull();
@@ -481,16 +617,12 @@ describe('companion', () => {
     open(['/diagnostic/background']);
 
     fireEvent.click(await screen.findByRole('button', { name: /Ask Hera/ }));
-    // Before a snapshot exists it opens in build mode, but is never stuck there.
+    // Build mode by default before a snapshot exists, with a switch to ask mode.
     fireEvent.click(await screen.findByRole('button', { name: 'Ask a question instead' }));
     expect(await screen.findByRole('button', { name: OPENERS_FIRST })).toBeVisible();
 
     fireEvent.click(screen.getByRole('button', { name: 'Build my profile without a CV' }));
-    expect(
-      await screen.findByRole('button', {
-        name: 'I was a teacher for six years, then home with my kids.',
-      })
-    ).toBeVisible();
+    expect(await screen.findByText(/start with your last job before your break/)).toBeVisible();
   });
 
   it('stays off the landing page, where there is nothing of hers to read', async () => {

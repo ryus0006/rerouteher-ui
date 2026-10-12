@@ -1,10 +1,9 @@
 /**
- * A photograph with a WebP source and a JPEG fallback.
+ * Responsive photo with a WebP source and JPEG fallback.
  *
- * `width` and `height` are the file's intrinsic pixels, so the browser reserves
- * the box before the image arrives and nothing around it shifts on load. The
- * frame's own aspect ratio comes from `className`, with `object-cover` cropping
- * to it.
+ * `width` and `height` are the intrinsic pixel dimensions, letting the browser
+ * reserve space and avoid layout shift. The displayed aspect ratio comes from
+ * `className`, with `object-cover` cropping to fit.
  */
 export default function Photo({
   webp,
@@ -16,8 +15,7 @@ export default function Photo({
   loading = 'lazy',
   fetchPriority = 'auto',
 }) {
-  // `contents` removes the picture's own box, so the image lays out as a direct
-  // child of whatever frame it is dropped into.
+  // `contents` removes the <picture> box so the image lays out as a direct child of its container.
   return (
     <picture className="contents">
       <source srcSet={webp} type="image/webp" />

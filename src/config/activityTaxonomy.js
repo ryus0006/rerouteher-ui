@@ -1,9 +1,8 @@
 /**
  * Career-break activities, grouped into the four categories shown on the break step.
  *
- * Ids are the payload sent to the snapshot endpoint, which looks them up to produce
- * reframed skills. Components render from this config rather than repeating an id
- * as a string literal, so every id lives in one file.
+ * Ids are sent to the snapshot endpoint, which maps them to reframed skills.
+ * Components read ids from this config instead of using string literals.
  */
 export const ACTIVITY_TAXONOMY = [
   {

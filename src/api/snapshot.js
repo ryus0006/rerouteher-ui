@@ -3,8 +3,8 @@ import { postJson } from './client.js';
 /**
  * @param {import('../types/intake.js').StoredCv} cv
  * @param {{ duration_years: number, activities: string[] }} careerBreak
- * @param {{ skill_id: string, skill_name: string }[]} [confirmedSkills] skills she ticked
- *   from her previous role's checklist in the chat; merged into the snapshot.
+ * @param {{ skill_id: string, skill_name: string }[]} [confirmedSkills] skills the user
+ *   confirmed from the previous-role checklist in the companion; merged into the snapshot.
  * @returns {Promise<import('../types/api.js').Snapshot>}
  */
 export function generateSnapshot(cv, careerBreak, confirmedSkills = []) {
@@ -14,6 +14,6 @@ export function generateSnapshot(cv, careerBreak, confirmedSkills = []) {
   return postJson('/api/snapshot/generate', {
     cv: structuredCv,
     break: careerBreak,
-    confirmed_skills: confirmedSkills.map((s) => s.skill_id),
+    confirmed_skills: confirmedSkills.map((s) => s.skill_id).filter(Boolean),
   });
 }

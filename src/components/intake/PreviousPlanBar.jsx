@@ -3,13 +3,11 @@ import { useAccountStore } from '../../store/accountStore.js';
 import { useIntakeStore } from '../../store/intakeStore.js';
 
 /**
- * The way back out of a redo she has started but not finished.
+ * Offers to restore the previous plan during an unfinished redo.
  *
- * Replacing the CV clears the snapshot, role, readiness and focus areas the
- * moment the new file lands, so abandoning halfway would otherwise leave her
- * with nothing at all — the old plan gone and the new one never built. The plan
- * she is replacing is held until the redo produces its own gap, and this is
- * what offers it back. It disappears on its own once the new one is finished.
+ * Uploading a new CV clears the snapshot, role and gap result. The previous
+ * plan is kept in `previousPlan` until the redo produces a new gap result;
+ * this bar lets the user restore it before then and hides once it is cleared.
  */
 export default function PreviousPlanBar() {
   const navigate = useSmoothNavigate();
@@ -19,8 +17,8 @@ export default function PreviousPlanBar() {
 
   if (!previousPlan) return null;
 
-  // Where the restored plan is read: the journey for an account, and the gap
-  // screen for a guest, who has no journey to be sent to.
+  // A restored plan with a gap result opens on the journey (signed in) or the
+  // gap screen (guest); a plan without one resumes at the snapshot step.
   const to = previousPlan.gapResult
     ? user
       ? '/journey'

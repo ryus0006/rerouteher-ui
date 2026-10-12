@@ -23,18 +23,18 @@ test('create account, persist session across reload, sign out, sign back in', as
   await sheet.getByLabel('Password', { exact: true }).fill(password);
   await sheet.getByRole('button', { name: 'Create account and continue' }).click();
 
-  // Signed in: the Sign out button appears (AC 5.1.3).
+  // Signed in: the Sign out button appears.
   await expect(page.getByRole('button', { name: 'Sign out' })).toBeVisible();
 
-  // Session survives a reload in the same tab (AC 5.3.5).
+  // Session survives a reload in the same tab.
   await page.reload();
   await expect(page.getByRole('button', { name: 'Sign out' })).toBeVisible();
 
-  // Sign out returns to guest (AC 5.5.2).
+  // Sign out returns to guest.
   await page.getByRole('button', { name: 'Sign out' }).click();
   await expect(page.getByRole('button', { name: 'Sign in' })).toBeVisible();
 
-  // Sign back in with the same credentials (AC 5.3.3).
+  // Sign back in with the same credentials.
   await page.getByRole('button', { name: 'Sign in' }).first().click();
   const signInSheet = page.getByRole('dialog');
   await signInSheet.getByLabel('Username').fill(username);

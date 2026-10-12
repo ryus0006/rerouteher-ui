@@ -1,5 +1,10 @@
 import { afterEach, expect, test, vi } from 'vitest';
-import { savePlan, signOut } from '../../src/api/account.js';
+import {
+  addProfessionalSkill,
+  removeProfessionalSkill,
+  savePlan,
+  signOut,
+} from '../../src/api/account.js';
 
 afterEach(() => vi.restoreAllMocks());
 
@@ -27,5 +32,35 @@ test('signOut calls the sign-out endpoint with credentials', async () => {
 
   const [url, options] = fetchMock.mock.calls[0];
   expect(url).toContain('/api/account/sign-out');
+  expect(options.credentials).toBe('include');
+});
+
+test('addProfessionalSkill uses authenticated JSON PUT', async () => {
+  const fetchMock = vi.fn().mockResolvedValue({
+    ok: true,
+    json: async () => ({ status: 'added' }),
+  });
+  vi.stubGlobal('fetch', fetchMock);
+
+  await addProfessionalSkill('skill/one');
+
+  const [url, options] = fetchMock.mock.calls[0];
+  expect(url).toContain('/api/account/professional-skills/skill%2Fone');
+  expect(options.method).toBe('PUT');
+  expect(options.credentials).toBe('include');
+});
+
+test('removeProfessionalSkill uses authenticated JSON DELETE', async () => {
+  const fetchMock = vi.fn().mockResolvedValue({
+    ok: true,
+    json: async () => ({ status: 'removed' }),
+  });
+  vi.stubGlobal('fetch', fetchMock);
+
+  await removeProfessionalSkill('s1');
+
+  const [url, options] = fetchMock.mock.calls[0];
+  expect(url).toContain('/api/account/professional-skills/s1');
+  expect(options.method).toBe('DELETE');
   expect(options.credentials).toBe('include');
 });

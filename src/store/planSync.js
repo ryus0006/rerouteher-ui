@@ -2,48 +2,39 @@ import { savePlan } from '../api/account.js';
 import { useAccountStore } from './accountStore.js';
 import { useIntakeStore } from './intakeStore.js';
 
-/* Long enough that a slider being dragged or a chip being toggled repeatedly
-   is one save rather than twenty, short enough that closing the tab straight
-   after an edit still catches it. */
+/* Debounce interval: batches rapid edits into one save while keeping the
+   delay short enough to complete before the tab is closed. */
 const QUIET_MS = 800;
 
 const serialise = () => JSON.stringify(useIntakeStore.getState().exportPlan());
 
 /**
- * Keeps a signed-in woman's account copy level with what she has on screen.
+ * Syncs the signed-in user's plan to their account, debouncing local changes
+ * and saving them with `savePlan`.
  *
- * Every edit after account creation — a redone diagnostic, a different target
- * role, her employer priorities — is written back to the account, so signing
- * in on another device brings all of it and not just the plan as it stood at
- * sign-up.
- *
- * Started explicitly from `main.jsx` rather than on import, so tests reach for
- * it when they mean to and are not given background traffic they did not ask
- * for.
+ * Started explicitly from `main.jsx` rather than on import, so tests opt in
+ * and do not generate unexpected background requests.
  *
  * @returns {() => void} stops syncing
  */
 export function startPlanSync() {
   let timer = null;
   let saved = null;
-  // The write the debounce is still holding, kept so it can be sent early.
+  // Pending debounced write, retained so it can be flushed early.
   let queued = null;
 
   function send({ plan }) {
     saved = plan;
 
     savePlan({ plan: JSON.parse(plan) }).catch(() => {
-      /* Losing the round trip must not lose the edit: clearing the baseline
-         means the next change she makes carries this one to the server too.
-         Nothing is said on screen — she did not ask for a save, and her work
-         is still on the device either way. */
+      /* On failure, reset the baseline so the next change re-sends this edit.
+         Failures are silent; the data remains on the device. */
       saved = null;
     });
   }
 
-  /* Sends the waiting write now rather than in another half second. Signing
-     out clears the device, so an edit still sitting in the debounce would be
-     the one thing that never reached the account. */
+  /* Sends any pending write immediately. Called when the account changes, so a
+     debounced edit is saved before sign-out clears local data. */
   function flush() {
     if (!queued) return;
     clearTimeout(timer);
@@ -54,9 +45,8 @@ export function startPlanSync() {
     send(write);
   }
 
-  /* Signing in or out changes whose plan this is rather than editing one. The
-     baseline moves with it, so an import is not immediately posted back and a
-     sign-out cannot leave one edit queued against the previous account. */
+  /* On sign-in or sign-out, flush any pending edit to the previous account,
+     then reset the baseline so an imported plan is not posted straight back. */
   const releaseAccount = useAccountStore.subscribe((state, previous) => {
     if (state.user?.username === previous.user?.username) return;
     flush();

@@ -1,6 +1,6 @@
 import useSmoothNavigate from '../../hooks/useSmoothNavigate.js';
 
-/** Return to the previous step. Sits under the stepper on every screen. */
+/** Link back to the previous screen. */
 export default function BackLink({ to, children }) {
   const navigate = useSmoothNavigate();
 

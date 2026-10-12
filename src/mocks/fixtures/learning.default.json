@@ -23,6 +23,30 @@
       "skill": "Prompt Engineering for UX Workflows",
       "icon": "case",
       "blurb": "Put prompting to work on the research and synthesis you already do."
+    },
+    {
+      "skill_id": "mock-accessibility",
+      "skill": "Accessibility Auditing (WCAG 2.2)",
+      "icon": "case",
+      "blurb": "Check your designs work for everyone, using the standard teams audit against."
+    },
+    {
+      "skill_id": "mock-product-analytics",
+      "skill": "Product Analytics for Design Decisions",
+      "icon": "layers",
+      "blurb": "Let usage data back up the design calls you already make."
+    },
+    {
+      "skill_id": "mock-motion",
+      "skill": "Motion & Micro-interaction Design",
+      "icon": "flow",
+      "blurb": "Add small, purposeful motion that helps people follow what changed."
+    },
+    {
+      "skill_id": "mock-ux-writing",
+      "skill": "UX Writing & Content Design",
+      "icon": "case",
+      "blurb": "Make the words in your designs do as much work as the layout."
     }
   ],
   "resources": [
@@ -151,6 +175,118 @@
       "free": true,
       "url": "https://www.youtube.com/results?search_query=ai+prompting+ux+research+synthesis",
       "why": "Applies prompting to research synthesis, the strongest skill on your snapshot, so it compounds rather than starts from scratch."
+    },
+    {
+      "skill_id": "mock-accessibility",
+      "id": "a11y-wcag-intro",
+      "skill": "Accessibility Auditing (WCAG 2.2)",
+      "title": "Accessibility for designers",
+      "provider": "Nielsen Norman Group",
+      "logo": "nngroup",
+      "format": "Article",
+      "minutes": 25,
+      "cost": "Free",
+      "free": true,
+      "url": "https://www.nngroup.com/topic/accessibility/",
+      "why": "Grounds the WCAG checks in the usability work you already run, rather than a checklist on its own."
+    },
+    {
+      "skill_id": "mock-accessibility",
+      "id": "a11y-figma-audit",
+      "skill": "Accessibility Auditing (WCAG 2.2)",
+      "title": "Auditing a Figma file for accessibility",
+      "provider": "YouTube",
+      "logo": "youtube",
+      "format": "Video",
+      "minutes": 35,
+      "cost": "Free",
+      "free": true,
+      "url": "https://www.youtube.com/results?search_query=figma+accessibility+audit+wcag",
+      "why": "Runs an audit inside Figma, so you can try it on your own files straight away."
+    },
+    {
+      "skill_id": "mock-product-analytics",
+      "id": "analytics-ux-metrics",
+      "skill": "Product Analytics for Design Decisions",
+      "title": "Choosing UX metrics that matter",
+      "provider": "Nielsen Norman Group",
+      "logo": "nngroup",
+      "format": "Article",
+      "minutes": 20,
+      "cost": "Free",
+      "free": true,
+      "url": "https://www.nngroup.com/topic/analytics-metrics/",
+      "why": "Connects numbers to the research questions you already ask, so data adds to your judgement rather than replacing it."
+    },
+    {
+      "skill_id": "mock-product-analytics",
+      "id": "analytics-funnels",
+      "skill": "Product Analytics for Design Decisions",
+      "title": "Reading funnels and drop-off",
+      "provider": "YouTube",
+      "logo": "youtube",
+      "format": "Video",
+      "minutes": 40,
+      "cost": "Free",
+      "free": true,
+      "url": "https://www.youtube.com/results?search_query=product+analytics+funnels+for+designers",
+      "why": "Shows where people leave a flow, the same question your user flows are built to answer."
+    },
+    {
+      "skill_id": "mock-motion",
+      "id": "motion-figma-smart-animate",
+      "skill": "Motion & Micro-interaction Design",
+      "title": "Smart Animate in Figma",
+      "provider": "Figma Learn",
+      "logo": "figma",
+      "format": "Article",
+      "minutes": 20,
+      "cost": "Free",
+      "free": true,
+      "url": "https://help.figma.com/hc/en-us",
+      "why": "Builds on the interactive prototypes you already make, with no new tool to learn."
+    },
+    {
+      "skill_id": "mock-motion",
+      "id": "motion-purpose",
+      "skill": "Motion & Micro-interaction Design",
+      "title": "Using animation with purpose",
+      "provider": "Nielsen Norman Group",
+      "logo": "nngroup",
+      "format": "Article",
+      "minutes": 15,
+      "cost": "Free",
+      "free": true,
+      "url": "https://www.nngroup.com/topic/animation/",
+      "why": "Keeps motion tied to usability, so it explains a change instead of decorating it."
+    },
+    {
+      "skill_id": "mock-ux-writing",
+      "id": "writing-microcopy",
+      "skill": "UX Writing & Content Design",
+      "title": "Writing clear interface copy",
+      "provider": "Nielsen Norman Group",
+      "logo": "nngroup",
+      "format": "Article",
+      "minutes": 20,
+      "cost": "Free",
+      "free": true,
+      "url": "https://www.nngroup.com/topic/writing-web/",
+      "why": "Pairs with your usability testing: unclear words are one of the most common things people stumble on."
+    },
+    {
+      "skill_id": "mock-ux-writing",
+      "id": "writing-content-design",
+      "skill": "UX Writing & Content Design",
+      "title": "Content design for product teams",
+      "provider": "YouTube",
+      "logo": "youtube",
+      "format": "Video",
+      "minutes": 30,
+      "cost": "Free",
+      "free": true,
+      "url": "https://www.youtube.com/results?search_query=content+design+ux+writing",
+      "why": "Shows how content designers work alongside UX, so you can speak to it in interviews."
     }
   ]
 }

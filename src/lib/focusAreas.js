@@ -1,15 +1,13 @@
 // @ts-check
 
 /**
- * Compose the focus areas from the backend's uplift-ranked gaps.
+ * Selects focus areas from the backend's uplift-ranked gaps.
  *
- * Most returners have no AI skills on their CV, so AI-literacy gaps would other-
- * wise flood the list and crowd out role skills. To keep role (technical) skills
- * visible, only one slot is reserved for the highest-uplift AI-literacy gap and
- * the remaining slots go to the highest-uplift role gaps. If role gaps run out,
- * the leftover slots are backfilled from the remaining gaps (including more AI)
- * rather than left empty. The result is then presented in uplift order (highest
- * first); the reserved AI gap keeps its slot but is not forced last.
+ * AI-literacy gaps are common and would otherwise crowd out role skills, so at
+ * most one slot is reserved for the highest-uplift AI-literacy gap and the rest
+ * go to the highest-uplift role gaps. If there are too few role gaps, remaining
+ * slots are backfilled from the other gaps. The result is sorted by uplift,
+ * highest first.
  *
  * @param {import('../types/api.js').Gap[]} gaps  ranked by uplift (backend order)
  * @param {number} max  how many focus areas to surface
@@ -32,4 +30,27 @@ export function pickFocusAreas(gaps, max) {
   }
 
   return chosen.sort((a, b) => b.uplift - a.uplift);
+}
+
+/** Focus areas take the landing page's tool tones, in ranking order. */
+export const FOCUS_TONES = ['pink', 'indigo', 'amber', 'violet'];
+
+/**
+ * Focus areas in a learning plan, in order: the first focus areas from the
+ * gap result, then gaps added from Up later, then owned skills added back as
+ * refreshers (marked `refresher: true`).
+ *
+ * @param {{ gaps: import('../types/api.js').Gap[] } | null} gapResult
+ * @param {string[] | undefined} added  skill ids added from Up later
+ * @param {{ skill_id: string, skill: string }[] | undefined} refreshed
+ * @param {number} max  how many focus areas the gap result starts with
+ */
+export function planFocusAreas(gapResult, added, refreshed, max) {
+  if (!gapResult) return [];
+  const picked = pickFocusAreas(gapResult.gaps, max);
+  const extra = (added ?? [])
+    .map((skillId) => gapResult.gaps.find((gap) => gap.skill_id === skillId))
+    .filter((gap) => gap && !picked.includes(gap));
+  const refreshers = (refreshed ?? []).map((entry) => ({ ...entry, refresher: true }));
+  return [...picked, ...extra, ...refreshers];
 }

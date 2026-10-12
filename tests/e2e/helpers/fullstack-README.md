@@ -29,3 +29,25 @@ Notes:
 - Without E2E_FULLSTACK the suite runs mock-backed against `npm run preview`, as before.
 - CORS: the backend allows http://localhost:5173 and http://localhost:5174 by default (iteration 2 UI runs on 5174); the API port can differ (8080/8081) without affecting CORS, which keys off the frontend origin, not the API port.
 - Stop: Ctrl-C the uvicorn (API), then ./scripts/local-stop.sh (add nothing to reset the DB, or --keep-data to preserve it).
+
+## E9 full-stack fixture
+
+The E9 browser scenario uses the deterministic backend fixture at
+`rerouteher-system/tests/fixtures/e9_job_search.sql`.
+
+1. Start the backend database and API with the normal Docker Compose workflow.
+2. Load the fixture against the running database:
+
+   ```bash
+   psql "$DATABASE_URL" -f rerouteher-system/tests/fixtures/e9_job_search.sql
+   ```
+
+3. Start the UI against the API and run:
+
+   ```bash
+   E2E_FULLSTACK=1 E2E_BASE_URL=http://localhost:5174 npm run test:e2e -- tests/e2e/e9-employers.spec.js
+   ```
+
+The fixture is idempotent. It creates a ready `R03` Human Resources Officer
+search and one active CIMB Group Holdings Berhad opening at a test-only HTTPS
+URL. It does not call Jooble, foundit, Tavily, or Gemini.

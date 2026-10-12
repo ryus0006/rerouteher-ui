@@ -1,6 +1,6 @@
 /**
- * The three phases the landing page advertises, in order. `FLOW_STEPS` is the
- * separate, finer-grained list of screens the intake stepper walks through.
+ * The three journey stages shown on the landing page, in order. See
+ * `FLOW_STEPS` for the per-screen list used by the intake stepper.
  */
 export const JOURNEY_STAGES = [
   {
@@ -16,7 +16,7 @@ export const JOURNEY_STAGES = [
   {
     id: 'gap',
     label: 'Know your next move',
-    blurb: 'A readiness score and three focus areas.',
+    blurb: 'The skills you already have, and three to build first.',
   },
 ];
 

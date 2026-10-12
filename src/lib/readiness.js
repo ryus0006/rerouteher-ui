@@ -1,8 +1,6 @@
 /**
- * Running readiness after each focus area, in the order they are ranked.
- *
- * Shared by the gap screen and the journey page so both draw the same arc from
- * the same numbers.
+ * Cumulative readiness after each ranked focus area, used to draw the gauge
+ * segments on the gap and journey pages.
  */
 export function markersFor(readiness, focusAreas) {
   let running = readiness;

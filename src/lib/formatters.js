@@ -4,7 +4,7 @@ export function formatYears(years) {
   return years === 1 ? '1 year' : `${years} years`;
 }
 
-/** Readiness increase a gap would unlock, straight from the backend value. */
+/** Formats a gap's readiness uplift as returned by the backend. */
 export function formatUplift(uplift) {
   return `+${uplift}% if learned`;
 }

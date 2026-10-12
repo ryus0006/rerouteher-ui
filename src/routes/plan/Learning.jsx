@@ -1,77 +1,33 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Navigate } from 'react-router-dom';
+import { ArrowUpRight, BookmarkSimple } from '@phosphor-icons/react';
 import Header from '../../components/layout/Header.jsx';
+import GradientButton from '../../components/ui/GradientButton.jsx';
 import BackLink from '../../components/intake/BackLink.jsx';
 import TargetRoleSelect from '../../components/plan/TargetRoleSelect.jsx';
-import Photo from '../../components/ui/Photo.jsx';
-import LearningIcon from '../../components/plan/LearningIcon.jsx';
+import ProviderMark from '../../components/learning/ProviderMark.jsx';
+import UpNext from '../../components/learning/UpNext.jsx';
+import FinishPanel from '../../components/learning/FinishPanel.jsx';
+import LearningHero from '../../components/learning/LearningHero.jsx';
+import AreaRail from '../../components/learning/AreaRail.jsx';
+import UpLater from '../../components/learning/UpLater.jsx';
+import FinishedAreas from '../../components/learning/FinishedAreas.jsx';
+import RefreshSkills from '../../components/learning/RefreshSkills.jsx';
+import MoreSkills from '../../components/learning/MoreSkills.jsx';
+import ChapterLabel from '../../components/learning/ChapterLabel.jsx';
 import { MAX_FOCUS_AREAS } from '../../components/gap/FocusAreaList.jsx';
-import { pickFocusAreas } from '../../lib/focusAreas.js';
-import { formatUplift } from '../../lib/formatters.js';
+import { FOCUS_TONES as TONES, planFocusAreas } from '../../lib/focusAreas.js';
+import { learnedSkillsFor, sameLearned, statusOf, upNext } from '../../lib/learningProgress.js';
+import { addSkillToCv, removeSkillFromCv, skillOnCv } from '../../lib/cvDraft.js';
 import { recommendLearning } from '../../api/learning.js';
 import { useAccountStore } from '../../store/accountStore.js';
 import { useIntakeStore } from '../../store/intakeStore.js';
 
-import bannerWebp from '../../assets/learning-desk.webp';
-import bannerJpg from '../../assets/learning-desk.jpg';
-import figmaLogo from '../../assets/logos/figma.png';
-import youtubeLogo from '../../assets/logos/youtube.png';
-import nngroupLogo from '../../assets/logos/nngroup.png';
-import openaiLogo from '../../assets/logos/openai.png';
+/* Time away from the tab before returning asks whether a resource was
+   finished, so a quick switch back does not prompt. */
+const CHECK_IN_AFTER_MS = 4000;
 
-/* The providers' own marks, self-hosted rather than hot-linked, so the page
-   makes no request to anyone she has not chosen to visit. */
-const LOGOS = {
-  figma: figmaLogo,
-  youtube: youtubeLogo,
-  nngroup: nngroupLogo,
-  openai: openaiLogo,
-};
-
-const ALL = 'all';
-
-/** "30 min" under the hour, "1.5h" over it — the way a course is advertised. */
-function duration(minutes) {
-  if (!minutes) return null;
-  if (minutes < 60) return `${minutes} min`;
-  const hours = minutes / 60;
-  return `${Number.isInteger(hours) ? hours : hours.toFixed(1)}h`;
-}
-
-/**
- * The provider's own mark, with its initials as the fallback.
- *
- * She is being asked to trust a link and spend an evening on it, and a name
- * she recognises at a glance is most of that decision. Hidden from assistive
- * technology because the provider is written out beside it.
- */
-function ProviderMark({ logo, provider }) {
-  const source = LOGOS[logo];
-
-  if (source) {
-    return (
-      <img
-        src={source}
-        alt=""
-        aria-hidden="true"
-        width="32"
-        height="32"
-        loading="lazy"
-        decoding="async"
-        className="size-8 shrink-0 rounded-lg object-contain"
-      />
-    );
-  }
-
-  return (
-    <span
-      aria-hidden="true"
-      className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-canvas-sunk text-[0.625rem] font-bold leading-none text-ink-soft"
-    >
-      {provider.slice(0, 2)}
-    </span>
-  );
-}
+const STATUS_LABEL = { saved: 'Saved', started: 'In progress', done: 'Finished' };
 
 function Chip({ tone = 'neutral', children }) {
   const tones = {
@@ -87,77 +43,183 @@ function Chip({ tone = 'neutral', children }) {
   );
 }
 
-/**
- * One resource, with the reason it is here in her own terms.
- *
- * The `why` line is the whole point of the row (US6.2): a list of courses is
- * something she could have searched for herself, and what she cannot search for
- * is which one closes the gap she was just shown. Everything else on the row —
- * provider, format, length, price — is what she needs to judge whether it fits
- * a week that already has a family in it.
- */
-function Resource({ resource }) {
+/** Status ring: empty until finished, then filled with a tick. */
+function StatusRing({ status, title, onClick }) {
+  const done = status === 'done';
   return (
-    <li className="flex flex-wrap items-start gap-x-4 gap-y-3 border-t border-line px-5 py-4 sm:flex-nowrap sm:px-6">
-      <ProviderMark logo={resource.logo} provider={resource.provider} />
-
-      <div className="min-w-0 flex-1">
-        <h3 className="font-semibold text-ink">{resource.title}</h3>
-        <p className="mt-0.5 text-xs text-ink-faint">{resource.provider}</p>
-        <p className="mt-1.5 max-w-[62ch] text-sm leading-relaxed text-ink-soft">{resource.why}</p>
-      </div>
-
-      <div className="flex shrink-0 flex-wrap items-center gap-2">
-        <Chip tone="format">{resource.format}</Chip>
-        {duration(resource.minutes) && <Chip>{duration(resource.minutes)}</Chip>}
-        <Chip tone={resource.free ? 'free' : 'neutral'}>{resource.cost}</Chip>
-      </div>
-
-      <a
-        href={resource.url}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="shrink-0 rounded-full border border-line-strong px-4 py-2 text-sm font-semibold text-ink transition hover:bg-canvas-sunk focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
-      >
-        Open resource
-        <span aria-hidden="true" className="ml-1 text-ink-faint">
-          ↗
-        </span>
-        <span className="sr-only">
-          {resource.title} at {resource.provider}, opens in a new tab
-        </span>
-      </a>
-    </li>
+    <button
+      type="button"
+      onClick={onClick}
+      data-status={status ?? 'none'}
+      aria-label={done ? `Mark ${title} as not finished` : `Mark ${title} as finished`}
+      className="lp-ring group"
+    >
+      <svg viewBox="0 0 24 24" aria-hidden="true" className="size-6">
+        <circle cx="12" cy="12" r="10" className="lp-ring-track" />
+        <circle cx="12" cy="12" r="10" className="lp-ring-fill" />
+        <path d="m7.5 12.3 3 3 6-6.3" className="lp-ring-tick" />
+      </svg>
+    </button>
   );
 }
 
 /**
- * What to actually do about the gap (E6).
- *
- * Grouped under the focus area each resource closes rather than listed flat,
- * so relevance is carried by the structure instead of being asserted in a
- * label. The order is the gap's order, so the first thing on the page is the
- * thing that moves her readiness most.
+ * Learning resource row: title, `why` (how it addresses the gap), provider,
+ * format and cost, with its status and a bookmark for later.
+ */
+function Resource({ resource, status, onFinish, onUnfinish, onSave, onOpen }) {
+  const saved = status === 'saved' || status === 'started';
+  const done = status === 'done';
+
+  return (
+    <li data-status={status ?? 'none'} className="lp-row">
+      <StatusRing
+        status={status}
+        title={resource.title}
+        onClick={() => (done ? onUnfinish(resource) : onFinish(resource))}
+      />
+      <ProviderMark logo={resource.logo} provider={resource.provider} />
+
+      {/* lp-row-body and lp-row-actions let the actions wrap to their own
+          line on phones (see index.css). */}
+      <div className="lp-row-body min-w-0 flex-1">
+        <h3 className="flex flex-wrap items-center gap-x-2 gap-y-1 font-semibold text-ink">
+          {resource.title}
+          {status && (
+            <span className="lp-status" data-status={status}>
+              {STATUS_LABEL[status]}
+            </span>
+          )}
+        </h3>
+        <p className="mt-0.5 text-xs text-ink-faint">{resource.provider}</p>
+        <p className="mt-1.5 max-w-[62ch] text-sm leading-relaxed text-ink-soft">{resource.why}</p>
+        <div className="mt-3 flex flex-wrap items-center gap-1.5">
+          <Chip tone="format">{resource.format}</Chip>
+          <Chip tone={resource.free ? 'free' : 'neutral'}>{resource.cost}</Chip>
+        </div>
+      </div>
+
+      <div className="lp-row-actions flex shrink-0 items-center gap-1.5">
+        <button
+          type="button"
+          onClick={() => onSave(resource)}
+          aria-pressed={saved}
+          aria-label={`Save ${resource.title} for later`}
+          className={`lp-icon-button ${done ? 'invisible' : ''}`}
+          tabIndex={done ? -1 : undefined}
+        >
+          <BookmarkSimple
+            weight={saved ? 'fill' : 'light'}
+            className="size-[1.125rem]"
+            aria-hidden="true"
+          />
+        </button>
+        <a
+          href={resource.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={() => onOpen(resource)}
+          className="lp-open group"
+        >
+          {status === 'started' ? 'Continue' : done ? 'Revisit' : 'Open resource'}
+          <span className="lp-open-icon">
+            <ArrowUpRight weight="bold" className="size-3" aria-hidden="true" />
+          </span>
+          <span className="sr-only">
+            {resource.title} at {resource.provider}, opens in a new tab
+          </span>
+        </a>
+      </div>
+    </li>
+  );
+}
+
+/** Sign-in gate: the learning plan and its progress are saved per account. */
+function SignInRequired() {
+  const openSheet = useAccountStore((state) => state.openSheet);
+  return (
+    <div className="flex min-h-screen flex-col">
+      <Header />
+      <main className="page-shell max-w-[760px] flex-1 py-16 max-md:py-10">
+        <h1 className="font-display text-4xl font-bold tracking-[-0.03em] text-ink max-md:text-3xl">
+          Your learning plan
+        </h1>
+        <p className="mt-3 max-w-[54ch] text-base leading-relaxed text-ink-soft">
+          Create a free account to open your learning plan. It saves the resources you finish and
+          your progress on each focus area.
+        </p>
+        <p className="mt-2 max-w-[54ch] text-sm leading-relaxed text-ink-soft">
+          Everything you have done so far as a guest comes with you.
+        </p>
+        <div className="mt-7 flex flex-wrap gap-3">
+          <GradientButton size="md" onClick={() => openSheet('create', '/plan/learning')}>
+            Create an account
+          </GradientButton>
+        </div>
+      </main>
+    </div>
+  );
+}
+
+/**
+ * Learning plan page. Resources are grouped by focus area, in the gap
+ * result's ranking order, and one focus area is shown at a time, picked from
+ * the rail. Each resource can be saved for later, is marked started when
+ * opened, and on return the user is asked whether it was finished.
  */
 export default function Learning() {
   const snapshot = useIntakeStore((state) => state.snapshot);
   const selectedRole = useIntakeStore((state) => state.selectedRole);
   const user = useAccountStore((state) => state.user);
   const gapResult = useIntakeStore((state) => state.gapResult);
+  const progress = useIntakeStore((state) => state.learningProgress);
+  const setStatus = useIntakeStore((state) => state.setLearningStatus);
+  const openSheet = useAccountStore((state) => state.openSheet);
+  const learnedSkills = useIntakeStore((state) => state.learnedSkills);
+  const setLearnedSkills = useIntakeStore((state) => state.setLearnedSkills);
+  const addedFocusAreas = useIntakeStore((state) => state.addedFocusAreas);
+  const addFocusArea = useIntakeStore((state) => state.addFocusArea);
+  const refreshAreas = useIntakeStore((state) => state.refreshAreas);
+  const addRefreshArea = useIntakeStore((state) => state.addRefreshArea);
+  const cvDraft = useIntakeStore((state) => state.cvDraft);
+  const setCvDraft = useIntakeStore((state) => state.setCvDraft);
 
   const [plan, setPlan] = useState(null);
+  // The skill ids the current plan was fetched for.
+  const [planKey, setPlanKey] = useState(null);
   const [error, setError] = useState(null);
-  const [filter, setFilter] = useState(ALL);
-  const [closed, setClosed] = useState([]);
+  // The floating panel: { kind: 'check' | 'area' | 'account', id }.
+  const [moment, setMoment] = useState(null);
+  // Resource opened in another tab, awaiting the user's return: { id, at }.
+  const awaiting = useRef(null);
+  // Focus area shown beside the rail; the first active one when unset.
+  const [picked, setPicked] = useState(null);
+  // Open More skills tab: 'later' | 'refresh' | 'finished'.
+  const [moreTab, setMoreTab] = useState(null);
+  const learningNow = useRef(null);
+  // Area just added from Up later or Refresh; scrolled to and animated once its
+  // resources load.
+  const [entering, setEntering] = useState(null);
+  const scrolledTo = useRef(null);
+  // Finished focus areas opened to show their resources.
+  const [openFinished, setOpenFinished] = useState([]);
 
-  const focusAreas = gapResult ? pickFocusAreas(gapResult.gaps, MAX_FOCUS_AREAS) : [];
-  const skillIds = focusAreas.map((gap) => gap.skill_id);
-  const skillKey = skillIds.join('|');
+  const roleId = selectedRole?.role_id;
+  const added = addedFocusAreas?.[roleId];
+  const refreshed = refreshAreas?.[roleId];
+  // The first focus areas from the gap result, then any added from Up later,
+  // then owned skills added back as refreshers.
+  const focusAreas = useMemo(
+    () => planFocusAreas(gapResult, added, refreshed, MAX_FOCUS_AREAS),
+    [gapResult, added, refreshed]
+  );
+  const laterGaps = gapResult ? gapResult.gaps.filter((gap) => !focusAreas.includes(gap)) : [];
+  const skillKey = focusAreas.map((gap) => gap.skill_id).join('|');
 
   useEffect(() => {
     if (!gapResult || !selectedRole) return undefined;
 
-    // A changed target role reissues this; the stale answer must not win.
+    // Ignore responses from a superseded request (e.g. after a target role change).
     let live = true;
 
     recommendLearning({
@@ -168,6 +230,7 @@ export default function Learning() {
       .then((result) => {
         if (!live) return;
         setPlan(result);
+        setPlanKey(skillKey);
         setError(null);
       })
       .catch((cause) => live && setError(cause.message));
@@ -177,36 +240,211 @@ export default function Learning() {
     };
   }, [skillKey, gapResult, selectedRole]);
 
-  /* One filter per format actually present, so a chip never leads to an empty
-     page. "Free only" cuts across the formats, which is why it sits apart. */
-  const formats = useMemo(() => {
-    const seen = [];
-    for (const resource of plan?.resources ?? []) {
-      if (!seen.includes(resource.format)) seen.push(resource.format);
-    }
-    return seen;
-  }, [plan]);
+  const resources = useMemo(() => plan?.resources ?? [], [plan]);
 
-  // Everything in the plan is free, so there is no "free only" to offer.
-  const matches = (resource) => filter === ALL || resource.format === filter;
+  // Keep the CV builder's learned skills in step with finished focus areas.
+  useEffect(() => {
+    if (!plan) return;
+    // Refreshers are skills the user already has, so they never count as learned.
+    const gaps = focusAreas.filter((area) => !area.refresher);
+    const next = learnedSkillsFor(gaps, resources, progress, learnedSkills);
+    if (!sameLearned(next, learnedSkills)) setLearnedSkills(next);
+  }, [plan, focusAreas, resources, progress, learnedSkills, setLearnedSkills]);
 
-  // The plan is built from the gap, so there is nothing to show without one.
+  // On returning to the tab after opening a resource, ask whether it was finished.
+  useEffect(() => {
+    const onReturn = () => {
+      const opened = awaiting.current;
+      if (!opened || document.visibilityState !== 'visible') return;
+      awaiting.current = null;
+      if (Date.now() - opened.at < CHECK_IN_AFTER_MS) return;
+      if (statusOf(useIntakeStore.getState().learningProgress, opened.id) === 'done') return;
+      setMoment({ kind: 'check', id: opened.id });
+    };
+    document.addEventListener('visibilitychange', onReturn);
+    window.addEventListener('focus', onReturn);
+    return () => {
+      document.removeEventListener('visibilitychange', onReturn);
+      window.removeEventListener('focus', onReturn);
+    };
+  }, []);
+
+  // Guest progress would be lost with the session, so tracking asks for an account.
+  const askToSignIn = (resource) => setMoment({ kind: 'account', id: resource.id });
+
+  // Once an added area's resources arrive, bring its section into view.
+  useEffect(() => {
+    if (!entering || scrolledTo.current === entering) return;
+    if (!plan?.resources.some((resource) => resource.skill_id === entering)) return;
+    scrolledTo.current = entering;
+    document
+      .getElementById(`area-${entering}`)
+      ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, [entering, plan]);
+
+  const addToPlan = (gap) => {
+    addFocusArea(roleId, gap.skill_id);
+    setEntering(gap.skill_id);
+    setPicked(gap.skill_id);
+  };
+
+  const addRefresher = (entry) => {
+    addRefreshArea(roleId, entry);
+    setEntering(entry.skill_id);
+    setPicked(entry.skill_id);
+  };
+
+  const open = (resource) => {
+    if (!user) return;
+    if (statusOf(progress, resource.id) !== 'done') setStatus(resource.id, 'started');
+    awaiting.current = { id: resource.id, at: Date.now() };
+    setMoment(null);
+  };
+
+  // Ticking a resource needs no panel; only finishing a whole focus area does.
+  // Finishing a gap area keeps it in the plan so it moves to Finished; it is not
+  // auto-added to the professional profile (the panel offers adding it to the CV).
+  const finish = (resource) => {
+    if (!user) return askToSignIn(resource);
+    setStatus(resource.id, 'done');
+    const completesArea = resources
+      .filter((other) => other.skill_id === resource.skill_id && other.id !== resource.id)
+      .every((other) => statusOf(progress, other.id) === 'done');
+    setMoment(completesArea ? { kind: 'area', id: resource.id } : null);
+  };
+
+  // Restores the status held before it was finished; entries without `from`
+  // fall back to started.
+  const unfinish = (resource) => {
+    const entry = progress[resource.id];
+    setStatus(resource.id, entry && 'from' in entry ? entry.from : 'started');
+    if (moment?.id === resource.id) setMoment(null);
+  };
+
+  const toggleSave = (resource) => {
+    if (!user) return askToSignIn(resource);
+    const status = statusOf(progress, resource.id);
+    setStatus(resource.id, status === 'saved' || status === 'started' ? null : 'saved');
+  };
+
+  const closePanel = useCallback(() => setMoment(null), []);
+
+  // The learning plan tracks finished resources per account, so it requires sign in.
+  if (!user) return <SignInRequired />;
+
+  // Requires a gap result.
   if (!snapshot || !gapResult) return <Navigate to="/diagnostic/gap" replace />;
 
-  const shown = (plan?.resources ?? []).filter(matches);
+  // Refreshers share one green tone; gaps cycle through the palette.
+  const toneOf = (skillId) => {
+    const index = focusAreas.findIndex((gap) => gap.skill_id === skillId);
+    if (focusAreas[index]?.refresher) return 'refresh';
+    return TONES[Math.max(0, index) % TONES.length];
+  };
+
+  // Every focus area with its resources and progress, in ranking order.
+  const areas = focusAreas.map((gap) => {
+    const own = resources.filter((resource) => resource.skill_id === gap.skill_id);
+    const statuses = own.map((resource) => statusOf(progress, resource.id));
+    const done = statuses.filter((status) => status === 'done').length;
+    return {
+      ...gap,
+      icon: plan?.groups?.find((entry) => entry.skill_id === gap.skill_id)?.icon,
+      blurb: plan?.groups?.find((entry) => entry.skill_id === gap.skill_id)?.blurb,
+      tone: toneOf(gap.skill_id),
+      resources: own,
+      statuses,
+      done,
+      complete: own.length > 0 && done === own.length,
+    };
+  });
+  const withResources = areas.filter((area) => area.resources.length > 0);
+  const areaOf = (skillId) => areas.find((area) => area.skill_id === skillId);
+
+  // The one resource featured at the top: the latest started, then saved,
+  // then the first unfinished one in ranking order.
+  const queue = upNext(resources, progress);
+  const featured =
+    queue[0] ??
+    withResources
+      .flatMap((area) => area.resources)
+      .find((resource) => statusOf(progress, resource.id) !== 'done');
+  const shelf = queue.filter((resource) => resource.id !== featured?.id);
+
+  // Progress counts gap resources only; refreshers brush up on skills already held.
+  const gapResources = resources.filter((resource) => !areaOf(resource.skill_id)?.refresher);
+  const finishedCount = gapResources.filter(
+    (resource) => statusOf(progress, resource.id) === 'done'
+  ).length;
+  // Refreshers are counted on their own.
+  const refreshResources = resources.filter((resource) => areaOf(resource.skill_id)?.refresher);
+  const unfinished = (list) =>
+    list.filter((resource) => statusOf(progress, resource.id) !== 'done');
+
+  // Shows a focus area in place of the current one, bringing the top of the
+  // list back into view when it has scrolled past.
+  const showArea = (skillId) => {
+    setPicked(skillId);
+    const top = learningNow.current?.getBoundingClientRect().top ?? 0;
+    if (top < 0) learningNow.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
+  const scrollToMore = (scrollId = 'more-skills') =>
+    requestAnimationFrame(() =>
+      document.getElementById(scrollId)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    );
+
+  // Data for the floating panel.
+  const momentResource = moment && resources.find((resource) => resource.id === moment.id);
+  const momentArea = momentResource && areaOf(momentResource.skill_id);
+
+  // A finished area moves to the Finished tab, except the one just finished: it
+  // stays in place while its panel is open.
+  const holding = moment?.kind === 'area' ? momentArea?.skill_id : null;
+  const activeAreas = withResources.filter((area) => !area.complete || area.skill_id === holding);
+  const finishedAreas = withResources.filter((area) => area.complete && area.skill_id !== holding);
+  const shownArea = activeAreas.find((area) => area.skill_id === picked) ?? activeAreas[0];
+
+  // Owned skills for this role. The gap result carries each held skill's id, so
+  // refreshers can be fetched deterministically. Refreshers already in the plan
+  // above (with resources) leave this list.
+  const ownedSkills = (gapResult.skills_have ?? [])
+    .map((entry) => ({ skill_id: entry.skill_id, skill: entry.skill }))
+    .filter((entry) => {
+      const area = areaOf(entry.skill_id);
+      return !area || (area.refresher && area.resources.length === 0);
+    });
+  const refreshStateOf = (entry) => {
+    if (!areaOf(entry.skill_id)) return 'idle';
+    return planKey === skillKey ? 'none' : 'loading';
+  };
+
+  const showFinished = (skillId) => {
+    setOpenFinished((ids) => (ids.includes(skillId) ? ids : [...ids, skillId]));
+    setMoreTab('finished');
+    scrollToMore(`finished-${skillId}`);
+  };
+
+  const resourceRows = (area) =>
+    area.resources.map((resource) => (
+      <Resource
+        key={resource.id}
+        resource={resource}
+        status={statusOf(progress, resource.id)}
+        onFinish={(item) => finish(item)}
+        onUnfinish={unfinish}
+        onSave={toggleSave}
+        onOpen={open}
+      />
+    ));
 
   return (
     <div className="flex min-h-screen flex-col">
       <Header />
 
-      <main className="mx-auto w-full max-w-[1080px] flex-1 px-5 py-8 sm:px-6 sm:py-10">
-        {/* The journey for an account, the gap screen for a guest, who has no
-            journey to be sent to. */}
-        {user ? (
-          <BackLink to="/journey">Back to your journey</BackLink>
-        ) : (
-          <BackLink to="/diagnostic/gap">Back to your readiness</BackLink>
-        )}
+      <main className="page-shell max-w-[1200px] flex-1 pt-14 pb-40 max-md:pt-8 max-md:pb-16">
+        {/* Guests have no journey, so they get a way back to the gap screen. */}
+        {!user && <BackLink to="/diagnostic/gap">Back to your readiness</BackLink>}
 
         <div className="mt-3 flex flex-wrap items-start justify-between gap-x-8 gap-y-4">
           <div className="min-w-0">
@@ -222,35 +460,6 @@ export default function Learning() {
           <TargetRoleSelect />
         </div>
 
-        <section className="learning-banner mt-6 grid overflow-hidden rounded-3xl md:grid-cols-[1fr_1fr]">
-          <div className="order-2 p-6 sm:p-8 md:order-1 md:self-center">
-            <p className="eyebrow text-ink-faint">Learn at your own pace</p>
-            <h2 className="mt-2 max-w-[16ch] font-display text-2xl font-bold leading-[1.12] tracking-[-0.02em] text-ink sm:text-3xl">
-              Small steps, bigger possibilities.
-            </h2>
-            <p className="mt-3 max-w-[40ch] text-sm leading-relaxed text-ink-soft">
-              Build new skills, rekindle your confidence, and create the next chapter on your terms.
-            </p>
-          </div>
-
-          <div className="relative order-1 md:order-2">
-            {/* The band bleeds into the photograph rather than butting against
-                it, so the two halves read as one surface. */}
-            <div
-              aria-hidden="true"
-              className="learning-banner-blend pointer-events-none absolute inset-0 z-10"
-            />
-            <Photo
-              webp={bannerWebp}
-              jpg={bannerJpg}
-              width={1672}
-              height={941}
-              alt="A sunlit desk with a stack of books, a notebook and pen, a mug of coffee and an open laptop."
-              className="block h-44 w-full object-cover object-center sm:h-56 md:h-full"
-            />
-          </div>
-        </section>
-
         {error && (
           <p role="alert" className="mt-8 text-sm font-medium text-pink-600">
             {error} Reload the page to try again.
@@ -261,107 +470,144 @@ export default function Learning() {
           <p className="mt-8 text-sm text-ink-soft">Finding resources for your focus areas…</p>
         )}
 
-        {plan && plan.resources.length > 0 && (
-          <div className="mt-7 flex flex-wrap items-center gap-2">
-            {[ALL, ...formats].map((value) => {
-              const label = value === ALL ? 'All' : `${value}s`;
-              const active = filter === value;
-
-              return (
-                <button
-                  key={value}
-                  type="button"
-                  aria-pressed={active}
-                  onClick={() => setFilter(value)}
-                  className={[
-                    'rounded-full border px-4 py-2 text-sm font-medium transition duration-200 ease-spring focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600',
-                    active
-                      ? 'border-ink bg-ink text-white'
-                      : 'border-line-strong bg-surface text-ink-soft hover:border-ink/30 hover:text-ink',
-                  ].join(' ')}
-                >
-                  {label}
-                </button>
-              );
-            })}
-          </div>
+        {plan && resources.length > 0 && (
+          <LearningHero
+            progress={progress}
+            done={finishedCount}
+            total={gapResources.length}
+            refreshDone={refreshResources.length - unfinished(refreshResources).length}
+            refreshTotal={refreshResources.length}
+            role={selectedRole?.role}
+            featured={featured}
+            queueSize={queue.length}
+            featuredArea={featured && areaOf(featured.skill_id)}
+            nextGap={laterGaps[0]}
+            onAddNext={addToPlan}
+            onOpen={open}
+            onFinish={(resource) => finish(resource)}
+            onSave={toggleSave}
+          />
         )}
 
-        {plan &&
-          focusAreas.map((gap) => {
-            const group = plan.groups?.find((entry) => entry.skill_id === gap.skill_id);
-            const forGap = shown.filter((resource) => resource.skill_id === gap.skill_id);
+        {shelf.length > 0 && (
+          <UpNext
+            items={shelf}
+            progress={progress}
+            areaName={(skillId) => areaOf(skillId)?.skill ?? ''}
+            toneOf={toneOf}
+            onOpen={open}
+            onFinish={(resource) => finish(resource)}
+            onRemove={(resource) => setStatus(resource.id, null)}
+          />
+        )}
 
-            // Hide a focus area whose resources are all filtered out, so a filter
-            // never leaves an empty card behind. The count reflects what is shown.
-            if (forGap.length === 0) return null;
+        {plan && resources.length > 0 && (
+          <div className="mt-14 grid gap-10 lg:grid-cols-[16.5rem_minmax(0,1fr)] lg:gap-14 max-md:mt-10">
+            <aside>
+              <AreaRail
+                areas={activeAreas.filter((area) => !area.refresher)}
+                active={shownArea?.skill_id}
+                onSelect={showArea}
+                laterCount={laterGaps.length}
+                onLater={() => {
+                  setMoreTab('later');
+                  scrollToMore();
+                }}
+                refreshing={activeAreas.filter((area) => area.refresher)}
+                finished={finishedAreas}
+                onSelectFinished={showFinished}
+              />
+            </aside>
 
-            const count = forGap.length;
-            const open = !closed.includes(gap.skill_id);
-
-            return (
-              <section
-                key={gap.skill_id}
-                className="mt-5 overflow-hidden rounded-2xl border border-line bg-surface"
-              >
-                <div className="flex flex-wrap items-center gap-x-4 gap-y-3 p-5 sm:px-6">
-                  <span
-                    aria-hidden="true"
-                    className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-canvas-sunk text-ink"
-                  >
-                    <LearningIcon name={group?.icon} className="size-5" />
-                  </span>
-
-                  <div className="min-w-0 flex-1">
-                    <h2 className="font-display text-lg font-bold tracking-[-0.015em] text-ink">
-                      {gap.skill}
-                    </h2>
-                    {group?.blurb && <p className="mt-0.5 text-sm text-ink-soft">{group.blurb}</p>}
-                  </div>
-
-                  <p className="shrink-0 text-sm font-semibold tabular text-verify">
-                    {formatUplift(gap.uplift)}
-                  </p>
-
-                  <button
-                    type="button"
-                    aria-expanded={open}
-                    onClick={() =>
-                      setClosed((current) =>
-                        current.includes(gap.skill_id)
-                          ? current.filter((id) => id !== gap.skill_id)
-                          : [...current, gap.skill_id]
-                      )
-                    }
-                    className="flex shrink-0 items-center gap-2 rounded-full px-2 py-1 text-sm text-ink-soft transition hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
-                  >
-                    {count} {count === 1 ? 'resource' : 'resources'}
-                    <svg
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      aria-hidden="true"
-                      className={`size-4 transition-transform duration-200 ${open ? '' : 'rotate-180'}`}
-                    >
-                      <path d="m5 14 7-7 7 7" />
-                    </svg>
-                    <span className="sr-only">, {open ? 'hide' : 'show'} these resources</span>
-                  </button>
+            <section ref={learningNow} aria-label="All resources" className="min-w-0 scroll-mt-8">
+              {activeAreas.length > 0 && (
+                <div className="mb-8">
+                  <ChapterLabel>
+                    {shownArea?.refresher ? 'Refreshing' : 'Learning now'}
+                  </ChapterLabel>
                 </div>
+              )}
+              {queue.length === 0 && activeAreas.length > 0 && (
+                <p className="-mt-5 mb-8 flex items-center gap-1.5 text-sm text-ink-faint">
+                  <BookmarkSimple weight="light" className="size-4" aria-hidden="true" />
+                  {user
+                    ? 'Save anything for later and it waits at the top of this page.'
+                    : 'Create a free account to save resources and track what you finish.'}
+                </p>
+              )}
 
-                {open && (
-                  <ul>
-                    {forGap.map((resource) => (
-                      <Resource key={resource.id} resource={resource} />
-                    ))}
-                  </ul>
-                )}
-              </section>
-            );
-          })}
+              {shownArea && (
+                <section
+                  key={shownArea.skill_id}
+                  id={`area-${shownArea.skill_id}`}
+                  data-tone={shownArea.tone}
+                  data-complete={shownArea.complete || undefined}
+                  data-entering={shownArea.skill_id === entering || undefined}
+                  className="lp-area lp-tone lp-swap"
+                >
+                  <h2 className="flex flex-wrap items-center gap-x-3 gap-y-1 font-display text-[1.75rem] font-bold leading-tight tracking-[-0.03em] text-ink max-md:text-2xl">
+                    {shownArea.skill}
+                    {shownArea.refresher && <span className="lp-refresh-tag">Refresher</span>}
+                  </h2>
+                  {shownArea.blurb && (
+                    <p className="mt-1 text-sm text-ink-soft">{shownArea.blurb}</p>
+                  )}
+
+                  <ul className="mt-4 space-y-1">{resourceRows(shownArea)}</ul>
+                </section>
+              )}
+
+              <MoreSkills
+                current={moreTab}
+                onSelect={setMoreTab}
+                tabs={[
+                  laterGaps.length > 0 && {
+                    id: 'later',
+                    label: 'Up later',
+                    count: laterGaps.length,
+                    panel: <UpLater gaps={laterGaps} role={selectedRole?.role} onAdd={addToPlan} />,
+                  },
+                  ownedSkills.length > 0 && {
+                    id: 'refresh',
+                    label: 'Refresh',
+                    count: ownedSkills.length,
+                    panel: (
+                      <RefreshSkills
+                        skills={ownedSkills}
+                        stateOf={refreshStateOf}
+                        onRefresh={addRefresher}
+                      />
+                    ),
+                  },
+                  finishedAreas.length > 0 && {
+                    id: 'finished',
+                    label: 'Finished',
+                    count: finishedAreas.length,
+                    panel: (
+                      <FinishedAreas
+                        areas={finishedAreas}
+                        open={openFinished}
+                        onToggle={(skillId) =>
+                          setOpenFinished((ids) =>
+                            ids.includes(skillId)
+                              ? ids.filter((id) => id !== skillId)
+                              : [...ids, skillId]
+                          )
+                        }
+                        signedIn={Boolean(user)}
+                        onCv={(area) => skillOnCv(cvDraft, roleId, area.skill)}
+                        onAddToCv={(area) =>
+                          setCvDraft(addSkillToCv(useIntakeStore.getState(), area.skill))
+                        }
+                        renderResources={resourceRows}
+                      />
+                    ),
+                  },
+                ].filter(Boolean)}
+              />
+            </section>
+          </div>
+        )}
 
         {plan?.resources.length === 0 && (
           <p className="mt-8 max-w-[56ch] text-sm leading-relaxed text-ink-soft">
@@ -369,13 +615,24 @@ export default function Learning() {
             resources for it are being added.
           </p>
         )}
-
-        {plan && plan.resources.length > 0 && shown.length === 0 && (
-          <p className="mt-8 max-w-[56ch] text-sm leading-relaxed text-ink-soft">
-            No {filter}s here for your focus areas. Select “All” to see everything.
-          </p>
-        )}
       </main>
+
+      <FinishPanel
+        moment={moment}
+        resource={momentResource}
+        area={momentArea}
+        total={momentArea?.resources.length ?? 0}
+        onAccount={() => {
+          closePanel();
+          openSheet('create', '/plan/learning');
+        }}
+        onYes={() => momentResource && finish(momentResource)}
+        onNotYet={closePanel}
+        onCv={Boolean(momentArea && skillOnCv(cvDraft, roleId, momentArea.skill))}
+        onAddToCv={() => setCvDraft(addSkillToCv(useIntakeStore.getState(), momentArea.skill))}
+        onRemoveFromCv={() => setCvDraft(removeSkillFromCv(cvDraft, roleId, momentArea.skill))}
+        onClose={closePanel}
+      />
     </div>
   );
 }

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import useSmoothNavigate from '../../hooks/useSmoothNavigate.js';
+import { ArrowRight } from '@phosphor-icons/react';
 import GradientButton from '../../components/ui/GradientButton.jsx';
 import IntakeLayout from '../../components/intake/IntakeLayout.jsx';
 import BackLink from '../../components/intake/BackLink.jsx';
@@ -9,14 +10,9 @@ import { generateSnapshot } from '../../api/snapshot.js';
 import { useIntakeStore } from '../../store/intakeStore.js';
 
 /**
- * What she is asking employers for, asked while she is still answering
- * questions rather than after she has been given an answer.
- *
- * It comes before the snapshot, so she is choosing what a workplace owes her
- * without a role in front of her. That is the right order for this question —
- * what she needs from an employer is true of her, not of the job — but it does
- * mean the copy has to say the answer is for later, since the next screen is
- * her skills and not a list of companies.
+ * Intake step for employer priorities. Runs before the snapshot, since
+ * priorities are independent of the target role; the copy notes that they
+ * are used later for employer matching.
  */
 export default function Priorities() {
   const navigate = useSmoothNavigate();
@@ -54,14 +50,14 @@ export default function Priorities() {
   return (
     <IntakeLayout
       stageIndex={2}
-      back={<BackLink to="/diagnostic/break">Back to career break</BackLink>}
       title="What matters most for your return?"
-      intro={`Pick as many as matter to you. We come back to these at the end, to find employers whose published reports match.`}
+      intro="Select all the priorities that matter to you."
+      wide
     >
-      <PriorityPicker chosen={chosen} columns={2} onToggle={toggle} />
+      <PriorityPicker chosen={chosen} onToggle={toggle} />
 
       <div className="mt-6">
-        <HowItWorks />
+        <HowItWorks compact />
       </div>
 
       {error && (
@@ -70,13 +66,14 @@ export default function Priorities() {
         </p>
       )}
 
-      <div className="mt-6 flex justify-end">
+      <div className="action-row mt-6 flex items-center justify-between">
+        <BackLink to="/diagnostic/break">Back to career break</BackLink>
         <GradientButton
           disabled={!canGenerate || chosen.length === 0 || generating}
           onClick={handleGenerate}
         >
           {generating ? 'Building your snapshot…' : 'Continue to Skill Snapshot'}
-          {!generating && <span aria-hidden="true">→</span>}
+          {!generating && <ArrowRight weight="bold" className="size-4" aria-hidden="true" />}
         </GradientButton>
       </div>
     </IntakeLayout>

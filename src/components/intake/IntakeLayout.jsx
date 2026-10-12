@@ -5,14 +5,14 @@ import PreviousPlanBar from './PreviousPlanBar.jsx';
 /**
  * Shared frame for every intake screen: stepper, heading, and body.
  */
-export default function IntakeLayout({ stageIndex, back, title, intro, children }) {
+export default function IntakeLayout({ stageIndex, back, title, intro, wide = false, children }) {
   return (
     <div className="flex min-h-screen flex-col">
       <Header />
 
-      <main className="mx-auto w-full max-w-[720px] flex-1 px-5 py-8 sm:px-6 sm:py-10">
-        {/* Above the stepper, so the way out is visible on every step of the
-            redo rather than only on the one where it started. */}
+      <main className={`page-shell ${wide ? 'max-w-[900px]' : 'max-w-[720px]'} flex-1 py-8`}>
+        {/* Rendered on every intake step so the restore option stays available
+            throughout a redo. */}
         <PreviousPlanBar />
 
         <IntakeStepper currentIndex={stageIndex} />

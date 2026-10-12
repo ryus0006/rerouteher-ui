@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import useSmoothNavigate from '../../hooks/useSmoothNavigate.js';
-import GlassCard from '../../components/ui/GlassCard.jsx';
+import { motion } from 'motion/react';
+import { ArrowRight } from '@phosphor-icons/react';
 import GradientButton from '../../components/ui/GradientButton.jsx';
 import IntakeLayout from '../../components/intake/IntakeLayout.jsx';
 import { useCompanionStore } from '../../store/companionStore.js';
@@ -8,6 +9,8 @@ import CvDropzone from '../../components/intake/CvDropzone.jsx';
 import UploadedFileChip from '../../components/intake/UploadedFileChip.jsx';
 import { parseCv, validateCvFile } from '../../api/cv.js';
 import { useIntakeStore } from '../../store/intakeStore.js';
+
+const EASE = [0.32, 0.72, 0, 1];
 
 const REQUIRED_MESSAGE = 'CV is required before you can continue.';
 
@@ -66,28 +69,26 @@ export default function Background() {
       title="Upload your CV"
       intro="We analyze your previous experience to extract your core professional skills automatically."
     >
-      <GlassCard className="p-6">
-        <h2 className="text-sm text-ink-soft">
+      <motion.div
+        className="cv-card"
+        initial={{ opacity: 0, y: 24 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.8, ease: EASE }}
+      >
+        <h2 className="text-sm font-medium text-ink-soft">
           Select your CV file <span className="text-pink-600">*</span>
         </h2>
 
-        {/* Fixed height across both states: without it the primary action jumps
-            ~56px up the moment a file is accepted, under the pointer. */}
-        <div className="mt-3 flex min-h-[11.5rem] items-center">
-          <div className="w-full">
-            {cvParsed && cv ? (
-              // Keeps the dropzone frame around the accepted file.
-              <div className="rounded-2xl border border-dashed border-line-strong bg-canvas p-4">
-                <UploadedFileChip
-                  fileName={cv.fileName}
-                  fileSize={cv.fileSize}
-                  onRemove={handleRemove}
-                />
-              </div>
-            ) : (
-              <CvDropzone onSelect={handleSelect} disabled={uploading} />
-            )}
-          </div>
+        <div className="mt-3">
+          {cvParsed && cv ? (
+            <UploadedFileChip
+              fileName={cv.fileName}
+              fileSize={cv.fileSize}
+              onRemove={handleRemove}
+            />
+          ) : (
+            <CvDropzone onSelect={handleSelect} disabled={uploading} />
+          )}
         </div>
 
         {uploading && <p className="mt-3 text-sm text-ink-soft">Reading your CV…</p>}
@@ -98,11 +99,10 @@ export default function Background() {
           </p>
         )}
 
-        {/* Plenty of women returning after years away have no CV to hand, and
-            being stopped at the first screen is where they leave. Chatting builds
-            the same profile the upload does (US8.1). */}
+        {/* Alternative for users without a CV: build the same profile through
+            the companion. */}
         {!cvParsed && (
-          <p className="mt-4 border-t border-line pt-4 text-sm text-ink-soft">
+          <p className="cv-card-alt">
             No CV?{' '}
             <button
               type="button"
@@ -114,14 +114,19 @@ export default function Background() {
             and build your profile by chatting about what you have done.
           </p>
         )}
-      </GlassCard>
+      </motion.div>
 
-      <div className="mt-8 flex justify-end">
+      <motion.div
+        className="action-row mt-8 flex justify-end"
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.8, delay: 0.12, ease: EASE }}
+      >
         <GradientButton onClick={handleContinue} disabled={uploading}>
           Continue to Career Break
-          <span aria-hidden="true">→</span>
+          <ArrowRight weight="bold" className="size-4" aria-hidden="true" />
         </GradientButton>
-      </div>
+      </motion.div>
     </IntakeLayout>
   );
 }

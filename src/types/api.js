@@ -22,6 +22,7 @@
  * @property {string | null} [skill_id]
  * @property {'experience'} source
  * @property {string} evidence
+ * @property {string | null} [definition] Short ESCO definition when available.
  */
 
 /**
@@ -30,6 +31,7 @@
  * @property {string | null} [skill_id]
  * @property {'break'} source
  * @property {string} from_activity
+ * @property {string | null} [definition] Short ESCO definition when available.
  */
 
 /**
@@ -62,12 +64,20 @@
  * @property {'role' | 'ai_usage'} band
  * @property {number} importance
  * @property {number} uplift
+ * @property {string | undefined} [definition] Optional ESCO-backed plain-language description
+ */
+
+/**
+ * @typedef {Object} HeldSkill
+ * @property {string} skill_id
+ * @property {string} skill
+ * @property {string | null} [definition] ESCO definition of the role requirement, for hover.
  */
 
 /**
  * @typedef {Object} GapResult
  * @property {number} readiness
- * @property {string[]} skills_have
+ * @property {HeldSkill[]} skills_have Role requirements the user already holds, each with its ESCO id.
  * @property {Gap[]} gaps
  */
 
@@ -95,18 +105,55 @@
  */
 
 /**
+ * @typedef {'ready' | 'empty' | 'temporarily_unavailable'} JobSearchStatus
+ */
+
+/**
+ * @typedef {Object} JobSearch
+ * @property {JobSearchStatus} status
+ * @property {string | null} searched_at
+ */
+
+/**
+ * @typedef {Object} JobOpening
+ * @property {string} title
+ * @property {string} url
+ * @property {string} found_at
+ */
+
+/**
  * @typedef {Object} EmployerMatch
  * @property {string} id
  * @property {string} name
  * @property {string} [industry]
  * @property {string} [location]
  * @property {{ text: string, bg: string, fg: string } | null} [logo]
+ * @property {string | null} [logo_url]
  * @property {string} [website]
  * @property {string} [summary]
  * @property {string[]} discloses
  * @property {{ label: string, url: string } | null} [report]
  * @property {string[]} met
  * @property {string[]} unmet
+ * @property {JobOpening | null} job
+ */
+
+/**
+ * @typedef {Object} EmployerMatchResponse
+ * @property {JobSearch} job_search
+ * @property {EmployerMatch[]} employers
+ */
+
+/**
+ * @typedef {Object} ProfileSkillUpdate
+ * @property {'add' | 'remove'} action
+ * @property {string} status
+ * @property {string} skill_id
+ * @property {string | null} [skill]
+ * @property {string | null} [definition]
+ * @property {Object} snapshot
+ * @property {Object | null} [gap_result]
+ * @property {Object[]} learned_skills
  */
 
 export {};

@@ -1,15 +1,26 @@
 import { useId, useState } from 'react';
+import { definitionsByName, getSkillDefinition } from '../../lib/skillDefinition.js';
+import { useIntakeStore } from '../../store/intakeStore.js';
+import SkillDefinitionPopover from '../skills/SkillDefinitionPopover.jsx';
 
 /**
- * The requirements this role asks for that she already covers. Collapsed by
- * default: the count is what moves when she switches role, the names are detail.
+ * Collapsible list of role requirements the user already meets, collapsed to
+ * a count by default. The requirements arrive as `{ skill_id, skill }`, so each
+ * definition is looked up by name from the user's own skills and opens on hover
+ * or focus where known.
  *
- * `onPlane` recolours it for the dark readiness rail — same component, both
- * grounds, so the colours always come from the surface behind it.
+ * `onPlane` switches to the colour scheme for the dark readiness panel.
  */
 export default function MetRequirements({ skills, total, onPlane = false }) {
   const [open, setOpen] = useState(false);
   const panelId = useId();
+  const snapshot = useIntakeStore((state) => state.snapshot);
+  const confirmedSkills = useIntakeStore((state) => state.confirmedSkills);
+  const definitions = definitionsByName([
+    ...(snapshot?.professional_skills ?? []),
+    ...(snapshot?.reframed_skills ?? []),
+    ...(confirmedSkills ?? []),
+  ]);
 
   if (skills.length === 0) {
     return (
@@ -36,7 +47,9 @@ export default function MetRequirements({ skills, total, onPlane = false }) {
       >
         <span aria-hidden="true">✓</span>
         <span className="flex-1">
-          You meet {skills.length} of {total} requirements
+          {/* `total` is the role's requirement count, read out for screen readers. */}
+          See the {skills.length} you already have
+          <span className="sr-only"> out of {total} requirements</span>
         </span>
         <svg
           aria-hidden="true"
@@ -53,19 +66,39 @@ export default function MetRequirements({ skills, total, onPlane = false }) {
       </button>
 
       <ul id={panelId} hidden={!open} className="mt-3 space-y-1.5">
-        {skills.map((skill) => (
-          <li
-            key={skill}
-            className={[
-              'rounded-xl border px-3 py-2 text-xs',
-              onPlane
-                ? 'border-white/12 bg-white/8 text-on-plane-soft'
-                : 'border-verify/20 bg-verify-soft text-verify',
-            ].join(' ')}
-          >
-            {skill}
-          </li>
-        ))}
+        {skills.map((held) => {
+          const name = held.skill;
+          // Prefer the definition the gap result carries; fall back to a name
+          // match against the user's own skills for older plans without it.
+          const definition = getSkillDefinition(held) ?? definitions.get(name.toLowerCase());
+          const itemClass = [
+            'block w-full rounded-xl border px-3 py-2 text-left text-xs transition-colors',
+            onPlane
+              ? 'border-white/12 bg-white/8 text-on-plane-soft'
+              : 'border-verify/20 bg-verify-soft text-verify',
+          ].join(' ');
+          return (
+            <li key={held.skill_id}>
+              <SkillDefinitionPopover definition={definition} label={name} tone="verify">
+                {(triggerProps) =>
+                  definition ? (
+                    <button
+                      type="button"
+                      {...triggerProps}
+                      className={`${itemClass} cursor-default ${
+                        onPlane ? 'hover:bg-white/14 hover:text-white' : 'hover:border-verify/40'
+                      }`}
+                    >
+                      {name}
+                    </button>
+                  ) : (
+                    <span className={itemClass}>{name}</span>
+                  )
+                }
+              </SkillDefinitionPopover>
+            </li>
+          );
+        })}
       </ul>
     </div>
   );

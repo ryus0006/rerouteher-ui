@@ -55,11 +55,9 @@ test.describe('E1 — Public Landing Page & Guest Entry', () => {
     }
   });
 
-  test('AC 1.2.3 — the benefits section shows three cards', async ({ page }) => {
-    const cards = page
-      .getByRole('heading', { level: 3 })
-      .filter({ hasText: /break counts|weighted readiness|three focus areas/i });
-    await expect(cards).toHaveCount(3);
+  test('AC 1.2.3 — the tools section shows one tile per tool', async ({ page }) => {
+    const tiles = page.getByRole('article').getByRole('heading', { level: 3 });
+    await expect(tiles).toHaveCount(4);
   });
 
   test('AC 1.2.4 — the journey stages stay ordered and readable at this viewport', async ({

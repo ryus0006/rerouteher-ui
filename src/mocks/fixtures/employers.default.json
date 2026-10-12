@@ -10,13 +10,15 @@
         "bg": "#ffcc00",
         "fg": "#1f2a44"
       },
+      "logo_url": "https://logo.clearbit.com/maybank.com",
       "website": "https://www.maybank.com/",
       "summary": "Maybank reports flexible working arrangements, parental support and initiatives to promote workplace inclusion in its sustainability reporting.",
-      "discloses": [
-        "flexible_work",
-        "childcare_support",
-        "inclusive_workplace"
-      ],
+      "job": {
+        "title": "UX Designer, Digital Banking",
+        "found_at": "2026-09-27T00:00:00Z",
+        "url": "https://www.maybank.com/"
+      },
+      "discloses": ["flexible_work", "childcare_support", "inclusive_workplace"],
       "report": {
         "label": "Sustainability Report 2024",
         "url": "https://www.maybank.com/en/sustainability.page"
@@ -34,6 +36,11 @@
       },
       "website": "https://www.petronas.com/",
       "summary": "PETRONAS discloses parental leave provisions, a returner programme and workplace flexibility initiatives in its sustainability reporting.",
+      "job": {
+        "title": "Marketing Executive",
+        "found_at": "2026-09-26T00:00:00Z",
+        "url": "https://www.petronas.com/"
+      },
       "discloses": [
         "flexible_work",
         "parental_support",
@@ -57,10 +64,12 @@
       },
       "website": "https://www.cimb.com/",
       "summary": "CIMB reports flexible work arrangements and diversity and inclusion programmes in its sustainability reporting.",
-      "discloses": [
-        "flexible_work",
-        "inclusive_workplace"
-      ],
+      "job": {
+        "title": "Senior Product Designer",
+        "found_at": "2026-09-25T00:00:00Z",
+        "url": "https://www.cimb.com/"
+      },
+      "discloses": ["flexible_work", "inclusive_workplace"],
       "report": {
         "label": "Sustainability Report 2024",
         "url": "https://www.cimb.com/en/sustainability.html"
@@ -78,11 +87,12 @@
       },
       "website": "https://www.tm.com.my/",
       "summary": "Telekom Malaysia reports childcare facilities, parental leave provisions and flexible working in its sustainability reporting.",
-      "discloses": [
-        "flexible_work",
-        "childcare_support",
-        "parental_support"
-      ],
+      "job": {
+        "title": "Customer Service Specialist",
+        "found_at": "2026-09-27T00:00:00Z",
+        "url": "https://www.tm.com.my/"
+      },
+      "discloses": ["flexible_work", "childcare_support", "parental_support"],
       "report": {
         "label": "Sustainability Report 2024",
         "url": "https://www.tm.com.my/sustainability"
@@ -100,11 +110,7 @@
       },
       "website": "https://www.ihhhealthcare.com/",
       "summary": "IHH Healthcare reports childcare provision, parental support and reintegration for returning staff in its sustainability reporting.",
-      "discloses": [
-        "childcare_support",
-        "parental_support",
-        "returning_to_work"
-      ],
+      "discloses": ["childcare_support", "parental_support", "returning_to_work"],
       "report": {
         "label": "Sustainability Report 2024",
         "url": "https://www.ihhhealthcare.com/sustainability"
@@ -145,11 +151,12 @@
       },
       "website": "https://www.celcomdigi.com/",
       "summary": "CelcomDigi reports hybrid working, a career reboot programme and diversity commitments in its sustainability reporting.",
-      "discloses": [
-        "flexible_work",
-        "returning_to_work",
-        "inclusive_workplace"
-      ],
+      "job": {
+        "title": "UI/UX Designer",
+        "found_at": "2026-09-24T00:00:00Z",
+        "url": "https://www.celcomdigi.com/"
+      },
+      "discloses": ["flexible_work", "returning_to_work", "inclusive_workplace"],
       "report": {
         "label": "Sustainability Report 2024",
         "url": "https://www.celcomdigi.com/sustainability"
@@ -167,10 +174,7 @@
       },
       "website": "https://www.simedarby.com/",
       "summary": "Sime Darby reports parental leave provisions and women in leadership targets in its sustainability reporting.",
-      "discloses": [
-        "parental_support",
-        "inclusive_workplace"
-      ],
+      "discloses": ["parental_support", "inclusive_workplace"],
       "report": {
         "label": "Sustainability Report 2024",
         "url": "https://www.simedarby.com/sustainability"

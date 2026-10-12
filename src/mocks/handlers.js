@@ -1,4 +1,4 @@
-import { http, HttpResponse } from 'msw';
+import { delay, http, HttpResponse } from 'msw';
 import cvParsed from './fixtures/cv-parse.200.json';
 import snapshotHighConfidence from './fixtures/snapshot.high-confidence.json';
 import gapDefault from './fixtures/gap.default.json';
@@ -6,16 +6,130 @@ import gapAltRole from './fixtures/gap.alt-role.json';
 import learningDefault from './fixtures/learning.default.json';
 import employersDefault from './fixtures/employers.default.json';
 import { validateCvFile } from '../api/cv.js';
+import { interviewHandlers } from './interview.js';
 
 const DEFAULT_ROLE_ID = 'role_ux';
 
-/** Accounts created this session, so a sign-in can hand the journey back. */
+/* Owned skills have no fixture resources; they arrive by name (no ESCO id), so
+   the mock builds a short refresher for each. One skill has none, to show the
+   empty state. */
+const NO_REFRESHER = 'Time & Multi-project Prioritisation';
+
+const refresherFor = (skill) => {
+  const query = encodeURIComponent(skill);
+  return {
+    group: {
+      skill_id: skill,
+      skill,
+      icon: 'spark',
+      blurb: 'A quick catch-up on what has changed since your break.',
+    },
+    resources: [
+      {
+        skill_id: skill,
+        id: `refresh-${query}-article`,
+        skill,
+        title: `What's new in ${skill}`,
+        provider: 'Nielsen Norman Group',
+        logo: 'nngroup',
+        format: 'Article',
+        minutes: 20,
+        cost: 'Free',
+        free: true,
+        url: `https://www.nngroup.com/search/?q=${query}`,
+        why: 'A short read on current practice, so you can see what still holds and what has moved on.',
+      },
+      {
+        skill_id: skill,
+        id: `refresh-${query}-video`,
+        skill,
+        title: `${skill}: a refresher`,
+        provider: 'YouTube',
+        logo: 'youtube',
+        format: 'Video',
+        minutes: 45,
+        cost: 'Free',
+        free: true,
+        url: `https://www.youtube.com/results?search_query=${query}`,
+        why: 'Watching someone work through it brings back the steps faster than reading about them.',
+      },
+    ],
+  };
+};
+
+const cvDraftForRole = (roleId) => ({
+  version: 3,
+  roleId,
+  personal: { name: '', email: '', phone: '', location: '' },
+  summary: `Professional prepared for ${roleId}.`,
+  skills: ['User Research & Persona Synthesis', 'Active Listening'],
+  experiences: [
+    {
+      title: 'Senior Product Designer',
+      organisation: 'Wira Digital',
+      start: '2015-03',
+      end: '2019-11',
+      description: '- Owned the design system and ran usability testing.',
+    },
+  ],
+  careerBreak: {
+    duration: '2019 - Present',
+    description:
+      '- Took a career break to care for children and run the household.\n- Managed the family budget.',
+  },
+});
+
+/** In-memory accounts created during the session, keyed by username. */
 const accounts = new Map();
 
-/** Stands in for the session cookie: who the mock currently treats as signed in. */
+/**
+ * Handler for employer matching over `pool`: employers that meet at least one
+ * requested priority, hiring first, then by priorities met, then by name.
+ * Shared by the test server and the browser worker, which uses a larger pool.
+ */
+export function employerMatchHandler(pool) {
+  return http.post('*/api/employers/match', async ({ request }) => {
+    const { priorities = [], target_role_id: targetRoleId } = await request.json();
+
+    if (targetRoleId === 'role_unavailable') {
+      return HttpResponse.json({
+        job_search: { status: 'temporarily_unavailable', searched_at: null },
+        employers: [],
+      });
+    }
+
+    const employers = pool
+      .map(({ job, ...employer }) => ({
+        ...employer,
+        job: job ?? null,
+        met: priorities.filter((id) => employer.discloses.includes(id)),
+        unmet: priorities.filter((id) => !employer.discloses.includes(id)),
+      }))
+      /* Exclude employers that meet none of the requested priorities. */
+      .filter((employer) => employer.met.length > 0)
+      .sort(
+        (a, b) =>
+          Number(Boolean(b.job)) - Number(Boolean(a.job)) ||
+          b.met.length - a.met.length ||
+          a.name.localeCompare(b.name)
+      );
+
+    return HttpResponse.json({
+      job_search: {
+        status: employers.some((employer) => employer.job) ? 'ready' : 'empty',
+        searched_at: '2026-10-04T00:00:00Z',
+      },
+      employers,
+    });
+  });
+}
+
+/** Simulated session: the currently signed-in username. */
 let sessionUser = null;
 
 export const handlers = [
+  ...interviewHandlers,
+
   http.post('*/api/cv/parse', async ({ request }) => {
     const form = await request.formData();
     const file = form.get('file');
@@ -26,6 +140,38 @@ export const handlers = [
     return HttpResponse.json(cvParsed);
   }),
 
+  http.post('*/api/cv/generate', async ({ request }) => {
+    const { roleId = DEFAULT_ROLE_ID } = await request.json();
+    return HttpResponse.json({
+      role_id: roleId,
+      generation_status: 'generated',
+      generated_at: '2026-10-04T00:00:00Z',
+      draft: cvDraftForRole(roleId),
+    });
+  }),
+
+  http.post('*/api/cv/improve', async ({ request }) => {
+    const { section } = await request.json();
+    const suggestion =
+      section === 'summary'
+        ? 'Professional prepared to contribute through user research and design coordination.'
+        : section === 'careerBreak'
+          ? '- Took a career break to care for children and run the household, staying organised and dependable throughout.\n- Managed the family budget with care and discipline.'
+          : 'Owned the design system and ran usability testing across product teams.';
+    return HttpResponse.json({
+      section,
+      experience_index: section === 'experience' ? 0 : null,
+      suggestion,
+      evidence:
+        section === 'careerBreak'
+          ? ''
+          : 'Owned the design system, ran usability testing, and led information architecture for the mobile app.',
+    });
+  }),
+
+  /* Fixture definitions mirror skill_taxonomy.definition. The last reframed
+     skill intentionally has no definition, to exercise the missing-definition
+     state. */
   http.post('*/api/snapshot/generate', () => HttpResponse.json(snapshotHighConfidence)),
 
   http.post('*/api/gap/compute', async ({ request }) => {
@@ -33,9 +179,8 @@ export const handlers = [
     return HttpResponse.json(targetRoleId === DEFAULT_ROLE_ID ? gapDefault : gapAltRole);
   }),
 
-  /* Learning resources for the gaps she was actually shown (E6). Keyed by
-     skill_id to match the real endpoint's deterministic contract. Used only by
-     unit tests now (the running app always calls the real backend). */
+  /* Learning resources for the requested gaps, keyed by skill_id to match the
+     real endpoint contract. */
   http.post('*/api/learning/recommend', async ({ request }) => {
     const { skill_ids: skillIds = [] } = await request.json();
 
@@ -44,41 +189,33 @@ export const handlers = [
     );
     const groups = learningDefault.groups.filter((group) => skillIds.includes(group.skill_id));
 
-    return HttpResponse.json({ groups, resources });
+    const known = new Set(learningDefault.groups.map((group) => group.skill_id));
+    const refreshers = skillIds
+      .filter((skillId) => !known.has(skillId) && skillId !== NO_REFRESHER)
+      .map(refresherFor);
+    if (refreshers.length > 0) await delay(900);
+
+    return HttpResponse.json({
+      groups: [...groups, ...refreshers.map((entry) => entry.group)],
+      resources: [...resources, ...refreshers.flatMap((entry) => entry.resources)],
+    });
   }),
 
-  /* Employers ranked against the priorities she chose (E9). Every employer
-     lists the priorities its published report actually covers, so "not found
-     in report" is a real answer rather than a gap in the fixture. */
-  http.post('*/api/employers/match', async ({ request }) => {
-    const { priorities = [] } = await request.json();
+  /* Employers ranked against the requested priorities. Each fixture employer
+     lists the priorities its report covers, so unmet priorities are explicit. */
+  employerMatchHandler(employersDefault.employers),
 
-    const employers = employersDefault.employers
-      .map((employer) => ({
-        ...employer,
-        met: priorities.filter((id) => employer.discloses.includes(id)),
-        unmet: priorities.filter((id) => !employer.discloses.includes(id)),
-      }))
-      /* Silent on everything she asked for is not a match, it is a different
-         company. Listing it would pad the count with rows that say nothing. */
-      .filter((employer) => employer.met.length > 0)
-      .sort((a, b) => b.met.length - a.met.length);
-
-    return HttpResponse.json({ employers });
-  }),
-
-  /* The re-entry companion (E8). One conversational endpoint, guest-usable. When
-     she has no snapshot yet the stand-in plays the profile-build role and returns
-     a journey_update (cv + break) the frontend applies to its store, exactly as
-     the real agent's update_profile tool does; once she has results it answers
-     from the journey sent with the question. */
+  /* Companion endpoint. Without a snapshot it acts as the profile builder and
+     returns a `journey_update` (cv + break), mirroring the real agent's
+     update_profile tool; with a snapshot it answers from the journey sent in
+     the request. */
   http.post('*/api/companion/ask', async ({ request }) => {
     const { question = '', journey = {} } = await request.json();
     const { snapshot, gapResult, selectedRole } = journey;
     const asked = question.toLowerCase();
 
-    // Pre-snapshot: if she names her occupation, offer a role-skill checklist (US8.1.17),
-    // standing in for the offer_role_skills tool.
+    // Pre-snapshot: when an occupation is mentioned, return a role-skill checklist,
+    // mirroring the offer_role_skills tool.
     if (!snapshot && /\bmanager\b|\bmy role\b|\boccupation\b/.test(asked)) {
       return HttpResponse.json({
         answer: 'Here are skills common for that role. Tick the ones you have.',
@@ -99,7 +236,15 @@ export const handlers = [
         journey_update: {
           cv: {
             raw_text: question,
-            experiences: [],
+            experiences: [
+              {
+                title: 'Marketing Coordinator',
+                organisation: 'Wira Digital',
+                start: '2015-03',
+                end: '2019-11',
+                description: 'Coordinated campaigns and managed schedules across teams.',
+              },
+            ],
             skill_mentions: ['coordination', 'scheduling'],
           },
           break: { duration_years: 2, activities: ['caregiving'] },
@@ -116,7 +261,7 @@ export const handlers = [
       return HttpResponse.json({
         answer: `Your focus areas are ${focusAreas.join(', ')}. They are ranked by how much readiness each one adds for ${role}, so the first one is the one worth your next free evening.`,
         sources: ['Your gap result'],
-        // As the real point_to_step tool does: offer an optional link to her plan.
+        // Mirrors the point_to_step tool: include an optional link to the learning plan.
         cta: { label: 'Open your learning plan', to: '/plan/learning' },
       });
     }
@@ -127,10 +272,9 @@ export const handlers = [
     });
   }),
 
-  /* Stands in for the account service. Accounts live for the life of the page,
-     which is enough to walk US5.3 and US5.4: create, sign out, sign back in and
-     the saved journey comes back. `taken` exists so the duplicate-username path
-     can be walked without a backend. */
+  /* Account service mock. Accounts persist for the lifetime of the page,
+     supporting create, sign-out and sign-in with the saved journey. The username
+     `taken` always fails, to exercise the duplicate-username error. */
   http.post('*/api/account/create', async ({ request }) => {
     const { username, display_name: displayName, plan } = await request.json();
 

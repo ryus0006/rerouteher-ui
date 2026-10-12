@@ -7,16 +7,46 @@ import { postJson } from './client.js';
  *
  * @param {import('../types/api.js').Snapshot} snapshot
  * @param {import('../types/api.js').RecommendedRole} targetRole
+ * @param {{ skill_id?: string | null, skill_name: string }[]} [confirmedSkills] skills
+ *   the user said they have that are not in the snapshot (e.g. missing from an outdated CV)
  * @returns {Promise<import('../types/api.js').GapResult>}
  */
-export function computeGap(snapshot, targetRole) {
-  const skill_ids = [...snapshot.professional_skills, ...snapshot.reframed_skills]
-    .map((s) => s.skill_id)
-    .filter(Boolean);
+export function computeGap(snapshot, targetRole, confirmedSkills = []) {
+  const skill_ids = [
+    ...new Set(
+      [...snapshot.professional_skills, ...snapshot.reframed_skills, ...confirmedSkills]
+        .map((s) => s.skill_id)
+        .filter(Boolean)
+    ),
+  ];
 
   return postJson('/api/gap/compute', {
     skill_ids,
     target_role_id: targetRole.role_id,
     target_role: targetRole.role,
-  });
+  }).then((result) => withConfirmedSkills(result, confirmedSkills));
+}
+
+/**
+ * Moves gaps the user confirmed into `skills_have`. Confirmed skills are matched
+ * to gaps by name; each met gap carries its ESCO `skill_id`, so it joins
+ * `skills_have` as a `{ skill_id, skill }` entry.
+ *
+ * @param {import('../types/api.js').GapResult} result
+ * @param {{ skill_name: string }[]} confirmedSkills
+ * @returns {import('../types/api.js').GapResult}
+ */
+function withConfirmedSkills(result, confirmedSkills) {
+  const names = new Set(confirmedSkills.map((s) => s.skill_name?.toLowerCase()));
+  const met = result.gaps.filter((gap) => names.has(gap.skill.toLowerCase()));
+  if (met.length === 0) return result;
+
+  return {
+    ...result,
+    gaps: result.gaps.filter((gap) => !met.includes(gap)),
+    skills_have: [
+      ...result.skills_have,
+      ...met.map((gap) => ({ skill_id: gap.skill_id, skill: gap.skill })),
+    ],
+  };
 }

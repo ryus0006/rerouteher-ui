@@ -1,4 +1,6 @@
+import { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { List, X } from '@phosphor-icons/react';
 import useSmoothNavigate from '../../hooks/useSmoothNavigate.js';
 import logoWebp from '../../assets/logo-full.webp';
 import logoPng from '../../assets/logo-full.png';
@@ -9,57 +11,35 @@ import { journeyProgress } from '../../lib/journeyProgress.js';
 import Avatar from '../account/Avatar.jsx';
 
 /**
- * Logo, and the account state on the right.
+ * Global header: logo, main navigation and account controls.
  *
- * The guest and signed-in states share one shape — label, avatar, action — so
- * signing in reads as the same slot changing rather than the bar reflowing.
- * Once signed in, the label and avatar together are the link to the profile.
- *
- * Signing out lives inside the menu rather than the bar: it is a once-a-session,
- * mildly destructive action, and a permanent top-level slot for it reads as an
- * account-first product.
+ * Guest and signed-in states share the same layout (label, avatar, action) so
+ * the bar does not reflow on sign-in. When signed in, the name and avatar link
+ * to the profile.
  */
-const RING_RADIUS = 7;
-const RING_CIRCUMFERENCE = 2 * Math.PI * RING_RADIUS;
-
-/** How much of the diagnostic is done, small enough to sit inside a nav link. */
-function ProgressRing({ percent }) {
-  return (
-    <span className="relative flex size-4 shrink-0">
-      <svg viewBox="0 0 18 18" className="size-4 -rotate-90" aria-hidden="true">
-        <circle
-          cx="9"
-          cy="9"
-          r={RING_RADIUS}
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2.5"
-          opacity="0.2"
-        />
-        <circle
-          cx="9"
-          cy="9"
-          r={RING_RADIUS}
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2.5"
-          strokeLinecap="round"
-          strokeDasharray={RING_CIRCUMFERENCE}
-          strokeDashoffset={RING_CIRCUMFERENCE * (1 - percent / 100)}
-        />
-      </svg>
-      <span className="sr-only">{percent}% complete</span>
-    </span>
-  );
-}
-
-export default function Header({ onGround = false }) {
+export default function Header() {
   const user = useAccountStore((state) => state.user);
   const openSheet = useAccountStore((state) => state.openSheet);
   const signOut = useAccountStore((state) => state.signOut);
 
   const navigate = useSmoothNavigate();
   const { pathname } = useLocation();
+
+  /* Below the lg breakpoint the links collapse into a menu panel. The menu
+     records the page it was opened on, so it reads as closed after any
+     navigation. */
+  const [menuPath, setMenuPath] = useState(null);
+  const menuOpen = menuPath === pathname;
+  const setMenuOpen = (open) => setMenuPath(open ? pathname : null);
+
+  useEffect(() => {
+    if (!menuOpen) return undefined;
+    const onKeyDown = (event) => {
+      if (event.key === 'Escape') setMenuPath(null);
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [menuOpen]);
 
   const cvParsed = useIntakeStore((state) => state.cvParsed);
   const activities = useIntakeStore((state) => state.break?.activities);
@@ -74,32 +54,57 @@ export default function Header({ onGround = false }) {
     gapResult,
   });
 
-  // Never read `displayName` straight: an account stored before display names
-  // existed has only a username, and the bar must still render.
+  // Resolve via the helper: some stored accounts have no `displayName`.
   const name = user ? resolveDisplayName(user) : null;
 
-  /* The journey belongs to an account, so the door only exists for one. Hidden
-     rather than shown disabled: a dead control a guest cannot use explains
-     nothing, and the Sign in beside it is already the way to earn it.
+  /* While the diagnostic is incomplete, its screens carry their own stepper,
+     so "My journey" is left out of the header there. Once complete, it stays
+     so a user revisiting a step can return to the journey page. */
+  const inDiagnostic = pathname.startsWith('/diagnostic/') && progress.percent < 100;
 
-     For an account holder it is always there, including on the journey itself,
-     where it marks the current page instead of vanishing. A nav item that
-     disappears once you arrive makes the bar look like it lost something. */
-  const showJourney = Boolean(user);
-  const onJourney = pathname === '/journey';
+  /* "My journey" is shown only to signed-in users. The remaining tools depend
+     on the target role, so they appear once a gap result exists. The active
+     item is marked as current rather than removed. */
+  const unlocked = Boolean(gapResult);
+  const links = [
+    user &&
+      !inDiagnostic && {
+        to: '/journey',
+        label: 'My journey',
+        current: pathname === '/journey',
+      },
+    unlocked && {
+      to: '/plan/learning',
+      label: 'Learning plan',
+      current: pathname === '/plan/learning',
+    },
+    unlocked && {
+      to: '/plan/employers/matches',
+      label: 'Employer fit',
+      current: pathname.startsWith('/plan/employers'),
+    },
+    unlocked && {
+      to: '/interview-practice',
+      label: 'Interview practice',
+      current: pathname === '/interview-practice',
+    },
+    unlocked && { to: '/plan/cv', label: 'CV builder', current: pathname === '/plan/cv' },
+  ].filter(Boolean);
 
-  /* The ring is a nudge to finish, so it retires the moment finishing is done.
-     A meter pinned at 100% forever is decoration, and the slot is wanted for
-     roadmap progress later. */
-  const showProgress = progress.percent < 100;
+  // Signed-in users always get the menu: below lg it holds the sign-out action.
+  const hasMenu = links.length > 0 || Boolean(user);
+
+  const handleSignOut = () => {
+    /* Navigate to the landing page and sign out in the same tick.
+       React batches both updates, so no results page stays mounted to
+       hit its missing-snapshot guard. Awaiting navigate would delay the
+       sign-out and briefly leave the user's data on the device. */
+    navigate('/');
+    signOut();
+  };
 
   return (
-    <header
-      className={[
-        'flex items-center justify-between gap-4 px-5 py-4 sm:px-8 sm:py-5',
-        onGround ? '' : 'border-b border-line bg-surface',
-      ].join(' ')}
-    >
+    <header className="page-bar max-lg:relative flex items-center gap-8 border-b border-line bg-surface py-4 sm:py-5">
       <Link
         to="/"
         aria-label="ReRouteHer — new paths, still you — home"
@@ -117,28 +122,30 @@ export default function Header({ onGround = false }) {
         </picture>
       </Link>
 
-      <div className="flex items-center gap-2 sm:gap-4">
-        {showJourney && (
-          <Link
-            to="/journey"
-            aria-current={onJourney ? 'page' : undefined}
-            className={[
-              'flex items-center gap-2 rounded-full px-3 py-1.5 text-sm font-medium transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600',
-              onJourney
-                ? 'bg-canvas-sunk text-ink'
-                : 'text-ink-soft hover:bg-canvas-sunk hover:text-ink',
-            ].join(' ')}
-          >
-            {showProgress && <ProgressRing percent={progress.percent} />}
-            My journey
-          </Link>
-        )}
+      {links.length > 0 && (
+        <nav aria-label="Main" className="flex items-center gap-1 max-lg:hidden">
+          {links.map((link) => (
+            <Link
+              key={link.to}
+              to={link.to}
+              aria-current={link.current ? 'page' : undefined}
+              className={[
+                'flex items-center gap-2 rounded-full px-3 py-1.5 text-sm font-medium transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600',
+                link.current
+                  ? 'bg-canvas-sunk text-ink'
+                  : 'text-ink-soft hover:bg-canvas-sunk hover:text-ink',
+              ].join(' ')}
+            >
+              {link.label}
+            </Link>
+          ))}
+        </nav>
+      )}
 
+      <div className="ml-auto flex shrink-0 items-center gap-2 sm:gap-4">
         {user ? (
           <div className="flex items-center gap-3">
-            {/* Name and avatar are one target, not two: they read as a single
-              identity, and splitting them would give the same destination two
-              hit areas of very different size. */}
+            {/* Name and avatar share a single link to the profile. */}
             <Link
               to="/profile"
               className="flex items-center gap-3 rounded-full transition hover:opacity-80 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
@@ -147,20 +154,11 @@ export default function Header({ onGround = false }) {
               <Avatar name={name} />
               <span className="sr-only">Your profile</span>
             </Link>
+            {/* Below lg, sign-out moves into the menu panel. */}
             <button
               type="button"
-              onClick={() => {
-                /* Nothing signed-out belongs on her journey, and the landing page
-                   is the only screen that explains the service from scratch.
-                   Navigate first, then clear, both in the same tick: React batches
-                   them, so the re-render lands on the landing (no results page left
-                   mounted to trip its no-snapshot guard) with her data already
-                   cleared. Awaiting the navigate would defer the clear to a later
-                   tick, leaving her signed in and her data on the device until then. */
-                navigate('/');
-                signOut();
-              }}
-              className="rounded-full px-3 py-1.5 text-sm text-ink-soft transition hover:bg-canvas-sunk hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
+              onClick={handleSignOut}
+              className="rounded-full px-3 py-1.5 text-sm text-ink-soft transition hover:bg-canvas-sunk hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 max-lg:hidden"
             >
               Sign out
             </button>
@@ -185,7 +183,87 @@ export default function Header({ onGround = false }) {
             </button>
           </div>
         )}
+
+        {/* Menu toggle, shown only below lg where the nav links are hidden. */}
+        {hasMenu && (
+          <button
+            type="button"
+            aria-expanded={menuOpen}
+            aria-controls="site-menu"
+            aria-label={menuOpen ? 'Close menu' : 'Open menu'}
+            onClick={() => setMenuOpen(!menuOpen)}
+            className="-mr-2 flex size-10 items-center justify-center rounded-full text-ink transition hover:bg-canvas-sunk focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 lg:hidden"
+          >
+            {menuOpen ? (
+              <X weight="bold" className="size-5" aria-hidden="true" />
+            ) : (
+              <List weight="bold" className="size-5" aria-hidden="true" />
+            )}
+          </button>
+        )}
       </div>
+
+      {hasMenu && menuOpen && (
+        <>
+          {/* Dims the page under the header; tapping it closes the menu. */}
+          <button
+            type="button"
+            tabIndex={-1}
+            aria-hidden="true"
+            onClick={() => setMenuOpen(false)}
+            className="absolute inset-x-0 top-full z-[44] h-dvh cursor-default bg-ink/15 lg:hidden"
+          />
+          {/* Drops down from the header: nav links, then profile and sign-out. */}
+          <div
+            id="site-menu"
+            className="site-menu absolute inset-x-0 top-full z-[45] bg-surface px-4 pb-5 pt-2 lg:hidden"
+          >
+            {links.length > 0 && (
+              <nav aria-label="Main menu" className="flex flex-col">
+                {links.map((link) => (
+                  <Link
+                    key={link.to}
+                    to={link.to}
+                    aria-current={link.current ? 'page' : undefined}
+                    onClick={() => setMenuOpen(false)}
+                    className={[
+                      'flex min-h-12 items-center rounded-2xl px-4 text-base font-medium transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600',
+                      link.current
+                        ? 'bg-canvas-sunk text-ink'
+                        : 'text-ink-soft hover:bg-canvas-sunk hover:text-ink',
+                    ].join(' ')}
+                  >
+                    {link.label}
+                  </Link>
+                ))}
+              </nav>
+            )}
+
+            {user && (
+              <div className={`flex flex-col ${links.length > 0 ? 'mt-3' : ''}`}>
+                <Link
+                  to="/profile"
+                  onClick={() => setMenuOpen(false)}
+                  className="flex min-h-12 items-center gap-3 rounded-2xl px-4 text-base font-medium text-ink-soft transition hover:bg-canvas-sunk hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
+                >
+                  <Avatar name={name} />
+                  <span className="min-w-0 truncate">{name}</span>
+                </Link>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMenuOpen(false);
+                    handleSignOut();
+                  }}
+                  className="flex min-h-12 items-center rounded-2xl px-4 text-left text-base font-medium text-ink-soft transition hover:bg-canvas-sunk hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
+                >
+                  Sign out
+                </button>
+              </div>
+            )}
+          </div>
+        </>
+      )}
     </header>
   );
 }

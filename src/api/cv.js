@@ -1,4 +1,4 @@
-import { postFile } from './client.js';
+import { postFile, postJson } from './client.js';
 
 export const MAX_CV_BYTES = 10 * 1024 * 1024;
 
@@ -21,4 +21,39 @@ export function validateCvFile(file) {
 export async function parseCv(file) {
   const { cv } = await postFile('/api/cv/parse', file);
   return cv;
+}
+
+/**
+ * Generates or explicitly regenerates the signed-in user's draft for one
+ * matched role. The journey and personal fields stay server-side.
+ *
+ * @param {{ roleId?: string, regenerate?: boolean }} [request]
+ */
+export function generateCv({ roleId, regenerate = false } = {}) {
+  return postJson('/api/cv/generate', {
+    ...(roleId ? { roleId } : {}),
+    regenerate,
+  });
+}
+
+/**
+ * Requests a grounded rewording of one CV section. Only the current section
+ * text and identifiers are sent; the journey and personal fields stay server-side.
+ *
+ * @param {{
+ *   section: 'summary' | 'experience',
+ *   text: string,
+ *   roleId: string,
+ *   experienceIndex?: number,
+ *   previous?: string[]
+ * }} request
+ */
+export function improveCvText({ section, text, roleId, experienceIndex, previous = [] }) {
+  return postJson('/api/cv/improve', {
+    section,
+    roleId,
+    ...(experienceIndex === undefined ? {} : { experienceIndex }),
+    currentText: text,
+    previousSuggestions: previous,
+  });
 }
