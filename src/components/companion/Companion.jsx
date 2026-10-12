@@ -196,6 +196,11 @@ export default function Companion({ defaultMode = 'ask' }) {
     setThinking(false);
   }, [username, closeCompanion]);
 
+  // Closing the panel discards the unsent message; the conversation itself is kept.
+  useEffect(() => {
+    if (!open) setQuestion('');
+  }, [open]);
+
   const panelRef = useRef(null);
   const inputRef = useRef(null);
   const openerRef = useRef(null);
