@@ -1,35 +1,38 @@
 import { Link } from 'react-router-dom';
+import { ArrowUpRight } from '@phosphor-icons/react';
 import { useAccountStore } from '../../store/accountStore.js';
+import { useIntakeStore } from '../../store/intakeStore.js';
 
-const NEXT_PANELS = [
-  {
-    id: 'learning',
-    title: 'Your learning plan',
-    body: 'Learning for each focus area, with the cost of each.',
-    to: '/plan/learning',
-    action: 'Open your learning plan',
-  },
-  {
-    id: 'employers',
-    title: 'Employers who fit your life',
-    body: 'Ranked on what you need, with the published policy behind each claim.',
-    to: '/plan/employers/matches',
-    action: 'See your matches',
-  },
-];
+const BUTTON_CLASS =
+  'group inline-flex items-center gap-3 rounded-full bg-ink py-2 pl-5 pr-2 text-sm font-semibold text-white transition duration-300 ease-spring hover:bg-plane-2 active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600';
+
+/** Button label followed by an arrow in its own circle, nudged on hover. */
+function ButtonContent({ children }) {
+  return (
+    <>
+      {children}
+      <span
+        aria-hidden="true"
+        className="flex size-7 items-center justify-center rounded-full bg-white/15 transition-transform duration-500 ease-spring group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
+      >
+        <ArrowUpRight size={13} weight="bold" />
+      </span>
+    </>
+  );
+}
 
 /**
- * Closing card on the gap screen linking to the learning plan and employer
- * matches.
+ * Closing band on the gap screen pointing to My Journey, where the learning
+ * plan, employer matches, CV and interview practice for the target role live.
  *
- * Each panel describes what the destination is for rather than repeating the
- * focus areas listed above it. Only the button in each panel is a link. Both
- * destinations require an account and ask a guest to create one; for guests a
- * single line below also offers to save the journey to an account.
+ * Signed-in users get a link straight to the journey. Guests see the same band
+ * with a button that opens account creation and lands on the journey; the
+ * account sheet saves their on-device progress to the new account.
  */
 export default function ChapterBreak() {
   const user = useAccountStore((state) => state.user);
   const openSheet = useAccountStore((state) => state.openSheet);
+  const role = useIntakeStore((state) => state.selectedRole?.role);
 
   return (
     <section
@@ -39,56 +42,43 @@ export default function ChapterBreak() {
       <p className="eyebrow">What&rsquo;s next</p>
       <h2
         id="whats-next-title"
-        className="mt-2 max-w-[24ch] font-display text-2xl font-bold leading-tight tracking-[-0.015em] sm:text-3xl"
+        className="mt-2 max-w-[28ch] font-display text-2xl font-bold leading-tight tracking-[-0.015em] sm:text-3xl"
       >
-        Now turn it into a plan.
+        {role ? `Your plan for ${role} is ready.` : 'Your plan is ready.'}
       </h2>
 
-      <div className="mt-6 grid gap-4 md:grid-cols-2">
-        {NEXT_PANELS.map((panel) => (
-          <div
-            key={panel.id}
-            className="flex flex-col gap-5 rounded-2xl bg-surface p-6 shadow-card"
-          >
-            <div>
-              <h3 className="font-display text-lg font-bold tracking-[-0.01em]">{panel.title}</h3>
-              <p className="mt-1.5 max-w-[40ch] text-sm leading-relaxed text-ink-soft">
-                {panel.body}
-              </p>
-            </div>
+      <div className="mt-4 flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
+        <p className="max-w-[56ch] text-sm leading-relaxed text-ink-soft sm:text-base">
+          {user ? (
+            <>
+              A learning plan, employer matches, a tailored CV and interview practice, all in My
+              Journey.
+            </>
+          ) : (
+            <>
+              <span className="font-semibold text-ink">
+                Create a free account to open My Journey:
+              </span>{' '}
+              a learning plan, employer matches, a tailored CV and interview practice. What
+              you&rsquo;ve done so far comes with you.
+            </>
+          )}
+        </p>
 
-            <Link
-              to={panel.to}
-              className="group mt-auto self-start rounded-full bg-ink px-5 py-2.5 text-sm font-semibold text-white transition duration-300 ease-spring hover:bg-plane-2 active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
-            >
-              {panel.action}
-              <span
-                aria-hidden="true"
-                className="ml-1.5 inline-block transition-transform duration-300 ease-spring group-hover:translate-x-0.5"
-              >
-                →
-              </span>
-            </Link>
-          </div>
-        ))}
-      </div>
-
-      {/* Guest-only prompt explaining that progress is stored in this browser.
-          Creating an account redirects to the journey dashboard, which links
-          to both destinations above. */}
-      {!user && (
-        <p className="mt-5 text-sm text-ink-soft">
-          Your plan lives in this tab.{' '}
+        {user ? (
+          <Link to="/journey" className={`${BUTTON_CLASS} shrink-0 self-start md:self-auto`}>
+            <ButtonContent>Go to My Journey</ButtonContent>
+          </Link>
+        ) : (
           <button
             type="button"
             onClick={() => openSheet('create', '/journey')}
-            className="rounded font-semibold text-ink underline underline-offset-4 transition hover:text-pink-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
+            className={`${BUTTON_CLASS} shrink-0 self-start md:self-auto`}
           >
-            Keep it with an account
+            <ButtonContent>Create account to continue</ButtonContent>
           </button>
-          .
-        </p>
-      )}
+        )}
+      </div>
     </section>
   );
 }
