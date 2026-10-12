@@ -20,7 +20,7 @@
  * @typedef {Object} ProfessionalSkill
  * @property {string} skill
  * @property {string | null} [skill_id]
- * @property {'experience'} source
+ * @property {'experience' | 'role_confirmed'} source `role_confirmed` = a skill the user ticked.
  * @property {string} evidence
  * @property {string | null} [definition] Short ESCO definition when available.
  */
@@ -72,6 +72,7 @@
  * @property {string} skill_id
  * @property {string} skill
  * @property {string | null} [definition] ESCO definition of the role requirement, for hover.
+ * @property {'role' | 'ai_usage' | 'soft'} [band] Soft skills are left out of the met/total count.
  */
 
 /**
