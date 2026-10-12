@@ -157,7 +157,8 @@ export const BOOK_VERSION = 3;
  * @returns {{ version: number, activeRoleId: string | null, personal: object, drafts: Record<string, object>, gaps: Record<string, object> }}
  */
 export function openCvBook(saved) {
-  if (saved?.version === BOOK_VERSION) return saved;
+  if (saved?.version === BOOK_VERSION)
+    return { ...saved, personal: { ...EMPTY_PERSONAL, ...saved.personal } };
   const empty = {
     version: BOOK_VERSION,
     activeRoleId: null,
@@ -171,6 +172,24 @@ export function openCvBook(saved) {
     ...empty,
     personal: { ...EMPTY_PERSONAL, ...saved.personal },
     drafts: saved.roleId ? { [saved.roleId]: saved } : {},
+  };
+}
+
+/**
+ * Returns the CV book without contact details, at book level and in each
+ * draft, so name, email, phone and location stay on the device.
+ */
+export function withoutPersonal(book) {
+  if (!book) return book;
+  const { personal: _personal, drafts = {}, ...rest } = book;
+  return {
+    ...rest,
+    drafts: Object.fromEntries(
+      Object.entries(drafts).map(([roleId, { personal: _draftPersonal, ...draft }]) => [
+        roleId,
+        draft,
+      ])
+    ),
   };
 }
 

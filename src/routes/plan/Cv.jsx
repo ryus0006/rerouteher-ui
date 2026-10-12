@@ -193,17 +193,22 @@ export default function Cv() {
   const roleId = activeRole?.role_id;
   const roleGap = roleId === selectedRole?.role_id ? gapResult : (book.gaps[roleId] ?? null);
   const saved = roleId ? book.drafts[roleId] : undefined;
-  const draft = ready && saved ? normaliseDraft(saved) : null;
+  // Contact details are shared across roles and live on the book, not the draft.
+  const draft = ready && saved ? normaliseDraft({ ...saved, personal: book.personal }) : null;
 
   const storeGeneratedDraft = useCallback(
     (targetRoleId, result) => {
       const generated = normaliseDraft(result.draft);
       if (!generated) return;
+      const { personal, ...rest } = generated;
       const latest = openCvBook(useIntakeStore.getState().cvDraft);
+      // Contact details from the server only fill a book that has none yet.
+      const blank = Object.values(latest.personal).every((value) => !value?.trim());
       setCvDraft({
         ...latest,
         activeRoleId: targetRoleId,
-        drafts: { ...latest.drafts, [targetRoleId]: generated },
+        personal: blank ? personal : latest.personal,
+        drafts: { ...latest.drafts, [targetRoleId]: rest },
       });
     },
     [setCvDraft]

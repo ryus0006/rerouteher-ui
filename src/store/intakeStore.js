@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import { knownPriorities } from '../config/employerPriorities.js';
+import { withoutPersonal } from '../lib/cvDraft.js';
 
 export const STORAGE_KEY = 'rerouteher.guestSession';
 
@@ -285,10 +286,13 @@ export const useIntakeStore = create(
         return careerBreak.activities.length > 0;
       },
 
-      /** Returns the plan fields to save to the account. */
+      /** Returns the plan fields to save to the account. CV contact details are left out. */
       exportPlan: () => {
         const state = get();
-        return Object.fromEntries(PLAN_FIELDS.map((field) => [field, state[field]]));
+        return {
+          ...Object.fromEntries(PLAN_FIELDS.map((field) => [field, state[field]])),
+          cvDraft: withoutPersonal(state.cvDraft),
+        };
       },
 
       /**
