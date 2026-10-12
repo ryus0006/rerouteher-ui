@@ -43,7 +43,10 @@ export function RequirementSegments({ have, total, delay }) {
  * requirements already met against the role's total, rather than a score.
  */
 export default function MatchPanel({ role, result, focusAreas, delay = 0 }) {
-  const have = result.skills_have.length;
+  // Soft skills are never listed as gaps, so they stay out of the count too; counting
+  // only the held ones made the total grow whenever one became covered.
+  const held = result.skills_have.filter((skill) => skill.band !== 'soft');
+  const have = held.length;
   const total = have + result.gaps.length;
   const focus = focusAreas.length;
 
@@ -118,7 +121,7 @@ export default function MatchPanel({ role, result, focusAreas, delay = 0 }) {
         </div>
 
         <motion.div className="bg-plane-2 p-7" {...rise(8)}>
-          <MetRequirements skills={result.skills_have} total={total} onPlane />
+          <MetRequirements skills={held} total={total} onPlane />
 
           <details className="mt-5 text-xs leading-relaxed text-on-plane-soft">
             <summary className="cursor-pointer font-semibold text-white">
