@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import ReactMarkdown from 'react-markdown';
 import { AnimatePresence, motion } from 'motion/react';
@@ -143,6 +143,9 @@ function getSessionId() {
   return id;
 }
 
+// Tallest the composer grows before it scrolls, in pixels (about six lines).
+const COMPOSER_MAX_HEIGHT = 136;
+
 export default function Companion({ defaultMode = 'ask' }) {
   const location = useLocation();
   const navigate = useSmoothNavigate();
@@ -197,6 +200,15 @@ export default function Companion({ defaultMode = 'ask' }) {
   const inputRef = useRef(null);
   const openerRef = useRef(null);
   const endRef = useRef(null);
+
+  // Grows the composer with its content up to COMPOSER_MAX_HEIGHT, then scrolls.
+  useLayoutEffect(() => {
+    const field = inputRef.current;
+    if (!field) return;
+    field.style.height = 'auto';
+    field.style.height = `${Math.min(field.scrollHeight, COMPOSER_MAX_HEIGHT)}px`;
+    field.style.overflowY = field.scrollHeight > COMPOSER_MAX_HEIGHT ? 'auto' : 'hidden';
+  }, [question, open]);
 
   // An explicit mode from `openCompanion` takes precedence over the route default.
   const building = (open ? mode : defaultMode) === 'build';
@@ -577,13 +589,22 @@ export default function Companion({ defaultMode = 'ask' }) {
                   {building ? 'Tell me about your work' : 'Ask about your results'}
                 </label>
                 <div className="hera-composer">
-                  <input
+                  {/* Enter sends; Shift+Enter starts a new line. Enter that confirms an
+                      IME composition is left to the input method. */}
+                  <textarea
                     ref={inputRef}
                     id="companion-question"
+                    rows={1}
                     value={question}
                     onChange={(event) => setQuestion(event.target.value)}
+                    onKeyDown={(event) => {
+                      if (event.key !== 'Enter' || event.shiftKey || event.nativeEvent.isComposing)
+                        return;
+                      event.preventDefault();
+                      send(question);
+                    }}
                     placeholder={building ? 'Tell me about your work' : 'Ask about your results'}
-                    className="min-w-0 flex-1 bg-transparent py-2 pl-4 text-sm text-ink outline-none placeholder:text-ink-faint"
+                    className="block min-w-0 flex-1 resize-none overflow-hidden bg-transparent py-2 pl-4 text-sm leading-5 text-ink outline-none placeholder:text-ink-faint"
                   />
                   <button
                     type="submit"
