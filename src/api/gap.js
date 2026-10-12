@@ -12,16 +12,23 @@ import { postJson } from './client.js';
  * @returns {Promise<import('../types/api.js').GapResult>}
  */
 export function computeGap(snapshot, targetRole, confirmedSkills = []) {
-  const skill_ids = [
-    ...new Set(
-      [...snapshot.professional_skills, ...snapshot.reframed_skills, ...confirmedSkills]
-        .map((s) => s.skill_id)
-        .filter(Boolean)
-    ),
+  // Ticked skills (sent separately) cover on exact id only; CV skills may also cover
+  // similar role skills. A regenerated snapshot merges ticks in as `role_confirmed`.
+  const fromCv = [...snapshot.professional_skills, ...snapshot.reframed_skills].filter(
+    (s) => s.source !== 'role_confirmed'
+  );
+  const ticked = [
+    ...snapshot.professional_skills.filter((s) => s.source === 'role_confirmed'),
+    ...confirmedSkills,
+  ];
+  const skill_ids = [...new Set(fromCv.map((s) => s.skill_id).filter(Boolean))];
+  const confirmed_skill_ids = [
+    ...new Set(ticked.map((s) => s.skill_id).filter((id) => id && !skill_ids.includes(id))),
   ];
 
   return postJson('/api/gap/compute', {
     skill_ids,
+    confirmed_skill_ids,
     target_role_id: targetRole.role_id,
     target_role: targetRole.role,
   }).then((result) => withConfirmedSkills(result, confirmedSkills));
@@ -46,7 +53,7 @@ function withConfirmedSkills(result, confirmedSkills) {
     gaps: result.gaps.filter((gap) => !met.includes(gap)),
     skills_have: [
       ...result.skills_have,
-      ...met.map((gap) => ({ skill_id: gap.skill_id, skill: gap.skill })),
+      ...met.map((gap) => ({ skill_id: gap.skill_id, skill: gap.skill, band: gap.band })),
     ],
   };
 }

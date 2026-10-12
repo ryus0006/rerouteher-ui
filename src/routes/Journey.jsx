@@ -803,7 +803,7 @@ export default function Journey() {
   }
 
   // Match in the gap page's terms: requirements met out of the role's total.
-  const have = gapResult?.skills_have?.length ?? 0;
+  const have = (gapResult?.skills_have ?? []).filter((skill) => skill.band !== 'soft').length;
   const total = have + (gapResult?.gaps.length ?? 0);
   const focusAreas = gapResult ? pickFocusAreas(gapResult.gaps, MAX_FOCUS_AREAS) : [];
 
